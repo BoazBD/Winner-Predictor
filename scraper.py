@@ -16,7 +16,7 @@ from selenium.webdriver.common.keys import Keys
 
 from Bet import Bet
 
-ENV = os.environ.get("ENV",'local')
+ENV = os.environ.get("ENV", "local")
 
 num_errors = 0
 list_of_bets = []
@@ -135,8 +135,6 @@ def parse_sport_event(child):
     # print('Parsing sport event')
     type, time_text, bet_event = parse_event_title(child)
     option1, ratio1, option2, ratio2, option3, ratio3 = parse_event_odds(child)
-    print("yuval")
-    logger.info("yuval")
     bet = Bet(
         type_convertor(type),
         cur_date,
@@ -149,10 +147,17 @@ def parse_sport_event(child):
         option3,
         ratio3,
     )
-    if str(bet) not in processed_rows:
+    if str(bet) not in processed_rows and "סך הכל שערים" not in bet.bet_type:
         processed_rows.add(str(bet))
         list_of_bets.append(bet)
-    print(bet.event_date, bet.event, option1, option2, option3)
+    print(bet.event_date, bet.event[::-1], option1[::-1], option2[::-1], option3[::-1])
+
+
+def convert_to_date_format(input_str):
+    current_year = datetime.now().year
+    return datetime.strptime(f"{input_str}.{current_year}", "%d.%m.%Y").strftime(
+        "%Y-%m-%d"
+    )
 
 
 def parse_date(nested_child):
@@ -163,7 +168,7 @@ def parse_date(nested_child):
     )  # Change the tag name as per your HTML structure
     if date_element:
         global cur_date
-        cur_date = date_element.text.split("|")[1]
+        cur_date = convert_to_date_format(date_element.text.split("|")[1])
     else:
         print("error: Date not found")
 
@@ -199,7 +204,7 @@ def parse_sport(driver, temp):
     )
     action = ActionChains(driver)
 
-    for i in range(15):
+    for i in range(22):
         child_elements = main_element.find_elements(By.XPATH, ".//div[@role='row']")
         for row in child_elements:
             try:
@@ -215,7 +220,7 @@ def parse_sport(driver, temp):
         # print('scrolling down -----------------------------------')
         for i in range(2):
             action.send_keys(Keys.PAGE_DOWN).perform()
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         # time.sleep(2)
 
@@ -248,23 +253,31 @@ def parse_hebrew(text):
 
 
 def write_bets_to_s3(bets: list[dict]):
+    # Get the current time in GMT+3
+    gmt3 = pytz.timezone("Etc/GMT-3")  # Note the negative sign, it's an offset from GMT
+    current_time_gmt3 = datetime.now(gmt3)
+    cur_date = current_time_gmt3.strftime("%Y-%m-%d")
+    cur_time = current_time_gmt3.strftime("%H:%M:%S")
+    run_time = f"{cur_date} {cur_time}"
+
+    for bet in bets:
+        bet["run_time"] = run_time
+
     csv_buffer = StringIO()
     csv_writer = csv.DictWriter(csv_buffer, fieldnames=bets[0].keys())
     csv_writer.writeheader()
     for row in bets:
         csv_writer.writerow(row)
+
+    # Write a column run_time with the current time
+    csv_buffer.seek(0)
     csv_content = csv_buffer.getvalue()
-    gmt3 = pytz.timezone("Etc/GMT-3")  # Note the negative sign, it's an offset from GMT
-    # Get the current time in GMT+3
-    current_time_gmt3 = datetime.now(gmt3)
-    cur_date = current_time_gmt3.strftime("%Y-%m-%d")
-    cur_time = current_time_gmt3.strftime("%H:%M:%S")
 
     if ENV == "prod":
         # Upload to S3
         s3 = boto3.resource("s3")
         bucket_name = "boaz-winner-prod"
-        file_name = f"odds/{cur_date}/{cur_time}.csv"
+        file_name = f"odds/date_parsed={cur_date}/{cur_time}.csv"
         object = s3.Object(bucket_name, file_name)
         object.put(Body=csv_content)
     else:
@@ -300,15 +313,19 @@ def process_buttons(driver, temp):
     for i in range(2, 5):  # Adjust range if needed
         try:
             print("Trying button ", i)
-            print("SOURCE:", driver.page_source)
             button = driver.find_element(
                 By.XPATH, f'//*[@id="sport-items"]/div[{i}]/label/button'
             )
             button.click()
             time.sleep(1)
+            if i == 2:
+                driver.get(
+                    "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%90%D7%A0%D7%92%D7%9C%D7%99%D7%94,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%99%D7%A9%D7%A8%D7%90%D7%9C,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336293;4336297;4336310;4336321;%D7%99%D7%A9%D7%A8%D7%90%D7%9C$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%A2%D7%9C;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%92%D7%91%D7%99%D7%A2%20%D7%9C%D7%99%D7%91%D7%A8%D7%98%D7%93%D7%95%D7%A8%D7%A1;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%94%D7%9C%D7%99%D7%92%D7%94%20%D7%94%D7%90%D7%99%D7%A8%D7%95%D7%A4%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%A7%D7%95%D7%A0%D7%A4%D7%A8%D7%A0%D7%A1%20%D7%9C%D7%99%D7%92"
+                )
+                time.sleep(3)
             parse_sport(driver, temp)
             global num_errors  # Preferably, avoid global. Consider refactoring to use local variable or class.
-            print("FOR TIME: ", temp, "NUM ERRORS: ", num_errors)
+            # print("FOR TIME: ", temp, "NUM ERRORS: ", num_errors)
             num_errors = 0
         except Exception as e:
             print(f"An exception occurred while processing button {i}: {e}")
@@ -336,8 +353,8 @@ def scrape_winner_with_selenium():
     service = get_chrome_service()
     with webdriver.Chrome(options=options, service=service) as driver:
         driver.get(URL)
-        driver.implicitly_wait(25)
-        time.sleep(15)
+        driver.implicitly_wait(10)
+        time.sleep(7)
         process_buttons(driver, temp=0.1)
 
         bet_dicts = [bet_to_dict(bet) for bet in list_of_bets]
