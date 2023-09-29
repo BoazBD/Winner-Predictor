@@ -1,4 +1,6 @@
 import csv
+import logging
+import os
 import re
 import time
 from datetime import datetime
@@ -11,10 +13,10 @@ from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-import logging
+
 from Bet import Bet
 
-RUN_LOCAL = True
+ENV = os.environ.get("ENV",'local')
 
 num_errors = 0
 list_of_bets = []
@@ -24,7 +26,6 @@ cur_date = None
 URL = "https://www.winner.co.il/"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
-
 
 
 def parse_event_title(child):
@@ -89,7 +90,7 @@ def parse_event_title(child):
                                 By.XPATH, ".//span[@class='market-type']"
                             )
                             market_type = market_type_element.text
-    bet_event = league + parse_hebrew(market_type).replace('1X2 - ','')
+    bet_event = league + parse_hebrew(market_type).replace("1X2 - ", "")
     return type, time_text, bet_event
 
 
@@ -134,7 +135,8 @@ def parse_sport_event(child):
     # print('Parsing sport event')
     type, time_text, bet_event = parse_event_title(child)
     option1, ratio1, option2, ratio2, option3, ratio3 = parse_event_odds(child)
-
+    print("yuval")
+    logger.info("yuval")
     bet = Bet(
         type_convertor(type),
         cur_date,
@@ -197,7 +199,7 @@ def parse_sport(driver, temp):
     )
     action = ActionChains(driver)
 
-    for i in range(10):
+    for i in range(15):
         child_elements = main_element.find_elements(By.XPATH, ".//div[@role='row']")
         for row in child_elements:
             try:
@@ -213,7 +215,7 @@ def parse_sport(driver, temp):
         # print('scrolling down -----------------------------------')
         for i in range(2):
             action.send_keys(Keys.PAGE_DOWN).perform()
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         # time.sleep(2)
 
@@ -258,17 +260,22 @@ def write_bets_to_s3(bets: list[dict]):
     cur_date = current_time_gmt3.strftime("%Y-%m-%d")
     cur_time = current_time_gmt3.strftime("%H:%M:%S")
 
-    # Upload to S3
-    s3 = boto3.resource("s3")
-    bucket_name = "boaz-scraper-test2"
-    file_name = f"test1/{cur_date}/{cur_time}.csv"
-    object = s3.Object(bucket_name, file_name)
-    object.put(Body=csv_content)
+    if ENV == "prod":
+        # Upload to S3
+        s3 = boto3.resource("s3")
+        bucket_name = "boaz-winner-prod"
+        file_name = f"odds/{cur_date}/{cur_time}.csv"
+        object = s3.Object(bucket_name, file_name)
+        object.put(Body=csv_content)
+    else:
+        # save to csv
+        with open(f"scraper_output.csv", "w") as f:
+            f.write(csv_content)
 
 
 def configure_chrome_options():
     options = webdriver.ChromeOptions()
-    if not RUN_LOCAL:
+    if ENV == "prod":
         options.binary_location = "/opt/chrome/chrome"
         options.add_argument("--disable-gpu")
         options.add_argument("--single-process")
@@ -277,29 +284,35 @@ def configure_chrome_options():
         options.add_argument(f"--data-path={mkdtemp()}")
         options.add_argument(f"--disk-cache-dir={mkdtemp()}")
         options.add_argument("--remote-debugging-port=9222")
-    #options.add_argument("--window-size=1920,1080")
+    options.add_argument("--window-size=480,1000")
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-dev-tools")
     return options
 
+
 def get_chrome_service():
-    return webdriver.ChromeService("/opt/chromedriver") if not RUN_LOCAL else None
+    return webdriver.ChromeService("/opt/chromedriver") if ENV == "prod" else None
+
 
 def process_buttons(driver, temp):
-    for i in range(2, 4):  # Adjust range if needed
+    for i in range(2, 5):  # Adjust range if needed
         try:
             print("Trying button ", i)
-            button = driver.find_element(By.XPATH, f'//*[@id="sport-items"]/div[{i}]/label/button')
+            print("SOURCE:", driver.page_source)
+            button = driver.find_element(
+                By.XPATH, f'//*[@id="sport-items"]/div[{i}]/label/button'
+            )
             button.click()
-            time.sleep(2)
+            time.sleep(1)
             parse_sport(driver, temp)
             global num_errors  # Preferably, avoid global. Consider refactoring to use local variable or class.
             print("FOR TIME: ", temp, "NUM ERRORS: ", num_errors)
             num_errors = 0
         except Exception as e:
             print(f"An exception occurred while processing button {i}: {e}")
+
 
 def bet_to_dict(bet):
     bet_dict = {
@@ -317,13 +330,14 @@ def bet_to_dict(bet):
         bet_dict["Ratio3"] = bet.ratio3
     return bet_dict
 
+
 def scrape_winner_with_selenium():
     options = configure_chrome_options()
     service = get_chrome_service()
     with webdriver.Chrome(options=options, service=service) as driver:
         driver.get(URL)
-        driver.implicitly_wait(22)
-        time.sleep(5)
+        driver.implicitly_wait(25)
+        time.sleep(15)
         process_buttons(driver, temp=0.1)
 
         bet_dicts = [bet_to_dict(bet) for bet in list_of_bets]
@@ -334,13 +348,15 @@ def scrape_winner_with_selenium():
 
 def main(event, context):
     logger.info("Boaz BBB")
+    print("enviroment: ", ENV)
     num_rows = scrape_winner_with_selenium()
     response = {
         "statusCode": 200,
         "body": "Successfully scraped " + str(num_rows) + " rows.",
     }
-    logger.info('NUM ERRORS:' + str(num_errors))
+    logger.info("NUM ERRORS:" + str(num_errors))
     return response
+
 
 if __name__ == "__main__":
     main(None, None)
