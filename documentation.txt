@@ -1,0 +1,11 @@
+Somewhere in Nov 2023 winter clock was set in israel.
+
+between 12-11-23 to 14-11-23 (2-3 files also in 15th) there was a bug- no soccer and some runs missing
+
+todo: check which file is screwd in 00:30 of 15-11. problem is- in some files all rows dont have option3 so athena confuses
+
+22-11-23 to 25-11-23 html change (made outcome dive instead of span) caused to not work
+
+
+
+docker buildx build --platform linux/amd64 -f ./Dockerfile -t winner_scraper .

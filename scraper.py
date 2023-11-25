@@ -108,7 +108,7 @@ def parse_event_odds(child):
             labels = btn_group_toggle.find_elements(By.XPATH, ".//label")
             options = []
             for label in labels:
-                outcome = label.find_element(By.XPATH, ".//span[@class='outcome']")
+                outcome = label.find_element(By.XPATH, ".//div[@class='outcome']")
                 if outcome:
                     # print the span of class which contains the string hasHebrewCharacters and span of class ratio
                     hasHebrewCharacters = outcome.find_element(
@@ -119,15 +119,13 @@ def parse_event_odds(child):
                     ratio = outcome.find_element(By.XPATH, ".//span[@class='ratio']")
                     ratio_value = ratio.text
                     options.append({"team": team, "ratio": ratio_value})
-    # print('DEBUG3')
-    for option in options:
-        if "ץייווש" in option["team"]:
-            print("found")
+    
     option1, ratio1 = options[0]["team"], options[0]["ratio"]
     option2, ratio2 = options[1]["team"], options[1]["ratio"]
     option3, ratio3 = None, None
     if len(options) > 2:
         option3, ratio3 = options[2]["team"], options[2]["ratio"]
+
     return option1, ratio1, option2, ratio2, option3, ratio3
 
 
@@ -147,7 +145,7 @@ def parse_sport_event(child):
         option3,
         ratio3,
     )
-    if str(bet) not in processed_rows and "סך הכל שערים" not in bet.bet_type:
+    if str(bet) not in processed_rows and "סך הכל שערים" not in bet.event and 'סה"כ' not in bet.event:
         processed_rows.add(str(bet))
         list_of_bets.append(bet)
     print(bet.event_date, bet.event[::-1], option1[::-1], option2[::-1], option3[::-1])
@@ -188,23 +186,23 @@ def parse_row(row):
         parse_date(nested_child)
     if child.get_attribute("class") == "market  market-01":
         parse_sport_event(child)
+#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]/div/div[1]/div[1]/div/h4/span[2]/span[3]/span[1]
+#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]
+#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[4]
 
-
-def parse_sport(driver, temp):
+def parse_sport(driver, temp, i):
     # print('Parsing sport')
     scrollable_element_xpath = (
-        '//*[@id="WinnerLine"]/div[2]/div[2]/div/div/div[1]/div/div'
+        '//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div'
     )
     scrollable_element = driver.find_element(By.XPATH, scrollable_element_xpath)
     scrollable_element.click()
-
-    time.sleep(1)
+    time.sleep(0.1)
     main_element = driver.find_element(
-        By.XPATH, '//*[@id="WinnerLine"]/div[2]/div[2]/div/div/div[1]/div/div'
+        By.XPATH, '//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div'
     )
     action = ActionChains(driver)
-
-    for i in range(22):
+    for i in range(22 if i==2 else 8):
         child_elements = main_element.find_elements(By.XPATH, ".//div[@role='row']")
         for row in child_elements:
             try:
@@ -309,6 +307,7 @@ def get_chrome_service():
     return webdriver.ChromeService("/opt/chromedriver") if ENV == "prod" else None
 
 
+
 def process_buttons(driver, temp):
     for i in range(2, 5):  # Adjust range if needed
         try:
@@ -320,11 +319,11 @@ def process_buttons(driver, temp):
             time.sleep(1)
             if i == 2:
                 driver.get(
-                    "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%90%D7%A0%D7%92%D7%9C%D7%99%D7%94,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%99%D7%A9%D7%A8%D7%90%D7%9C,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336293;4336297;4336310;4336321;%D7%99%D7%A9%D7%A8%D7%90%D7%9C$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%A2%D7%9C;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%92%D7%91%D7%99%D7%A2%20%D7%9C%D7%99%D7%91%D7%A8%D7%98%D7%93%D7%95%D7%A8%D7%A1;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%94%D7%9C%D7%99%D7%92%D7%94%20%D7%94%D7%90%D7%99%D7%A8%D7%95%D7%A4%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%A7%D7%95%D7%A0%D7%A4%D7%A8%D7%A0%D7%A1%20%D7%9C%D7%99%D7%92"
+                    "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336297;4336310;4336321;4793697;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%90%D7%9C%D7%99%D7%A4%D7%95%D7%AA%20%D7%90%D7%99%D7%A8%D7%95%D7%A4%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%90%D7%A1%D7%99%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%90%D7%A4%D7%A8%D7%99%D7%A7%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%93%D7%A8'%20%D7%90%D7%9E%D7%A8%D7%99%D7%A7%D7%94;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA"
                 )
-                time.sleep(3)
-            parse_sport(driver, temp)
-            global num_errors  # Preferably, avoid global. Consider refactoring to use local variable or class.
+                time.sleep(3) 
+            parse_sport(driver, temp, i)
+            global num_errors
             # print("FOR TIME: ", temp, "NUM ERRORS: ", num_errors)
             num_errors = 0
         except Exception as e:
@@ -345,8 +344,10 @@ def bet_to_dict(bet):
     if bet.option3 and bet.ratio3:
         bet_dict["Option3"] = bet.option3
         bet_dict["Ratio3"] = bet.ratio3
+    else:
+        bet_dict["Option3"] = None
+        bet_dict["Ratio3"] = None
     return bet_dict
-
 
 def scrape_winner_with_selenium():
     options = configure_chrome_options()
@@ -361,10 +362,8 @@ def scrape_winner_with_selenium():
         num_rows = len(list_of_bets)
         write_bets_to_s3(bet_dicts)
         return num_rows
-
-
+    
 def main(event, context):
-    logger.info("Boaz BBB")
     print("enviroment: ", ENV)
     num_rows = scrape_winner_with_selenium()
     response = {
@@ -372,6 +371,7 @@ def main(event, context):
         "body": "Successfully scraped " + str(num_rows) + " rows.",
     }
     logger.info("NUM ERRORS:" + str(num_errors))
+    print("NUM ROWS: ", num_rows)
     return response
 
 
