@@ -98,7 +98,7 @@ def parse_event_odds(child):
     # print('Parsing event odds')
     market_btns = child.find_element(By.XPATH, ".//div[@class='market-btns']")
     if market_btns:
-        # print('DEBUG1')
+        print('DEBUG1')
         btn_group_toggle = child.find_element(
             By.XPATH, ".//div[@class='btn-group-toggle']"
         )
@@ -119,6 +119,10 @@ def parse_event_odds(child):
                     ratio = outcome.find_element(By.XPATH, ".//span[@class='ratio']")
                     ratio_value = ratio.text
                     options.append({"team": team, "ratio": ratio_value})
+        else:
+            print("error: no btn_group_toggle")
+    else:
+        print("error: no market_btns")
     
     option1, ratio1 = options[0]["team"], options[0]["ratio"]
     option2, ratio2 = options[1]["team"], options[1]["ratio"]
@@ -319,7 +323,7 @@ def process_buttons(driver, temp):
             time.sleep(1)
             if i == 2:
                 driver.get(
-                    "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336297;4336310;4336321;4793697;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%90%D7%9C%D7%99%D7%A4%D7%95%D7%AA%20%D7%90%D7%99%D7%A8%D7%95%D7%A4%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%90%D7%A1%D7%99%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%90%D7%A4%D7%A8%D7%99%D7%A7%D7%94;%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99$%D7%9E%D7%95%D7%A7%D7%93%D7%9E%D7%95%D7%AA%20%D7%9E%D7%95%D7%A0%D7%93%D7%99%D7%90%D7%9C,%20%D7%93%D7%A8'%20%D7%90%D7%9E%D7%A8%D7%99%D7%A7%D7%94;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA"
+                    "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%90%D7%A0%D7%92%D7%9C%D7%99%D7%94,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%99%D7%A9%D7%A8%D7%90%D7%9C,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336293;4336297;4336310;4336321;%D7%99%D7%A9%D7%A8%D7%90%D7%9C$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%A2%D7%9C;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA%20%D7%94%D7%90%D7%A1%D7%99%D7%90%D7%AA%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA%20%D7%94%D7%90%D7%A4%D7%A8%D7%99%D7%A7%D7%90%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%A7%D7%95%D7%A0%D7%A4%D7%A8%D7%A0%D7%A1%20%D7%9C%D7%99%D7%92"
                 )
                 time.sleep(3) 
             parse_sport(driver, temp, i)
