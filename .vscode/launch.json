@@ -8,7 +8,18 @@
             "name": "Scraper",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/scraper.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local"
+            }
+        },
+        {
+            "name": "API Scraper",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/api_request/api_scraper.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {

@@ -1,0 +1,13 @@
+FROM public.ecr.aws/lambda/python:3.12
+
+WORKDIR /usr/src/app
+
+COPY api_request/ api_request/
+COPY requirements.txt .
+COPY Bet.py .
+
+RUN pip install -r requirements.txt
+
+ENV PYTHONPATH /usr/src/app
+
+CMD [ "api_request.api_scraper.main" ]

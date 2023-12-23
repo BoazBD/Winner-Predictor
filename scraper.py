@@ -336,7 +336,7 @@ def process_buttons(driver, temp):
 
 def bet_to_dict(bet):
     bet_dict = {
-        "Type": bet.bet_type,
+        "Type": bet.type,
         "Date": bet.event_date,
         "Time": bet.time,
         "Event": bet.event,
