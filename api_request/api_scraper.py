@@ -18,8 +18,10 @@ RECORDING_BETS = [
     "הימור יתרון - ללא הארכות",  # Basketball
     "הימור יתרון - כולל הארכות אם יהיו",  # Football
     "מחצית/סיום - ללא הארכות",  # Football
+    "המנצח/ת - משחק", #Tennis
+    
 ]
-SID_MAP = {240: "Soccer", 227: "Basketball", 1100: "Handball", 1: "Football"}
+SID_MAP = {240: "Soccer", 227: "Basketball", 1100: "Handball", 1: "Football", 239: "Tennis"}
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 logging.basicConfig(level=logging.INFO)
@@ -65,7 +67,8 @@ def create_bet(market):
     bet_type = SID_MAP[market["sId"]]
     event_date = datetime.datetime.strptime(str(market["e_date"]), "%y%m%d").date()
     time = str(market["m_hour"])[:2] + ":" + str(market["m_hour"])[2:]
-    event = market["league"] + " - " + market["mp"]
+    event = market["mp"]
+    league = market["league"]
     option1 = remove_bidirectional_control_chars(market["outcomes"][0]["desc"])
     ratio1 = market["outcomes"][0]["price"]
     option2 = remove_bidirectional_control_chars(market["outcomes"][1]["desc"])
@@ -78,6 +81,7 @@ def create_bet(market):
         bet_type,
         event_date,
         time,
+        league,
         event,
         option1,
         ratio1,
@@ -129,6 +133,8 @@ def main(event, context):
         )
     rows_processed = bet_df.shape[0]
     logger.info(f"Successfully wrote {rows_processed} rows.")
+    if rows_processed == 0:
+        raise Exception("No data processed.")
     response = {
         "statusCode": 200,
         "body": f"Successfully scraped {rows_processed} rows.",

@@ -23,7 +23,8 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
-                "ENV": "local"
+                "ENV": "local",
+                "PYTHONPATH": "${workspaceFolder}/"
             }
         }
     ]
