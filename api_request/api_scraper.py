@@ -21,7 +21,7 @@ RECORDING_BETS = [
     "המנצח/ת - משחק", #Tennis
     
 ]
-SID_MAP = {240: "Soccer", 227: "Basketball", 1100: "Handball", 1: "Football", 239: "Tennis"}
+SID_MAP = {240: "Soccer", 227: "Basketball", 1100: "Handball", 1: "Football", 239: "Tennis", 226:"Baseball"}
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 logging.basicConfig(level=logging.INFO)
@@ -64,7 +64,10 @@ def process_data(data):
 
 def create_bet(market):
     """Create a Bet object from market data."""
-    bet_type = SID_MAP[market["sId"]]
+    
+    bet_type = SID_MAP.get(market["sId"], "unknown")
+    if bet_type == "unknown":
+        logger.error(f"Unknown sport_id: {market['sId']}")
     event_date = datetime.datetime.strptime(str(market["e_date"]), "%y%m%d").date()
     time = str(market["m_hour"])[:2] + ":" + str(market["m_hour"])[2:]
     event = market["mp"]
