@@ -20,3 +20,8 @@ echo "Pushing Docker image to ECR..."
 docker push 105144480348.dkr.ecr.il-central-1.amazonaws.com/winner-api:latest
 
 echo "Docker image pushed successfully to ECR."
+
+aws lambda update-function-code \
+           --function-name Winner-api-lambda \
+           --image-uri 105144480348.dkr.ecr.il-central-1.amazonaws.com/winner-api:latest
+echo "Lambda image updated successfully."
