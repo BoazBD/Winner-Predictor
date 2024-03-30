@@ -5,8 +5,13 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from api_request.api_scraper import (API_URL, create_bet, fetch_data,
-                                     process_data, save_to_s3)
+from api_request.api_scraper import (
+    API_URL,
+    create_bet,
+    fetch_data,
+    process_data,
+    save_to_s3,
+)
 
 
 class TestApiScraper(unittest.TestCase):
