@@ -6,10 +6,11 @@ import pandas as pd
 import json
 
 from api_request.api_scraper import (
+    save_to_s3,
     fetch_data,
     process_data,
     create_bet,
-    save_to_s3,
+    API_URL
 )
 
 
@@ -17,13 +18,15 @@ class TestApiScraper(unittest.TestCase):
 
     @patch("requests.get")
     def test_fetch_data_success(self, mock_get):
-        url = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
         mock_response = MagicMock()
-        mock_response.status_code = 200
+
+
+
+        mock_response.status_code =  200
         mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
-        result = fetch_data(url)
+        result = fetch_data(API_URL)
 
         self.assertEqual(result, {"data": "test"})
 
