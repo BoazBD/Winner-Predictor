@@ -18,14 +18,21 @@ RECORDING_BETS = [
     "הימור יתרון - ללא הארכות",  # Basketball
     "הימור יתרון - כולל הארכות אם יהיו",  # Football
     "מחצית/סיום - ללא הארכות",  # Football
-    "המנצח/ת - משחק", #Tennis
-    
+    "המנצח/ת - משחק",  # Tennis
 ]
-SID_MAP = {240: "Soccer", 227: "Basketball", 1100: "Handball", 1: "Football", 239: "Tennis", 226:"Baseball"}
+SID_MAP = {
+    240: "Soccer",
+    227: "Basketball",
+    1100: "Handball",
+    1: "Football",
+    239: "Tennis",
+    226: "Baseball",
+}
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
 
 def remove_bidirectional_control_chars(s):
     """Remove bidirectional control characters from a string."""
@@ -66,7 +73,7 @@ def process_data(data):
 
 def create_bet(market):
     """Create a Bet object from market data."""
-    
+
     bet_type = SID_MAP.get(market["sId"], "unknown")
     if bet_type == "unknown":
         logger.error(f"Unknown sport_id: {market['sId']}")
@@ -114,7 +121,7 @@ def save_to_s3(df, path, database, table, partition_cols):
 def main(event, context):
     print("enviroment: ", ENV)
     data = fetch_data(API_URL)
-        
+
     bet_df = process_data(data)
 
     israel_timezone = pytz.timezone("Israel")
@@ -147,5 +154,3 @@ def main(event, context):
 
 if __name__ == "__main__":
     main(None, None)
-
-

@@ -28,7 +28,6 @@ class TestApiScraper(unittest.TestCase):
 
         self.assertEqual(result, {"data": "test"})
 
-
     def test_process_data(self):
         with open("test_response.json") as file:
             data = json.load(file)
@@ -41,27 +40,27 @@ class TestApiScraper(unittest.TestCase):
         # Assert the result has 534 rows and 11 columns
         self.assertEqual(result.shape[0], 534)
         self.assertEqual(result.shape[1], 11)
-        
-        not_nullable_columns = result.columns.difference(['option3', 'ratio3'])
+
+        not_nullable_columns = result.columns.difference(["option3", "ratio3"])
         self.assertTrue(result[not_nullable_columns].notnull().all().all())
 
         # Convert ratios to float
-        result['ratio1'] = result['ratio1'].astype(float)
-        result['ratio2'] = result['ratio2'].astype(float)
-        result['ratio3'] = result['ratio3'].astype(float)
+        result["ratio1"] = result["ratio1"].astype(float)
+        result["ratio2"] = result["ratio2"].astype(float)
+        result["ratio3"] = result["ratio3"].astype(float)
 
-        self.assertTrue((result['ratio1'] >= 1).all())
-        self.assertTrue((result['ratio1'] <= 200).all())
-        self.assertTrue((result['ratio2'] >= 1).all())
-        self.assertTrue((result['ratio2'] <= 200).all())
-        
+        self.assertTrue((result["ratio1"] >= 1).all())
+        self.assertTrue((result["ratio1"] <= 200).all())
 
-        #Check that option3 and ratio3 are not null when the type is Soccer
-        soccer_rows = result[result['type'] == 'Soccer']
-        self.assertTrue(soccer_rows[['option3', 'ratio3']].notnull().all().all())
+        self.assertTrue((result["ratio2"] >= 1).all())
+        self.assertTrue((result["ratio2"] <= 200).all())
 
-        self.assertTrue((soccer_rows['ratio3'] >= 1).all())
-        self.assertTrue((soccer_rows['ratio3'] <= 200).all())
+        # Check that option3 and ratio3 are not null when the type is Soccer
+        soccer_rows = result[result["type"] == "Soccer"]
+        self.assertTrue(soccer_rows[["option3", "ratio3"]].notnull().all().all())
+
+        self.assertTrue((soccer_rows["ratio3"] >= 1).all())
+        self.assertTrue((soccer_rows["ratio3"] <= 200).all())
 
     def test_create_bet(self):
         market = {

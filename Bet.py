@@ -1,5 +1,18 @@
 class Bet:
-    def __init__(self, bet_type, event_date, time,league, event, option1, ratio1, option2, ratio2, option3=None, ratio3=None):
+    def __init__(
+        self,
+        bet_type,
+        event_date,
+        time,
+        league,
+        event,
+        option1,
+        ratio1,
+        option2,
+        ratio2,
+        option3=None,
+        ratio3=None,
+    ):
         self.type = bet_type
         self.event_date = event_date
         self.time = time
@@ -11,7 +24,7 @@ class Bet:
         self.ratio2 = ratio2
         self.option3 = option3
         self.ratio3 = ratio3
-    
+
     def __str__(self):
         """
         Return a string representation of the Bet object.

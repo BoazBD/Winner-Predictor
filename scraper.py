@@ -98,7 +98,7 @@ def parse_event_odds(child):
     # print('Parsing event odds')
     market_btns = child.find_element(By.XPATH, ".//div[@class='market-btns']")
     if market_btns:
-        print('DEBUG1')
+        print("DEBUG1")
         btn_group_toggle = child.find_element(
             By.XPATH, ".//div[@class='btn-group-toggle']"
         )
@@ -123,7 +123,7 @@ def parse_event_odds(child):
             print("error: no btn_group_toggle")
     else:
         print("error: no market_btns")
-    
+
     option1, ratio1 = options[0]["team"], options[0]["ratio"]
     option2, ratio2 = options[1]["team"], options[1]["ratio"]
     option3, ratio3 = None, None
@@ -149,7 +149,11 @@ def parse_sport_event(child):
         option3,
         ratio3,
     )
-    if str(bet) not in processed_rows and "סך הכל שערים" not in bet.event and 'סה"כ' not in bet.event:
+    if (
+        str(bet) not in processed_rows
+        and "סך הכל שערים" not in bet.event
+        and 'סה"כ' not in bet.event
+    ):
         processed_rows.add(str(bet))
         list_of_bets.append(bet)
     print(bet.event_date, bet.event[::-1], option1[::-1], option2[::-1], option3[::-1])
@@ -190,9 +194,12 @@ def parse_row(row):
         parse_date(nested_child)
     if child.get_attribute("class") == "market  market-01":
         parse_sport_event(child)
-#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]/div/div[1]/div[1]/div/h4/span[2]/span[3]/span[1]
-#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]
-#//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[4]
+
+
+# //*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]/div/div[1]/div[1]/div/h4/span[2]/span[3]/span[1]
+# //*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[3]
+# //*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div/div[4]
+
 
 def parse_sport(driver, temp, i):
     # print('Parsing sport')
@@ -206,7 +213,7 @@ def parse_sport(driver, temp, i):
         By.XPATH, '//*[@id="WinnerLine"]/div[2]/div[3]/div/div/div[1]/div/div'
     )
     action = ActionChains(driver)
-    for i in range(22 if i==2 else 8):
+    for i in range(22 if i == 2 else 8):
         child_elements = main_element.find_elements(By.XPATH, ".//div[@role='row']")
         for row in child_elements:
             try:
@@ -311,7 +318,6 @@ def get_chrome_service():
     return webdriver.ChromeService("/opt/chromedriver") if ENV == "prod" else None
 
 
-
 def process_buttons(driver, temp):
     for i in range(2, 5):  # Adjust range if needed
         try:
@@ -325,7 +331,7 @@ def process_buttons(driver, temp):
                 driver.get(
                     "https://www.winner.co.il/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%D7%9D/%D7%95%D7%95%D7%99%D7%A0%D7%A8-%D7%9C%D7%99%D7%99%D7%9F/%D7%9B%D7%93%D7%95%D7%A8%D7%92%D7%9C/%D7%90%D7%99%D7%98%D7%9C%D7%99%D7%94,%D7%90%D7%A0%D7%92%D7%9C%D7%99%D7%94,%D7%92%D7%A8%D7%9E%D7%A0%D7%99%D7%94,%D7%99%D7%A9%D7%A8%D7%90%D7%9C,%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D,%D7%A1%D7%A4%D7%A8%D7%93,%D7%A6%D7%A8%D7%A4%D7%AA/4336287;4336293;4336297;4336310;4336321;%D7%99%D7%A9%D7%A8%D7%90%D7%9C$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%A2%D7%9C;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA%20%D7%94%D7%90%D7%A1%D7%99%D7%90%D7%AA%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%9C%D7%99%D7%92%D7%AA%20%D7%94%D7%90%D7%9C%D7%95%D7%A4%D7%95%D7%AA%20%D7%94%D7%90%D7%A4%D7%A8%D7%99%D7%A7%D7%90%D7%99%D7%AA;%D7%9E%D7%95%D7%A2%D7%93%D7%95%D7%A0%D7%99%D7%9D%20%D7%91%D7%99%D7%A0%D7%9C%D7%90%D7%95%D7%9E%D7%99%D7%99%D7%9D$%D7%A7%D7%95%D7%A0%D7%A4%D7%A8%D7%A0%D7%A1%20%D7%9C%D7%99%D7%92"
                 )
-                time.sleep(3) 
+                time.sleep(3)
             parse_sport(driver, temp, i)
             global num_errors
             # print("FOR TIME: ", temp, "NUM ERRORS: ", num_errors)
@@ -353,6 +359,7 @@ def bet_to_dict(bet):
         bet_dict["Ratio3"] = None
     return bet_dict
 
+
 def scrape_winner_with_selenium():
     options = configure_chrome_options()
     service = get_chrome_service()
@@ -366,7 +373,8 @@ def scrape_winner_with_selenium():
         num_rows = len(list_of_bets)
         write_bets_to_s3(bet_dicts)
         return num_rows
-    
+
+
 def main(event, context):
     print("enviroment: ", ENV)
     num_rows = scrape_winner_with_selenium()
