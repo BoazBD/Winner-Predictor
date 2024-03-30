@@ -1,22 +1,22 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
-    hooks:
-    -   id: check-yaml
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
-    
+  rev: v2.3.0
+  hooks:
+  -   id: check-yaml
+  -   id: end-of-file-fixer
+  -   id: trailing-whitespace
+
 -   repo: https://github.com/psf/black
-    rev: 22.10.0
-    hooks:
+  rev: 22.10.0
+  hooks:
     -   id: black
     -   id: isort  
 
-    -   repo: local
-      hooks:
-      -   id: run-tests
-        name: Run tests
-        entry: pytest ./tests
-        language: system
-        stages: [commit]
-        types: [python]
+-   repo: local
+  hooks:
+  -   id: run-tests
+    name: Run tests
+    entry: pytest ./tests
+    language: system
+    stages: [commit]
+    types: [python]
