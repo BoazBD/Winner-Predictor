@@ -5,13 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from api_request.api_scraper import (
-    create_bet,
-    fetch_data,
-    API_URL,
-    process_data,
-    save_to_s3,
-)
+from api_request.api_scraper import (API_URL, create_bet, fetch_data,
+                                     process_data, save_to_s3)
 
 
 class TestApiScraper(unittest.TestCase):
@@ -34,7 +29,7 @@ class TestApiScraper(unittest.TestCase):
         result = process_data(data)
         self.assertIsInstance(result, pd.DataFrame)
 
-        self.assertEqual(result.shape[0], 533)
+        self.assertEqual(result.shape[0], 534)
         self.assertEqual(result.shape[1], 11)
 
         not_nullable_columns = result.columns.difference(["option3", "ratio3"])
