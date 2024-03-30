@@ -18,6 +18,12 @@ jobs:
               uses: rickstaa/action-black@v1
               with:
                 black_args: ". --check"
+              continue-on-error: false
+            - name: Sort imports
+              run: |
+                pip install isort
+                isort .
+              continue-on-error: false
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
