@@ -11,6 +11,15 @@ jobs:
               uses: actions/setup-python@v2
               with:
                   python-version: 3.11
+            - name: configure aws credentials
+              uses: aws-actions/configure-aws-credentials@v1.7.0
+              with:
+                role-to-assume: arn:aws:iam::105144480348:role/github-actions
+                role-session-name: GitHub_to_AWS_via_FederatedOIDC
+                aws-region: il-central-1
             - name: Run deploy script
               run: |
                   ./deploy_api.sh
+
+
+
