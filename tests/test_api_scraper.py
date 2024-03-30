@@ -10,7 +10,6 @@ from api_request.api_scraper import (
     process_data,
     create_bet,
     save_to_s3,
-    SID_MAP,
 )
 
 
@@ -29,7 +28,7 @@ class TestApiScraper(unittest.TestCase):
         self.assertEqual(result, {"data": "test"})
 
     def test_process_data(self):
-        with open("api_request/test_response.json") as file:
+        with open("tests/test_response.json") as file:
             data = json.load(file)
 
         result = process_data(data)
