@@ -29,7 +29,7 @@ class TestApiScraper(unittest.TestCase):
         self.assertEqual(result, {"data": "test"})
 
     def test_process_data(self):
-        with open("test_response.json") as file:
+        with open("api_request/test_response.json") as file:
             data = json.load(file)
 
         result = process_data(data)
