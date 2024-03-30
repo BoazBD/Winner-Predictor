@@ -1,27 +1,20 @@
-from datetime import datetime
+import json
 import unittest
-from unittest.mock import patch, MagicMock
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import json
 
-from api_request.api_scraper import (
-    save_to_s3,
-    fetch_data,
-    API_URL,
-    process_data,
-    create_bet,
-)
+from api_request.api_scraper import (API_URL, create_bet, fetch_data,
+                                     process_data, save_to_s3)
 
 
 class TestApiScraper(unittest.TestCase):
-
     @patch("requests.get")
     def test_fetch_data_success(self, mock_get):
         mock_response = MagicMock()
 
-
-        mock_response.status_code =   200
+        mock_response.status_code = 200
         mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
