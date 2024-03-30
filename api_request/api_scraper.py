@@ -59,7 +59,9 @@ def process_data(data):
     for market in markets:
         if market["mp"] in RECORDING_BETS:
             bet_list.append(create_bet(market))
-    return bet_list
+    if not bet_list:
+        raise Exception("No data processed.")
+    return pd.DataFrame([bet.__dict__ for bet in bet_list])
 
 
 def create_bet(market):
@@ -112,11 +114,9 @@ def save_to_s3(df, path, database, table, partition_cols):
 def main(event, context):
     print("enviroment: ", ENV)
     data = fetch_data(API_URL)
-    bet_list = process_data(data)
-    if bet_list == []:
-        raise Exception("No data processed.")
+        
+    bet_df = process_data(data)
 
-    bet_df = pd.DataFrame([bet.__dict__ for bet in bet_list])
     israel_timezone = pytz.timezone("Israel")
     current_time = datetime.datetime.now(israel_timezone)
     cur_date = current_time.strftime("%Y-%m-%d")
@@ -147,3 +147,5 @@ def main(event, context):
 
 if __name__ == "__main__":
     main(None, None)
+
+
