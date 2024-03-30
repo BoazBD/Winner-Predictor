@@ -8,8 +8,8 @@ import json
 from api_request.api_scraper import (
     save_to_s3,
     fetch_data,
-    process_data,
     API_URL,
+    process_data,
     create_bet,
 )
 
@@ -21,8 +21,7 @@ class TestApiScraper(unittest.TestCase):
         mock_response = MagicMock()
 
 
-
-        mock_response.status_code =  200
+        mock_response.status_code =   200
         mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
