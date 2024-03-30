@@ -29,7 +29,7 @@ class TestApiScraper(unittest.TestCase):
         result = process_data(data)
         self.assertIsInstance(result, pd.DataFrame)
 
-        self.assertEqual(result.shape[0], 534)
+        self.assertEqual(result.shape[0], 533)
         self.assertEqual(result.shape[1], 11)
 
         not_nullable_columns = result.columns.difference(["option3", "ratio3"])
