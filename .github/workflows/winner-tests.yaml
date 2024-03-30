@@ -22,7 +22,7 @@ jobs:
             - name: Sort imports
               run: |
                 pip install isort
-                isort .
+                isort --check-only .
               continue-on-error: false
             - name: Install dependencies
               run: |
