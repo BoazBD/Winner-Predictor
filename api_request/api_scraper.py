@@ -2,11 +2,11 @@ import datetime
 import logging
 import os
 
+import awswrangler as wr
 import boto3
 import pandas as pd
 import pytz
 import requests
-import awswrangler as wr
 
 from Bet import Bet
 

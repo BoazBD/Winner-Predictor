@@ -5,8 +5,13 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from api_request.api_scraper import (API_URL, create_bet, fetch_data,
-                                     process_data, save_to_s3)
+from api_request.api_scraper import (
+    API_URL,
+    create_bet,
+    fetch_data,
+    process_data,
+    save_to_s3,
+)
 
 
 class TestApiScraper(unittest.TestCase):
@@ -27,18 +32,14 @@ class TestApiScraper(unittest.TestCase):
             data = json.load(file)
 
         result = process_data(data)
-
-        # Assert the result is a DataFrame
         self.assertIsInstance(result, pd.DataFrame)
 
-        # Assert the result has 534 rows and 11 columns
         self.assertEqual(result.shape[0], 534)
         self.assertEqual(result.shape[1], 11)
 
         not_nullable_columns = result.columns.difference(["option3", "ratio3"])
         self.assertTrue(result[not_nullable_columns].notnull().all().all())
 
-        # Convert ratios to float
         result["ratio1"] = result["ratio1"].astype(float)
         result["ratio2"] = result["ratio2"].astype(float)
         result["ratio3"] = result["ratio3"].astype(float)

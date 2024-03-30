@@ -1,22 +1,36 @@
-name: Winner Tests
+name: CI
 
 on:
     pull_request:
         branches:
             - main
 jobs:
+    
     test:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v2
             - name: Set up Python 3.11
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v2
               with:
                   python-version: 3.11
+            - name: Run Black Check
+              uses: rickstaa/action-black@v1
+              with:
+                black_args: ". --check"
+              continue-on-error: false
+            - name: Sort imports
+              run: |
+                pip install isort
+                isort --check-only . --profile black
+              continue-on-error: false
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
                   pip install -r requirements.txt
+            - name: Install pytest
+              run: |
+                  pip install pytest
             - name: Run tests
               run: |
                   pytest tests/
