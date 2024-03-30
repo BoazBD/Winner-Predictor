@@ -9,8 +9,8 @@ from api_request.api_scraper import (
     save_to_s3,
     fetch_data,
     process_data,
+    API_URL,
     create_bet,
-    API_URL
 )
 
 
