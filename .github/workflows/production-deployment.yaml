@@ -2,11 +2,14 @@ name: Production Deployment
 
 on:
     workflow_dispatch
+permissions:
+      id-token: write
+      contents: read
 jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
             - name: Set up Python 3.11
               uses: actions/setup-python@v2
               with:
@@ -17,9 +20,9 @@ jobs:
                 role-to-assume: arn:aws:iam::105144480348:role/github-actions
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: il-central-1
+                audience: sts.amazonaws.com
             - name: Run deploy script
               run: |
                   ./deploy_api.sh
-
 
 

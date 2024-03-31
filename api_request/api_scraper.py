@@ -121,7 +121,6 @@ def save_to_s3(df, path, database, table, partition_cols):
 def main(event, context):
     print("enviroment: ", ENV)
     data = fetch_data(API_URL)
-
     bet_df = process_data(data)
 
     israel_timezone = pytz.timezone("Israel")
