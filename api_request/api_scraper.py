@@ -90,6 +90,7 @@ def create_bet(market):
         option3 = remove_bidirectional_control_chars(market["outcomes"][2]["desc"])
         ratio3 = market["outcomes"][2]["price"]
     return Bet(
+        bet_type,
         event_date,
         time,
         league,
