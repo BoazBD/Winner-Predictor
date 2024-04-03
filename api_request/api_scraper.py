@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
-def remove_bidirectional_control_chars(s):
+def remove_bidirectional_control_chars(s: str) -> str:
     """Remove bidirectional control characters from a string."""
     bidi_chars = [
         "\u202a",
@@ -50,16 +50,17 @@ def remove_bidirectional_control_chars(s):
     return "".join(c for c in s if c not in bidi_chars)
 
 
-def fetch_data(url):
+def fetch_data(url: str) -> dict:
     """Fetch data from the API."""
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
     else:
-        raise Exception("Failed to fetch data from the API.")
+        logger.error("Failed to fetch data from the API.")
+        raise Exception("Failed to fetch data from the API")
 
 
-def process_data(data):
+def process_data(data: dict) -> pd.DataFrame:
     """Process API data and return a list of bets."""
     markets = data["markets"]
     bet_list = []
@@ -67,11 +68,11 @@ def process_data(data):
         if market["mp"] in RECORDING_BETS:
             bet_list.append(create_bet(market))
     if not bet_list:
-        raise Exception("No data processed.")
+        logger.error("No data processed.")
     return pd.DataFrame([bet.__dict__ for bet in bet_list])
 
 
-def create_bet(market):
+def create_bet(market: dict) -> Bet:
     """Create a Bet object from market data."""
 
     bet_type = SID_MAP.get(market["sId"], "unknown")
@@ -106,22 +107,30 @@ def create_bet(market):
 
 def save_to_s3(df, path, database, table, partition_cols):
     """Save dataframe to S3."""
-    boto3.setup_default_session(region_name="il-central-1")
-    wr.s3.to_parquet(
-        df,
-        path=path,
-        dataset=True,
-        database=database,
-        table=table,
-        partition_cols=partition_cols,
-        mode="append",
-    )
+    try:
+        boto3.setup_default_session(region_name="il-central-1")
+        wr.s3.to_parquet(
+            df,
+            path=path,
+            dataset=True,
+            database=database,
+            table=table,
+            partition_cols=partition_cols,
+            mode="append",
+        )
+    except Exception as e:
+        logger.error(f"Failed to save to S3: {e}")
+        raise Exception("Failed to save to S3")
 
 
 def main(event, context):
     print("enviroment: ", ENV)
     data = fetch_data(API_URL)
-    bet_df = process_data(data)
+    try:
+        bet_df = process_data(data)
+    except Exception as e:
+        logger.error(f"Failed to process data: {e}")
+        raise Exception("Failed to process data")
 
     israel_timezone = pytz.timezone("Israel")
     current_time = datetime.datetime.now(israel_timezone)
