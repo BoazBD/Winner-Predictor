@@ -93,6 +93,7 @@ def create_bet(market: dict) -> Bet:
     return Bet(
         bet_type,
         event_date,
+        time,
         league,
         event,
         option1,
