@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import logging
 import os
 
@@ -32,6 +33,18 @@ API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+
+
+def create_hash(type, date, league, team1, team2):
+    data_to_hash = f"{type}_{date}_{league}_{team1}_{team2}"
+    return hashlib.sha1(data_to_hash.encode()).hexdigest()[:8]
+
+
+def generate_id(row):
+    second_team = row["option3"] if row["option3"] is not None else row["option2"]
+    return create_hash(
+        row["type"], row["date_parsed"], row["league"], row["option1"], second_team
+    )
 
 
 def remove_bidirectional_control_chars(s: str) -> str:
@@ -139,6 +152,7 @@ def main(event, context):
     run_time = f"{cur_date} {cur_time}"
     bet_df["date_parsed"] = cur_date
     bet_df["run_time"] = run_time
+    bet_df["id"] = bet_df.apply(generate_id, axis=1)
     if ENV == "local":
         bet_df.to_csv("bets.csv", index=False)
     else:
