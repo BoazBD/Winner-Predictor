@@ -35,13 +35,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 
+def clean_team_name(team_name):
+    """
+    This function cleans a team name by removing any parentheses and numbers at the end.
+    """
+    # Find the last index of an opening parenthesis
+    opening_bracket_index = team_name.rfind("(")
+    # If an opening parenthesis is found, remove everything after it (including the parenthesis)
+    if opening_bracket_index != -1:
+        return team_name[:opening_bracket_index].strip()
+    else:
+        return team_name
+
+
 def create_hash(type, date, league, team1, team2):
     data_to_hash = f"{type}_{date}_{league}_{team1}_{team2}"
     return hashlib.sha1(data_to_hash.encode()).hexdigest()[:8]
 
 
 def generate_id(row):
-    second_team = row["option3"] if row["option3"] is not None else row["option2"]
+    first_team = clean_team_name(row["option1"])
+    second_team = (
+        clean_team_name(row["option3"])
+        if row["option3"] is not None
+        else clean_team_name(row["option2"])
+    )
+
     return create_hash(
         row["type"], row["event_date"], row["league"], row["option1"], second_team
     )
