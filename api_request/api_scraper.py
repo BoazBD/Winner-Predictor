@@ -62,7 +62,7 @@ def generate_id(row):
     )
 
     return create_hash(
-        row["type"], row["event_date"], row["league"], row["option1"], second_team
+        row["type"], row["event_date"], row["league"], first_team, second_team
     )
 
 
