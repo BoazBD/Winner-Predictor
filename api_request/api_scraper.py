@@ -56,7 +56,7 @@ def create_hash(type, date, league, team1, team2):
 def generate_id(row):
     first_team = clean_team_name(row["option1"])
     # Don't use ternary operator here, as it will always evaluate both sides
-    if row["option3"] is not None:
+    if not pd.isnull(row["option3"]):
         second_team = clean_team_name(row["option3"])
     else:
         second_team = clean_team_name(row["option2"])
