@@ -55,11 +55,11 @@ def create_hash(type, date, league, team1, team2):
 
 def generate_id(row):
     first_team = clean_team_name(row["option1"])
-    second_team = (
-        clean_team_name(row["option3"])
-        if row["option3"] is not None
-        else clean_team_name(row["option2"])
-    )
+    # Don't use ternary operator here, as it will always evaluate both sides
+    if row["option3"] is not None:
+        second_team = clean_team_name(row["option3"])
+    else:
+        second_team = clean_team_name(row["option2"])
 
     return create_hash(
         row["type"], row["event_date"], row["league"], first_team, second_team
