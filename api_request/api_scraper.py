@@ -43,7 +43,7 @@ def create_hash(type, date, league, team1, team2):
 def generate_id(row):
     second_team = row["option3"] if row["option3"] is not None else row["option2"]
     return create_hash(
-        row["type"], row["date_parsed"], row["league"], row["option1"], second_team
+        row["type"], row["event_date"], row["league"], row["option1"], second_team
     )
 
 
