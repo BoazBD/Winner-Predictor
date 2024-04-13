@@ -63,7 +63,6 @@ def generate_id(row):
 
     return create_hash(
         row["type"], row["date_parsed"], row["league"], first_team, second_team
-      ]
     )
 
 
