@@ -97,7 +97,9 @@ def process_data(data: dict) -> pd.DataFrame:
     markets = data["markets"]
     bet_list = []
     for market in markets:
-        if market["mp"] in RECORDING_BETS:
+        if (
+            market["mp"] in RECORDING_BETS and len(market["outcomes"]) <= 3
+        ):  # There is a bug in the API that returns more than 3 outcomes for some basketball games
             bet_list.append(create_bet(market))
     if not bet_list:
         logger.error("No data processed.")
