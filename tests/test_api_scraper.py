@@ -96,7 +96,6 @@ class TestApiScraper(unittest.TestCase):
 
         save_to_s3(df, path, database, table, partition_cols)
 
-        mock_setup_default_session.assert_called_once_with(region_name="il-central-1")
         mock_to_parquet.assert_called_once_with(
             df,
             path=path,

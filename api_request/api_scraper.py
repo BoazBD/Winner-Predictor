@@ -1,5 +1,6 @@
 import datetime
 import hashlib
+import json
 import logging
 import os
 
@@ -31,6 +32,7 @@ SID_MAP = {
 }
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
+boto3.setup_default_session(region_name="il-central-1")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
@@ -142,7 +144,6 @@ def create_bet(market: dict) -> Bet:
 def save_to_s3(df, path, database, table, partition_cols):
     """Save dataframe to S3."""
     try:
-        boto3.setup_default_session(region_name="il-central-1")
         wr.s3.to_parquet(
             df,
             path=path,
@@ -155,6 +156,15 @@ def save_to_s3(df, path, database, table, partition_cols):
     except Exception as e:
         logger.error(f"Failed to save to S3: {e}")
         raise Exception("Failed to save to S3")
+
+
+def save_raw_data(data: dict, date, run_time):
+    data_string = json.dumps(data, indent=2, default=str)
+    s3_client = boto3.client("s3")
+    s3_client.put_object(
+        Body=data_string, Bucket="winner-raw-data", Key=f"{date}/{run_time}.json"
+    )
+    logger.info(f"Successfully saved raw data.")
 
 
 def main(event, context):
@@ -184,14 +194,20 @@ def main(event, context):
             "api-odds",
             ["date_parsed", "type"],
         )
+        logger.info(f"Successfully wrote {rows_processed} rows.")
+        save_raw_data(
+            data,
+            cur_date,
+            run_time,
+        )
     rows_processed = bet_df.shape[0]
-    logger.info(f"Successfully wrote {rows_processed} rows.")
     if rows_processed == 0:
         raise Exception("No data processed.")
     response = {
         "statusCode": 200,
         "body": f"Successfully scraped {rows_processed} rows.",
     }
+    logger.info("Exiting function.")
     return response
 
 
