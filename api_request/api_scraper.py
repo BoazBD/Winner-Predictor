@@ -194,7 +194,6 @@ def main(event, context):
             "api-odds",
             ["date_parsed", "type"],
         )
-        logger.info(f"Successfully wrote {rows_processed} rows.")
         save_raw_data(
             data,
             cur_date,
@@ -207,7 +206,7 @@ def main(event, context):
         "statusCode": 200,
         "body": f"Successfully scraped {rows_processed} rows.",
     }
-    logger.info("Exiting function.")
+    logger.info(f"Successfully wrote {rows_processed} rows.")
     return response
 
 
