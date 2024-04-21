@@ -2,6 +2,9 @@ name: Gold ETL
 
 on:
     workflow_dispatch
+permissions:
+      id-token: write
+      contents: read
 jobs:
     
     get_results:
@@ -19,7 +22,6 @@ jobs:
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: il-central-1
                 audience: sts.amazonaws.com
-              continue-on-error: false
             - name: Get Latest Results
               run: |
                   python scripts/get_results.py
