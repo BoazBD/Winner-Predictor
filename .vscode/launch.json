@@ -26,6 +26,18 @@
                 "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
+        },
+        {
+            "name": "Gold ETL",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/gold_etl.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
+                "PYTHONPATH": "${workspaceFolder}/"
+            }
         }
     ]
 }
