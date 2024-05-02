@@ -38,6 +38,18 @@
                 "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
+        },
+        {
+            "name": "Results ETL",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/get_results.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
+                "PYTHONPATH": "${workspaceFolder}/"
+            }
         }
     ]
 }

@@ -23,7 +23,7 @@ def clean_tables(odds: pd.DataFrame) -> pd.DataFrame:
     today = datetime.date.today()
     odds = odds[odds["event_date"] < today]
     odds = odds[~odds["option1"].str.contains(r".+ - .+")]  # Buggy odds handler
-    odds = odds[odds.groupby("id")["id"].transform("count") >= 50]
+    odds = odds[odds.groupby("id")["id"].transform("count") >= 200]
     return odds
 
 
