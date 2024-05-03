@@ -55,7 +55,18 @@ def create_hash(type, date, league, team1, team2):
     return hashlib.sha1(data_to_hash.encode()).hexdigest()[:8]
 
 
-def generate_id(row):
+def generate_unique_id(row):
+    if not pd.isnull(row["option3"]):
+        second_team = row["option3"]
+    else:
+        second_team = row["option2"]
+
+    return create_hash(
+        row["type"], row["event_date"], row["league"], row["option1"], second_team
+    )
+
+
+def generate_result_id(row):
     first_team = clean_team_name(row["option1"])
     # Don't use ternary operator here, as it will always evaluate both sides
     if not pd.isnull(row["option3"]):
@@ -183,7 +194,8 @@ def main(event, context):
     run_time = f"{cur_date} {cur_time}"
     bet_df["date_parsed"] = cur_date
     bet_df["run_time"] = run_time
-    bet_df["id"] = bet_df.apply(generate_id, axis=1)
+    bet_df["result_id"] = bet_df.apply(generate_result_id, axis=1)
+    bet_df["unique_id"] = bet_df.apply(generate_unique_id, axis=1)
     if ENV == "local":
         bet_df.to_csv("bets.csv", index=False)
     else:
