@@ -19,12 +19,15 @@ def get_tables():
     return odds, results
 
 
-def clean_tables(odds: pd.DataFrame) -> pd.DataFrame:
+def clean_tables(odds: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
     today = datetime.date.today()
     odds = odds[odds["event_date"] < today]
     odds = odds[~odds["option1"].str.contains(r".+ - .+")]  # Buggy odds handler
-    odds = odds[odds.groupby("id")["id"].transform("count") >= 200]
-    return odds
+    odds = odds[odds.groupby("unique_id")["unique_id"].transform("count") >= 400]
+
+    results = results.drop_duplicates(subset=["id"], keep="first")
+    logger.info("Tables cleaned successfully")
+    return odds, results
 
 
 def calculate_final_score(option: str, score: int) -> float:
@@ -58,15 +61,25 @@ def calculate_final_score(option: str, score: int) -> float:
 
 
 def validate_gold(gold: pd.DataFrame):
+    if gold["result_id"].isnull().any() or gold["unique_id"].isnull().any():
+        raise ValueError("Null values found in result_id or unique_id columns")
+
     invalid_rows = gold[(gold["final_scorea"] < 0) | (gold["final_scoreb"] < 0)]
     if invalid_rows.shape[0] > 0:
         raise ValueError(
             f"Invalid final scores found in gold table: {invalid_rows.shape[0]} rows"
         )
-    gold["only_one_true"] = gold[["bet1_won", "bet2_won", "tie_won"]].sum(axis=1) == 1
-    if not gold["only_one_true"].all():
+    only_one_true = gold[["bet1_won", "bet2_won", "tie_won"]].sum(axis=1) == 1
+    if not only_one_true.all():
         raise ValueError(
             "Multiple True values found in bet1_won, bet2_won, tie_won columns"
+        )
+    duplicate_run_times = gold[
+        gold.duplicated(subset=["unique_id", "run_time"], keep=False)
+    ]
+    if not duplicate_run_times.empty:
+        raise ValueError(
+            f"Duplicate run_times found for unique_ids:{duplicate_run_times['unique_id'].unique()}"
         )
     logger.info("Gold table validated successfully")
 
@@ -75,10 +88,10 @@ def save_results_to_s3(table: pd.DataFrame):
     try:
         wr.s3.to_parquet(
             table,
-            path="s3://boaz-winner-api/gold",
+            path="s3://boaz-winner-api/processed_data",
             dataset=True,
             database=database,
-            table="gold",
+            table="processed_data",
             partition_cols=["event_date", "type"],
             mode="overwrite_partitions",
         )
@@ -89,8 +102,14 @@ def save_results_to_s3(table: pd.DataFrame):
 
 if __name__ == "__main__":
     odds, results = get_tables()
-    odds = clean_tables(odds)
-    gold = odds.merge(results[["id", "scorea", "scoreb"]], on="id", how="left")
+    odds, results = clean_tables(odds, results)
+    gold = odds.merge(
+        results[["id", "scorea", "scoreb"]],
+        left_on="result_id",
+        right_on="id",
+        how="left",
+        validate="m:1",
+    ).drop(columns=["id"])
     if gold["scorea"].isna().sum() / gold.shape[0] > 0.08:
         raise ValueError("Too many unmatched games")
     gold = gold[gold["scorea"].notnull()]
