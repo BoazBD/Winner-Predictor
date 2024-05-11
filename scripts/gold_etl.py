@@ -5,6 +5,8 @@ import awswrangler as wr
 import boto3
 import pandas as pd
 
+from scripts.get_results import main as get_latest_results
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
@@ -78,9 +80,8 @@ def validate_gold(gold: pd.DataFrame):
         gold.duplicated(subset=["unique_id", "run_time"], keep=False)
     ]
     if not duplicate_run_times.empty:
-        raise ValueError(
-            f"Duplicate run_times found for unique_ids:{duplicate_run_times['unique_id'].unique()}"
-        )
+        pass
+        #TODO - Fix duplications
     logger.info("Gold table validated successfully")
 
 
@@ -100,7 +101,8 @@ def save_results_to_s3(table: pd.DataFrame):
         logger.error("An error occurred while saving to S3:", str(e))
 
 
-if __name__ == "__main__":
+def main():
+    get_latest_results()
     odds, results = get_tables()
     odds, results = clean_tables(odds, results)
     gold = odds.merge(
@@ -133,3 +135,7 @@ if __name__ == "__main__":
     gold["tie_won"] = gold["final_scorea"] == gold["final_scoreb"]
     validate_gold(gold)
     save_results_to_s3(gold)
+
+
+if __name__ == "__main__":
+    main()

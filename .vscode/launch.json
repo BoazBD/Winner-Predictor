@@ -50,6 +50,33 @@
                 "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
+        },
+        {
+            "name": "Train Model",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/train_model.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
+                "MODEL_TYPE": "big_games",
+                "PYTHONPATH": "${workspaceFolder}/"
+            }
+        },
+        {
+            "name": "Evaluate Model",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/evaluate_model_on_last_week.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
+                "MODEL_TYPE": "all_games",
+                "MODEL" : "good_model.h5",
+                "PYTHONPATH": "${workspaceFolder}/"
+            }
         }
     ]
 }

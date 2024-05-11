@@ -106,7 +106,11 @@ def save_results_to_s3(results_df: pd.DataFrame):
         logger.error("An error occurred while saving to S3:", str(e))
 
 
-if __name__ == "__main__":
+def main():
     response = request_results_from_api()
     results_df = process_response(response)
     save_results_to_s3(results_df)
+
+
+if __name__ == "__main__":
+    main()
