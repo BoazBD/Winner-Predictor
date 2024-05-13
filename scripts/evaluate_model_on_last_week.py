@@ -13,7 +13,7 @@ MODEL = os.environ.get("MODEL")
 loaded_model = load_model(f"trained_models/{MODEL}")
 
 database = "winner-db"
-THRESHOLD = 0.15
+THRESHOLD = 0.2
 
 predictions_df = pd.DataFrame()
 
@@ -73,6 +73,7 @@ def predict_model(bet, all_odds):
 
 
 def main():
+    betted_games = set()
     processed = wr.athena.read_sql_query(
         "SELECT * FROM processed_data", database=database
     )
@@ -105,6 +106,11 @@ def main():
         predictions_and_results = predictions_and_results[
             predictions_and_results["bet1_won"].notnull()
         ]  # remove games without results yet
+
+        predictions_and_results = predictions_and_results[
+            ~predictions_and_results["unique_id"].isin(betted_games)
+        ]
+        betted_games.update(predictions_and_results["unique_id"].tolist())
 
         predictions_and_results["pred_won"] = predictions_and_results.apply(
             determine_prediction_result, axis=1

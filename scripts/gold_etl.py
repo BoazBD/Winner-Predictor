@@ -81,7 +81,7 @@ def validate_gold(gold: pd.DataFrame):
     ]
     if not duplicate_run_times.empty:
         pass
-        #TODO - Fix duplications
+        # TODO - Fix duplications
     logger.info("Gold table validated successfully")
 
 
