@@ -6,7 +6,13 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 
-from scripts.train_model import BIG_GAMES, MAX_SEQ_LENGTH, prepare_features
+from scripts.train_model import (
+    BIG_GAMES,
+    MAX_SEQ_LENGTH,
+    RATIOS,
+    prepare_features,
+    process_ratios,
+)
 
 boto3.setup_default_session(region_name="il-central-1")
 MODEL = os.environ.get("MODEL")
@@ -50,10 +56,10 @@ def predict_model(bet, all_odds):
     global predictions_df
     predictions_df = pd.DataFrame()
     game_odds = all_odds[all_odds["unique_id"] == bet["unique_id"]]
-    if game_odds.shape[0] < 400:
-        return
     game_odds = game_odds.sort_values("run_time")
-    x = game_odds[["ratio1", "ratio2", "ratio3"]].astype(float)
+    x = process_ratios(game_odds)[RATIOS]
+    if x.shape[0] < MAX_SEQ_LENGTH:
+        return
     x = prepare_features(x)
 
     prediction = loaded_model.predict(x.reshape(1, MAX_SEQ_LENGTH, 3))
@@ -83,10 +89,10 @@ def main():
     total_earnings = 0
     total_bets = 0
     for date in pd.date_range(
-        end=pd.Timestamp.now().date() - pd.Timedelta(days=1), periods=7
+        end=pd.Timestamp.now().date() - pd.Timedelta(days=1), periods=10
     ):
         predictions_df = pd.DataFrame()
-        relevant_odds = all_odds[pd.to_datetime(all_odds["date_parsed"]) <= date]
+        relevant_odds = all_odds[(pd.to_datetime(all_odds["date_parsed"]) <= date)]
         latest_odds = relevant_odds[
             (relevant_odds["run_time"] == relevant_odds["run_time"].max())
         ]
@@ -126,6 +132,9 @@ def main():
         total_bets += num_predictions
         print(
             f"for date {date}, found {num_predictions} bets and expected earnings are {expected_earnings}"
+        )
+        print(
+            "-------------------------------------------------------------------------------------------"
         )
     print(
         f"Model {MODEL} - total bets: {total_bets},total earnings are {total_earnings}"

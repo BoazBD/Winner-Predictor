@@ -25,7 +25,6 @@ def clean_tables(odds: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
     today = datetime.date.today()
     odds = odds[odds["event_date"] < today]
     odds = odds[~odds["option1"].str.contains(r".+ - .+")]  # Buggy odds handler
-    odds = odds[odds.groupby("unique_id")["unique_id"].transform("count") >= 400]
 
     results = results.drop_duplicates(subset=["id"], keep="first")
     logger.info("Tables cleaned successfully")

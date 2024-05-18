@@ -4,15 +4,18 @@ from typing import Tuple
 import awswrangler as wr
 import boto3
 import numpy as np
+import optuna
 import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import KFold
-from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
 
-MAX_SEQ_LENGTH = 500
+MAX_SEQ_LENGTH = 15
 MIN_BET = 1
 MAX_BET = 10
+DAYS_TO_DISCARD = 10
+EPOCHS = 10
 database = "winner-db"
 
 boto3.setup_default_session(region_name="il-central-1")
@@ -44,89 +47,77 @@ BIG_GAMES = [
     "גביע הליגה האנגלי",
     "גביע אסיה",
 ]
+RATIOS = ["ratio1", "ratio2", "ratio3"]
 
 
 def scale_features(features: pd.DataFrame) -> pd.DataFrame:
     return (features - MIN_BET) / (MAX_BET - 1)
 
 
-def pad_features(features: np.array) -> np.array:
-    padding_length = MAX_SEQ_LENGTH - features.shape[0]
-    if padding_length > 0:
-        padded_features = np.zeros((MAX_SEQ_LENGTH, features.shape[1]))
-        padded_features[padding_length:, :] = features
-        features = padded_features
-    else:
-        features = features[-MAX_SEQ_LENGTH:, :]
-    return features
-
-
 def prepare_features(features: pd.DataFrame) -> np.array:
     features_scaled = scale_features(features)
     features_scaled = features_scaled.to_numpy()
-    features_scaled_padded = pad_features(features_scaled)
-    return features_scaled_padded
+    features_scaled = features_scaled[-MAX_SEQ_LENGTH:, :]
+    return features_scaled
+
+
+def remove_consecutive_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    shifted = df[RATIOS].shift()
+    mask = ~((df[RATIOS] == shifted).all(axis=1))
+    return df[mask]
+
+
+def process_ratios(group_df: pd.DataFrame) -> pd.DataFrame:
+    group_df[RATIOS] = group_df[RATIOS].astype(float)
+    group_df = remove_consecutive_duplicates(group_df)
+    return group_df
 
 
 def prepare_data_for_model(grouped_data: pd.DataFrame) -> Tuple[np.array, np.array]:
     x, y = [], []
     for _, group_df in grouped_data:
-        features = group_df[["ratio1", "ratio2", "ratio3"]].astype(float)
+        group_df = process_ratios(group_df)
+        if group_df.shape[0] < MAX_SEQ_LENGTH:
+            continue
+        features = group_df[RATIOS]
         target = group_df[["bet1_won", "bet2_won", "tie_won"]].values[-1].astype(float)
 
         prepared_features = prepare_features(features)
         x.append(prepared_features)
         y.append(target)
-
     x = np.array(x)
     y = np.array(y)
     return x, y
 
 
-def train_model(
-    x: pd.DataFrame,
-    y: pd.DataFrame,
-    learning_rate: float,
-    dropout_rate: float,
-    units: int,
-):
+def build_model(
+    learning_rate: float, dropout_rate: float, units: int, activation: str
+) -> Sequential:
     model = Sequential()
-    model.add(
-        LSTM(
-            units,
-            return_sequences=True,
-            input_shape=(x.shape[1], x.shape[2]),
-        )
-    )
-    model.add(LSTM(units // 2, activation="sigmoid", return_sequences=True))
-    model.add(LSTM(units // 2, activation="sigmoid"))
+    model.add(tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH, 3)))
+    model.add(Bidirectional(LSTM(units, return_sequences=True)))
+    model.add(LSTM(units // 2, activation=activation, return_sequences=True))
+    model.add(LSTM(units // 2, activation=activation))
     model.add(Dropout(dropout_rate))
-    model.add(Dense(3, activation="sigmoid"))
+    model.add(Dense(3, activation="softmax"))
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipvalue=1.0)
     model.compile(
-        loss="binary_crossentropy",
+        loss="categorical_crossentropy",
         optimizer=optimizer,
         metrics=["accuracy"],
     )
-    model.fit(x, y, epochs=1, batch_size=1)
     return model
 
 
-def main():
-    learning_rates = [0.001, 0.005, 0.01]
-    dropout_rates = [0.2, 0.3]
-    layer_units = [32, 64]
-    batch_sizes = [1]  # [32, 64, 128]
+def objective(trial: optuna.trial.Trial) -> float:
+    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
+    dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.4)
+    units = trial.suggest_categorical("units", [32, 64, 128, 256])
+    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+    activation = trial.suggest_categorical("activation", ["sigmoid", "tanh"])
 
-    max_accuracy = 0
-    best_lr = None
-    best_dropout_rate = None
-    best_units = None
-    best_model = None
-
-    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=7)
-
+    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=DAYS_TO_DISCARD)
     query = f"""
     SELECT league, ratio1, ratio2, ratio3, bet1_won, bet2_won, tie_won, run_time, unique_id 
     FROM processed_data 
@@ -142,44 +133,55 @@ def main():
     )
     x, y = prepare_data_for_model(grouped_processed)
 
-    for learning_rate in learning_rates:
-        for dropout_rate in dropout_rates:
-            for units in layer_units:
-                for batch_size in batch_sizes:
-                    print(
-                        f"Training model for {MODEL_TYPE} with hyperparameters: "
-                        f"learning_rate={learning_rate}, dropout_rate={dropout_rate}, "
-                        f"units={units}, batch_size={batch_size}"
-                    )
-                    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
-                    fold_accuracy = []
-                    for train_index, val_index in kfold.split(x):
-                        X_train, X_val = x[train_index], x[val_index]
-                        y_train, y_val = y[train_index], y[val_index]
+    kfold = KFold(n_splits=5, shuffle=True, random_state=42)
+    fold_accuracy = []
+    for train_index, val_index in kfold.split(x):
+        X_train, X_val = x[train_index], x[val_index]
+        y_train, y_val = y[train_index], y[val_index]
 
-                        model = train_model(
-                            X_train, y_train, learning_rate, dropout_rate, units
-                        )
-                        loss, val_accuracy = model.evaluate(X_val, y_val)
-                        fold_accuracy.append(val_accuracy)
+        model = build_model(learning_rate, dropout_rate, units, activation)
+        model.fit(X_train, y_train, epochs=EPOCHS, batch_size=batch_size, verbose=1)
+        loss, val_accuracy = model.evaluate(X_val, y_val, verbose=0)
+        fold_accuracy.append(val_accuracy)
 
-                    avg_accuracy = np.mean(fold_accuracy)
-                    print(
-                        f"Average Accuracy for {learning_rate}, {dropout_rate}, {units}, {batch_size}: {avg_accuracy:.4f}"
-                    )
-                    if avg_accuracy > max_accuracy:
-                        max_accuracy = avg_accuracy
-                        best_lr = learning_rate
-                        best_dropout_rate = dropout_rate
-                        best_units = units
-                        best_model = model
+    avg_accuracy = np.mean(fold_accuracy)
+    return avg_accuracy
 
-    print(
-        f"Best model has accuracy of {max_accuracy} with learning rate {best_lr}, dropout rate {best_dropout_rate} and units {best_units}"
+
+def main():
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=10)
+
+    print(f"Best trial: {study.best_trial.value}")
+    print(f"Best hyperparameters: {study.best_trial.params}")
+
+    # Train the final model with the best hyperparameters
+    best_params = study.best_trial.params
+    best_model = build_model(
+        best_params["learning_rate"],
+        best_params["dropout_rate"],
+        best_params["units"],
+        best_params["activation"],
     )
-    # Train best model on all data
-    best_model = train_model(x, y, best_lr, best_dropout_rate, best_units)
-    best_model.save(f"trained_models/{MODEL_TYPE}_model.h5")
+
+    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=DAYS_TO_DISCARD)
+    query = f"""
+    SELECT league, ratio1, ratio2, ratio3, bet1_won, bet2_won, tie_won, run_time, unique_id 
+    FROM processed_data 
+    WHERE type='Soccer' 
+    AND date_parsed < '{last_week_start}' 
+    """
+    processed = wr.athena.read_sql_query(query, database=database)
+
+    if MODEL_TYPE == "big_games":
+        processed = processed[processed["league"].isin(BIG_GAMES)]
+    grouped_processed = list(
+        processed.sort_values(by="run_time").groupby(["unique_id"])
+    )
+    x, y = prepare_data_for_model(grouped_processed)
+
+    best_model.fit(x, y, epochs=10, batch_size=best_params["batch_size"], verbose=1)
+    best_model.save(f"trained_models/{MODEL_TYPE}_model_v1.h5")
 
 
 if __name__ == "__main__":
