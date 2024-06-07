@@ -110,22 +110,27 @@ def remove_bidirectional_control_chars(s: str) -> str:
 
 
 def fetch_lineChecksum(url: str) -> str:
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        return json.loads(response.content.decode("utf-8"))["lineChecksum"]
-    else:
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()["lineChecksum"]
+    except:
         logger.error("Failed to fetch lineChecksum from the API.")
-        raise Exception("Failed to fetch lineChecksum from the API")
+        raise Exception(
+            f"Failed to fetch lineChecksum from the API: {response.status_code} , {response.content}"
+        )
 
 
 def fetch_data(url: str, lineChecksum: str) -> dict:
     """Fetch data from the API."""
-    response = requests.get(f"{url}?lineChecksum={lineChecksum}", headers=headers)
-    if response.status_code == 200:
+    try:
+        response = requests.get(f"{url}?lineChecksum={lineChecksum}", headers=headers)
         return response.json()
-    else:
+    except:
         logger.error("Failed to fetch data from the API.")
-        raise Exception("Failed to fetch data from the API")
+        raise Exception(
+            f"Failed to fetch data from the API: {response.status_code} , {response.content}"
+        )
 
 
 def process_data(data: dict) -> pd.DataFrame:
