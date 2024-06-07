@@ -9,6 +9,7 @@ import boto3
 import pandas as pd
 import pytz
 import requests
+import random
 
 from Bet import Bet
 
@@ -34,12 +35,12 @@ HASH_CHECKSUM_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileHashes"
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 headers = {
-    "Deviceid": "2e7f7266a5ff149d4a146e3d75b35a04",
+    "Deviceid": f"2e7f{random.randint(0,10)}66a5ff1{random.randint(0,10)}9d4a122e3d{random.randint(0,10)}5b35a0{random.randint(0,10)}",
     "Hashesmessage": '{"reason":"Initiated"}',
     "Host": "api.winner.co.il",
     "Origin": "https://www.winner.co.il",
     "Referer": "https://www.winner.co.il/",
-    "Requestid": "2bddbb12d61275b23ecea8bf0909d36d",
+    "Requestid": f"2bddbb1d6{random.randint(0,10)}275b23ecea8bf0{random.randint(0,10)}09d{random.randint(0,10)}6d",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.1","apptype":"mobileweb","originId":"3","isAccessibility":false}',
     "X-Csrf-Token": "null",
