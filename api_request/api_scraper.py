@@ -30,7 +30,20 @@ SID_MAP = {
     239: "Tennis",
     226: "Baseball",
 }
+HASH_CHECKSUM_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileHashes"
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
+
+headers = {
+    "Deviceid": "2e7f7266a5ff149d4a146e3d75b35a04",
+    "Hashesmessage": '{"reason":"Initiated"}',
+    "Host": "api.winner.co.il",
+    "Origin": "https://www.winner.co.il",
+    "Referer": "https://www.winner.co.il/",
+    "Requestid": "2bddbb12d61275b23ecea8bf0909d36d",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.1","apptype":"mobileweb","originId":"3","isAccessibility":false}',
+    "X-Csrf-Token": "null",
+}
 
 boto3.setup_default_session(region_name="il-central-1")
 logging.basicConfig(level=logging.INFO)
@@ -95,9 +108,18 @@ def remove_bidirectional_control_chars(s: str) -> str:
     return "".join(c for c in s if c not in bidi_chars)
 
 
-def fetch_data(url: str) -> dict:
+def fetch_lineChecksum(url: str) -> str:
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return json.loads(response.content.decode("utf-8"))["lineChecksum"]
+    else:
+        logger.error("Failed to fetch lineChecksum from the API.")
+        raise Exception("Failed to fetch lineChecksum from the API")
+
+
+def fetch_data(url: str, lineChecksum: str) -> dict:
     """Fetch data from the API."""
-    response = requests.get(url)
+    response = requests.get(f"{url}?lineChecksum={lineChecksum}", headers=headers)
     if response.status_code == 200:
         return response.json()
     else:
@@ -180,7 +202,8 @@ def save_raw_data(data: dict, date, run_time):
 
 def main(event, context):
     print("enviroment: ", ENV)
-    data = fetch_data(API_URL)
+    lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
+    data = fetch_data(API_URL, lineChecksum)
     try:
         bet_df = process_data(data)
     except Exception as e:
