@@ -35,17 +35,17 @@ HASH_CHECKSUM_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileHashes"
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
 
 headers = {
-    "Deviceid": f"2e7f{random.randint(0,10)}66a5ff1{random.randint(0,10)}9d4a122e3d{random.randint(0,10)}5b35a0{random.randint(0,10)}",
+    "Deviceid": f"2e7f{random.randint(0,9)}66a5ff1{random.randint(0,9)}9d4a122e3d{random.randint(0,9)}5b35a0{random.randint(0,9)}",
     "Hashesmessage": '{"reason":"Initiated"}',
     "Host": "api.winner.co.il",
     "Origin": "https://www.winner.co.il",
     "Referer": "https://www.winner.co.il/",
-    "Requestid": f"2bddbb1d6{random.randint(0,10)}275b23ecea8bf0{random.randint(0,10)}09d{random.randint(0,10)}6d",
+    "Requestid": f"2bddbb1d6{random.randint(0,9)}275b23ecea8bf0{random.randint(0,9)}09d{random.randint(0,9)}6d",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.1","apptype":"mobileweb","originId":"3","isAccessibility":false}',
     "X-Csrf-Token": "null",
 }
-
+PROXY_URL = "http://129.159.134.66:8080"
 boto3.setup_default_session(region_name="il-central-1")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -110,21 +110,27 @@ def remove_bidirectional_control_chars(s: str) -> str:
 
 
 def fetch_lineChecksum(url: str) -> str:
+    """Fetch the lineChecksum from the API using the proxy server."""
     try:
-        response = requests.get(url, headers=headers)
+        # Make a POST request to the proxy server with the API URL
+        response = requests.post(
+            PROXY_URL,
+            json={"url": url, "headers": headers},
+        )
         response.raise_for_status()
         return response.json()["lineChecksum"]
-    except:
+    except Exception as e:
         logger.error("Failed to fetch lineChecksum from the API.")
-        raise Exception(
-            f"Failed to fetch lineChecksum from the API: {response.status_code} , {response.content}"
-        )
+        raise Exception(f"Failed to fetch lineChecksum from the API: {e}")
 
 
 def fetch_data(url: str, lineChecksum: str) -> dict:
     """Fetch data from the API."""
+    complete_url = f"{url}?lineChecksum={lineChecksum}"
     try:
-        response = requests.get(f"{url}?lineChecksum={lineChecksum}", headers=headers)
+        response = requests.post(
+            PROXY_URL, json={"url": complete_url, "headers": headers}
+        )
         return response.json()
     except:
         logger.error("Failed to fetch data from the API.")
