@@ -6,6 +6,4 @@ todo: check which file is screwd in 00:30 of 15-11. problem is- in some files al
 
 22-11-23 to 25-11-23 html change (made outcome dive instead of span) caused to not work
 
-
-
-docker buildx build --platform linux/amd64 -f ./Dockerfile -t winner_scraper .
+New authentication method caused bug and resulted in some missing data between 06-06-24 11:00 to 08-06-24 15:00 
