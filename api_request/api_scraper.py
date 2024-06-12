@@ -9,8 +9,8 @@ import boto3
 import pandas as pd
 import pytz
 import requests
-from hash import HashGenerator
-from winner_config import API_URL, HASH_CHECKSUM_URL, RECORDING_BETS, SID_MAP, headers
+from api_request.hash import HashGenerator
+from api_request.winner_config import API_URL, HASH_CHECKSUM_URL, RECORDING_BETS, SID_MAP, headers
 
 from Bet import Bet
 
