@@ -4,18 +4,15 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import requests
 
-from api_request.api_scraper import (
-    API_URL,
-    create_bet,
-    fetch_data,
-    process_data,
-    save_to_s3,
-)
+from api_request.api_scraper import (API_URL, HASH_CHECKSUM_URL, create_bet,
+                                     fetch_data, headers, process_data,
+                                     save_to_s3)
 
 
 class TestApiScraper(unittest.TestCase):
-    @patch("requests.get")
+    @patch("requests.post")
     def test_fetch_data_success(self, mock_get):
         mock_response = MagicMock()
 
@@ -23,8 +20,7 @@ class TestApiScraper(unittest.TestCase):
         mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
-        result = fetch_data(API_URL)
-
+        result = fetch_data(API_URL, lineChecksum="test")
         self.assertEqual(result, {"data": "test"})
 
     def test_process_data(self):
@@ -85,9 +81,8 @@ class TestApiScraper(unittest.TestCase):
         result = create_bet(market)
         self.assertEqual(result.__dict__, expected_result)
 
-    @patch("boto3.setup_default_session")
     @patch("awswrangler.s3.to_parquet")
-    def test_save_to_s3(self, mock_to_parquet, mock_setup_default_session):
+    def test_save_to_s3(self, mock_to_parquet):
         df = pd.DataFrame({"col1": [1, 2, 3], "col2": [4, 5, 6]})
         path = "s3://boaz-winner-api/test-path"
         database = "test-db"
@@ -105,6 +100,34 @@ class TestApiScraper(unittest.TestCase):
             partition_cols=partition_cols,
             mode="append",
         )
+
+    def test_winner_connection(self):
+        def fetch_lineChecksum(url: str) -> str:
+            try:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                return response.json()["lineChecksum"]
+            except:
+                raise Exception(
+                    f"Failed to fetch lineChecksum from the API: {response.status_code} , {response.content}"
+                )
+
+        def fetch_data(url: str, lineChecksum: str) -> dict:
+            """Fetch data from the API."""
+            try:
+                response = requests.get(
+                    f"{url}?lineChecksum={lineChecksum}", headers=headers
+                )
+                return response.json()
+            except:
+                raise Exception(
+                    f"Failed to fetch data from the API: {response.status_code} , {response.content}"
+                )
+
+        lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
+        data = fetch_data(API_URL, lineChecksum)
+        self.assertIn("hashes", data)
+        self.assertIn("markets", data)
 
 
 if __name__ == "__main__":
