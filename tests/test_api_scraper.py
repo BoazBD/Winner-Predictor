@@ -6,9 +6,16 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import requests
 
-from api_request.api_scraper import (API_URL, HASH_CHECKSUM_URL, create_bet,
-                                     fetch_data, headers, process_data,
-                                     save_to_s3)
+from api_request.api_scraper import (
+    API_URL,
+    HASH_CHECKSUM_URL,
+    PROXY_URL,
+    create_bet,
+    fetch_data,
+    headers,
+    process_data,
+    save_to_s3,
+)
 
 
 class TestApiScraper(unittest.TestCase):
@@ -118,7 +125,7 @@ class TestApiScraper(unittest.TestCase):
                 response = requests.get(
                     f"{url}?lineChecksum={lineChecksum}", headers=headers
                 )
-                return response.json()
+                response.raise_for_status()
             except:
                 raise Exception(
                     f"Failed to fetch data from the API: {response.status_code} , {response.content}"
@@ -128,6 +135,17 @@ class TestApiScraper(unittest.TestCase):
         data = fetch_data(API_URL, lineChecksum)
         self.assertIn("hashes", data)
         self.assertIn("markets", data)
+
+    def test_proxy_connection(self):
+        try:
+            response = requests.post(
+                PROXY_URL,
+                json={"url": HASH_CHECKSUM_URL, "headers": headers},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise
 
 
 if __name__ == "__main__":
