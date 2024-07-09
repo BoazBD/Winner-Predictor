@@ -9,9 +9,15 @@ import boto3
 import pandas as pd
 import pytz
 import requests
-from api_request.hash import HashGenerator
-from api_request.winner_config import API_URL, HASH_CHECKSUM_URL, RECORDING_BETS, SID_MAP, headers
 
+from api_request.hash import HashGenerator
+from api_request.winner_config import (
+    API_URL,
+    HASH_CHECKSUM_URL,
+    RECORDING_BETS,
+    SID_MAP,
+    headers,
+)
 from Bet import Bet
 
 # Configuration
@@ -48,6 +54,7 @@ def fetch_lineChecksum(url: str) -> str:
         response = requests.post(
             PROXY_URL,
             json={"url": url, "headers": headers},
+            timeout=10,
         )
         response.raise_for_status()
         return response.json()["lineChecksum"]
@@ -56,12 +63,12 @@ def fetch_lineChecksum(url: str) -> str:
         raise
 
 
-def fetch_data(url: str, lineChecksum: str) -> dict:
+def fetch_data(url: str, lineChecksum: str= '') -> dict:
     """Fetch data from the API."""
-    complete_url = f"{url}?lineChecksum={lineChecksum}"
+    #complete_url = f"{url}?lineChecksum={lineChecksum}"
     try:
         response = requests.post(
-            PROXY_URL, json={"url": complete_url, "headers": headers}
+            PROXY_URL, json={"url": url, "headers": headers}, timeout=10
         )
         return response.json()
     except requests.RequestException as e:
@@ -151,10 +158,10 @@ def save_raw_data(data: dict, date, run_time):
 
 
 def main(event, context):
-    logger.info("Environment: ", ENV)
+    logger.info("Environment: " + ENV)
 
-    lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
-    data = fetch_data(API_URL, lineChecksum)
+    #lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
+    data = fetch_data(API_URL)
 
     try:
         bet_df = process_data(data)
