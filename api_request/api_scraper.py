@@ -63,9 +63,9 @@ def fetch_lineChecksum(url: str) -> str:
         raise
 
 
-def fetch_data(url: str, lineChecksum: str= '') -> dict:
+def fetch_data(url: str, lineChecksum: str = "") -> dict:
     """Fetch data from the API."""
-    #complete_url = f"{url}?lineChecksum={lineChecksum}"
+    # complete_url = f"{url}?lineChecksum={lineChecksum}"
     try:
         response = requests.post(
             PROXY_URL, json={"url": url, "headers": headers}, timeout=10
@@ -160,7 +160,7 @@ def save_raw_data(data: dict, date, run_time):
 def main(event, context):
     logger.info("Environment: " + ENV)
 
-    #lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
+    # lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
     data = fetch_data(API_URL)
 
     try:

@@ -111,7 +111,7 @@ class TestApiScraper(unittest.TestCase):
     def test_winner_connection(self):
         def fetch_lineChecksum(url: str) -> str:
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
                 return response.json()["lineChecksum"]
             except:
@@ -123,16 +123,17 @@ class TestApiScraper(unittest.TestCase):
             """Fetch data from the API."""
             try:
                 response = requests.get(
-                    f"{url}?lineChecksum={lineChecksum}", headers=headers
+                    f"{url}?lineChecksum={lineChecksum}", headers=headers, timeout=10
                 )
                 response.raise_for_status()
+                return response.json()
             except:
                 raise Exception(
                     f"Failed to fetch data from the API: {response.status_code} , {response.content}"
                 )
 
         lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
-        data = fetch_data(API_URL, lineChecksum)
+        data = fetch_data(API_URL, "429480933")
         self.assertIn("hashes", data)
         self.assertIn("markets", data)
 
@@ -140,10 +141,22 @@ class TestApiScraper(unittest.TestCase):
         try:
             response = requests.post(
                 PROXY_URL,
+                json={"url": "https://www.google.com"},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise
+
+    def test_proxy_checksum_connection(self):
+        try:
+            response = requests.post(
+                PROXY_URL,
                 json={"url": HASH_CHECKSUM_URL, "headers": headers},
                 timeout=10,
             )
             response.raise_for_status()
+            return response.json()["lineChecksum"]
         except requests.RequestException as e:
             raise
 

@@ -27,6 +27,6 @@ headers = {
     "Referer": "https://www.winner.co.il/",
     "Requestid": f"2bddbb1d6{random.randint(0,9)}275b23ecea8bf0{random.randint(0,9)}09d{random.randint(0,9)}6d",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
-    "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.1","apptype":"mobileweb","originId":"3","isAccessibility":false}',
+    "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.2","apptype":"mobileweb","originId":"3","isAccessibility":false}',
     "X-Csrf-Token": "null",
 }
