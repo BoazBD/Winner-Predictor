@@ -1,4 +1,5 @@
 import random
+import uuid
 
 RECORDING_BETS = [
     "הימור יתרון - תוצאת סיום (ללא הארכות)",  # Soccer
@@ -25,7 +26,7 @@ headers = {
     "Host": "api.winner.co.il",
     "Origin": "https://www.winner.co.il",
     "Referer": "https://www.winner.co.il/",
-    "Requestid": f"2bddbb1d6{random.randint(0,9)}275b23ecea8bf0{random.randint(0,9)}09d{random.randint(0,9)}6d",
+    "Requestid": str(uuid.uuid4()).replace("-", ""),
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Useragentdatresa": '{"devicemodel":"Macintosh","deviceos":"mac os","deviceosversion":"10.15.7","appversion":"1.8.2","apptype":"mobileweb","originId":"3","isAccessibility":false}',
     "X-Csrf-Token": "null",

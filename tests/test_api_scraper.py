@@ -148,15 +148,15 @@ class TestApiScraper(unittest.TestCase):
         except requests.RequestException as e:
             raise
 
-    def test_proxy_checksum_connection(self):
+    def test_proxy_winner_connection(self):
         try:
             response = requests.post(
-                PROXY_URL,
-                json={"url": HASH_CHECKSUM_URL, "headers": headers},
-                timeout=10,
+                PROXY_URL, json={"url": API_URL, "headers": headers}, timeout=10
             )
             response.raise_for_status()
-            return response.json()["lineChecksum"]
+            response = response.json()
+            self.assertIn("hashes", response)
+            self.assertIn("markets", response)
         except requests.RequestException as e:
             raise
 
