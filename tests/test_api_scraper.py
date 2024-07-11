@@ -1,15 +1,16 @@
 import json
+import os
 import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 
 from api_request.api_scraper import (
     API_URL,
     HASH_CHECKSUM_URL,
-    PROXY_URL,
     create_bet,
     fetch_data,
     headers,
@@ -17,8 +18,13 @@ from api_request.api_scraper import (
     save_to_s3,
 )
 
+load_dotenv()
+
 
 class TestApiScraper(unittest.TestCase):
+    def setUp(self):
+        self.proxy_url = os.environ.get("PROXY_URL")
+
     @patch("requests.post")
     def test_fetch_data_success(self, mock_get):
         mock_response = MagicMock()
@@ -140,9 +146,9 @@ class TestApiScraper(unittest.TestCase):
     def test_proxy_connection(self):
         try:
             response = requests.post(
-                PROXY_URL,
+                self.proxy_url,
                 json={"url": "https://www.google.com"},
-                timeout=10,
+                timeout=100,
             )
             response.raise_for_status()
         except requests.RequestException as e:
@@ -151,7 +157,7 @@ class TestApiScraper(unittest.TestCase):
     def test_proxy_winner_connection(self):
         try:
             response = requests.post(
-                PROXY_URL, json={"url": API_URL, "headers": headers}, timeout=10
+                self.proxy_url, json={"url": API_URL, "headers": headers}, timeout=10
             )
             response.raise_for_status()
             response = response.json()

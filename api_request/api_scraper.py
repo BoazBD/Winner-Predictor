@@ -22,7 +22,7 @@ from Bet import Bet
 
 # Configuration
 ENV = os.environ.get("ENV", "local")
-PROXY_URL = os.environ.get("PROXY_URL", "http://129.159.134.66:8080")
+PROXY_URL = os.environ.get("PROXY_URL")
 AWS_REGION = os.environ.get("AWS_REGION", "il-central-1")
 
 boto3.setup_default_session(region_name=AWS_REGION)

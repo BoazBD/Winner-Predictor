@@ -26,7 +26,7 @@ def proxy_request():
 
     try:
         # Make a GET request to the target URL with the provided headers
-        response = requests.get(target_url, headers=headers)
+        response = requests.get(target_url, headers=headers, timeout=10)
         response.raise_for_status()
         return response.content
     except requests.exceptions.HTTPError as http_err:
