@@ -1,7 +1,7 @@
 import logging
 
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
 
 app = Flask(__name__)
 
@@ -11,6 +11,17 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
+ALLOWED_IPS = ["147.235.205.57"]
+
+
+@app.before_request
+def limit_remote_addr():
+    if request.remote_addr not in ALLOWED_IPS and not request.remote_addr.startswith(
+        "51"
+    ):
+        logging.info(f"Forbidden IP request: {request.remote_addr}")
+        abort(403)  # Forbidden
 
 
 @app.route("/", methods=["POST"])
@@ -25,10 +36,9 @@ def proxy_request():
     logging.info(f"Received request: {request.json}")
 
     try:
-        # Make a GET request to the target URL with the provided headers
-        response = requests.get(target_url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.content
+        with requests.get(target_url, headers=headers, timeout=10) as response:
+            response.raise_for_status()
+            return response.content
     except requests.exceptions.HTTPError as http_err:
         logging.error(f"HTTP error occurred: {http_err}")
         return (

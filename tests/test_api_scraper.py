@@ -13,6 +13,7 @@ from api_request.api_scraper import (
     HASH_CHECKSUM_URL,
     create_bet,
     fetch_data,
+    fetch_lineChecksum,
     headers,
     process_data,
     save_to_s3,
@@ -33,7 +34,7 @@ class TestApiScraper(unittest.TestCase):
         mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
-        result = fetch_data(API_URL, lineChecksum="test")
+        result = fetch_data(API_URL, lineChecksum="test", proxy_url=self.proxy_url)
         self.assertEqual(result, {"data": "test"})
 
     def test_process_data(self):
@@ -119,7 +120,7 @@ class TestApiScraper(unittest.TestCase):
             try:
                 response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
-                return response.json()["lineChecksum"]
+                return json.loads(response.json())["lineChecksum"]
             except:
                 raise Exception(
                     f"Failed to fetch lineChecksum from the API: {response.status_code} , {response.content}"
@@ -132,14 +133,14 @@ class TestApiScraper(unittest.TestCase):
                     f"{url}?lineChecksum={lineChecksum}", headers=headers, timeout=10
                 )
                 response.raise_for_status()
-                return response.json()
+                return json.loads(response.json())
             except:
                 raise Exception(
                     f"Failed to fetch data from the API: {response.status_code} , {response.content}"
                 )
 
         lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
-        data = fetch_data(API_URL, "429480933")
+        data = fetch_data(API_URL, lineChecksum)
         self.assertIn("hashes", data)
         self.assertIn("markets", data)
 
@@ -148,19 +149,28 @@ class TestApiScraper(unittest.TestCase):
             response = requests.post(
                 self.proxy_url,
                 json={"url": "https://www.google.com"},
-                timeout=100,
+                timeout=10,
             )
             response.raise_for_status()
         except requests.RequestException as e:
             raise
 
-    def test_proxy_winner_connection(self):
+    def test_base_proxy_connection(self):
         try:
             response = requests.post(
                 self.proxy_url, json={"url": API_URL, "headers": headers}, timeout=10
             )
             response.raise_for_status()
             response = response.json()
+            self.assertIn("hashes", response)
+            self.assertIn("markets", response)
+        except requests.RequestException as e:
+            raise
+
+    def test_complete_proxy_connection(self):
+        try:
+            checksum = fetch_lineChecksum(HASH_CHECKSUM_URL, self.proxy_url)
+            response = fetch_data(API_URL, self.proxy_url, checksum)
             self.assertIn("hashes", response)
             self.assertIn("markets", response)
         except requests.RequestException as e:

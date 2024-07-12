@@ -48,29 +48,29 @@ def remove_bidirectional_control_chars(s: str) -> str:
     return "".join(c for c in s if c not in bidi_chars)
 
 
-def fetch_lineChecksum(url: str) -> str:
+def fetch_lineChecksum(url: str, proxy_url: str) -> str:
     """Fetch the lineChecksum from the API using the proxy server."""
     try:
         response = requests.post(
-            PROXY_URL,
+            proxy_url,
             json={"url": url, "headers": headers},
             timeout=10,
         )
         response.raise_for_status()
-        return response.json()["lineChecksum"]
+        return json.loads(response.json())["lineChecksum"]
     except requests.RequestException as e:
         logger.error("Failed to fetch lineChecksum from the API: %s", e)
         raise
 
 
-def fetch_data(url: str, lineChecksum: str = "") -> dict:
+def fetch_data(url: str, proxy_url: str, lineChecksum: str = "") -> dict:
     """Fetch data from the API."""
-    # complete_url = f"{url}?lineChecksum={lineChecksum}"
+    complete_url = f"{url}?lineChecksum={lineChecksum}"
     try:
         response = requests.post(
-            PROXY_URL, json={"url": url, "headers": headers}, timeout=10
+            proxy_url, json={"url": complete_url, "headers": headers}, timeout=10
         )
-        return response.json()
+        return json.loads(response.json())
     except requests.RequestException as e:
         logger.error("Failed to fetch data from the API: %s", e)
         raise
@@ -160,8 +160,8 @@ def save_raw_data(data: dict, date, run_time):
 def main(event, context):
     logger.info("Environment: " + ENV)
 
-    # lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
-    data = fetch_data(API_URL)
+    lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL, PROXY_URL)
+    data = fetch_data(API_URL, PROXY_URL, lineChecksum)
 
     try:
         bet_df = process_data(data)
