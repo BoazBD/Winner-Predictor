@@ -11,7 +11,8 @@ import boto3
 import pandas as pd
 import requests
 
-from api_request.api_scraper import SID_MAP, create_hash
+from api_request.hash import HashGenerator
+from api_request.winner_config import SID_MAP
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -25,12 +26,7 @@ def get_max_date_from_athena() -> str:
     return max_previous_date
 
 
-def request_results_from_api() -> dict:
-    max_previous_date = get_max_date_from_athena()
-    start_date = (pd.to_datetime(max_previous_date) - pd.Timedelta(days=1)).strftime(
-        "%Y-%m-%d"
-    )
-    end_date = datetime.today().strftime("%Y-%m-%d")
+def request_results_from_api(start_date: str, end_date: str) -> dict:
 
     URL = "https://www.winner.co.il/api/v2/publicapi/GetResults"
     headers = {
@@ -65,6 +61,24 @@ def request_results_from_api() -> dict:
     return response
 
 
+def fetch_and_combine_results(start_date: str, end_date: str) -> pd.DataFrame:
+    current_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    all_results = pd.DataFrame()
+
+    while current_date <= end_date:
+        next_date = min(current_date + pd.Timedelta(days=14), end_date)
+        response = request_results_from_api(
+            current_date.strftime("%Y-%m-%d"), next_date.strftime("%Y-%m-%d")
+        )
+        if response:
+            results_df = process_response(response)
+            all_results = pd.concat([all_results, results_df], ignore_index=True)
+        current_date = next_date + pd.Timedelta(days=1)
+
+    return all_results
+
+
 def process_response(response: dict) -> pd.DataFrame:
     results = []
     for event in response.json()["results"]["events"]:
@@ -78,7 +92,7 @@ def process_response(response: dict) -> pd.DataFrame:
                 "teamb": event["teamB"],
                 "scorea": event["scoreA"],
                 "scoreb": event["scoreB"],
-                "id": create_hash(
+                "id": HashGenerator().create_hash(
                     SID_MAP.get(int(event["sportid"])),
                     event["date"],
                     event["league"],
@@ -107,8 +121,12 @@ def save_results_to_s3(results_df: pd.DataFrame):
 
 
 def main():
-    response = request_results_from_api()
-    results_df = process_response(response)
+    max_previous_date = get_max_date_from_athena()
+    start_date = (pd.to_datetime(max_previous_date) - pd.Timedelta(days=1)).strftime(
+        "%Y-%m-%d"
+    )
+    end_date = (datetime.today()).strftime("%Y-%m-%d")
+    results_df = fetch_and_combine_results(start_date, end_date)
     save_results_to_s3(results_df)
 
 
