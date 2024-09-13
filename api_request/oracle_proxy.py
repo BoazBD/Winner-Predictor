@@ -12,18 +12,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
-ALLOWED_IPS = ["147.235.205.57"]
-
-
-@app.before_request
-def limit_remote_addr():
-    if request.remote_addr not in ALLOWED_IPS and not request.remote_addr.startswith(
-        "51"
-    ):
-        logging.info(f"Forbidden IP request: {request.remote_addr}")
-        abort(403)  # Forbidden
-
-
 @app.route("/", methods=["POST"])
 def proxy_request():
     # Get the URL and headers from the request
