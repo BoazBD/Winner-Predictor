@@ -31,7 +31,7 @@ class TestApiScraper(unittest.TestCase):
         mock_response = MagicMock()
 
         mock_response.status_code = 200
-        mock_response.json.return_value = {"data": "test"}
+        mock_response.json.return_value = '{"data": "test"}'
         mock_get.return_value = mock_response
 
         result = fetch_data(API_URL, lineChecksum="test", proxy_url=self.proxy_url)
@@ -120,7 +120,7 @@ class TestApiScraper(unittest.TestCase):
             try:
                 response = requests.get(url, headers=headers, timeout=10)
                 response.raise_for_status()
-                return json.loads(response.json())["lineChecksum"]
+                return response.json()["lineChecksum"]
             except:
                 raise Exception(
                     f"Failed to fetch lineChecksum from the API: {response.status_code} , {response.content}"
@@ -133,7 +133,7 @@ class TestApiScraper(unittest.TestCase):
                     f"{url}?lineChecksum={lineChecksum}", headers=headers, timeout=10
                 )
                 response.raise_for_status()
-                return json.loads(response.json())
+                return response.json()
             except:
                 raise Exception(
                     f"Failed to fetch data from the API: {response.status_code} , {response.content}"
