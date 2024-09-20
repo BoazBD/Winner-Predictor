@@ -10,8 +10,8 @@ import pandas as pd
 import pytz
 import requests
 
-from api_request.hash import HashGenerator
-from api_request.winner_config import (
+from scraper.hash import HashGenerator
+from scraper.winner_config import (
     API_URL,
     HASH_CHECKSUM_URL,
     RECORDING_BETS,

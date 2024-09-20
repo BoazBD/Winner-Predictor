@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 from dotenv import load_dotenv
 
-from api_request.api_scraper import (
+from scraper.main import (
     API_URL,
     HASH_CHECKSUM_URL,
     create_bet,

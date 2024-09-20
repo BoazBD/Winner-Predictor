@@ -11,8 +11,8 @@ import boto3
 import pandas as pd
 import requests
 
-from api_request.hash import HashGenerator
-from api_request.winner_config import SID_MAP
+from scraper.hash import HashGenerator
+from scraper.winner_config import SID_MAP
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
