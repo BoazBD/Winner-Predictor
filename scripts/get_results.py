@@ -12,7 +12,7 @@ import pandas as pd
 import requests
 
 from scraper.hash import HashGenerator
-from scraper.winner_config import SID_MAP
+from scraper.winner_config import RESULTS_URL, SID_MAP
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -27,8 +27,6 @@ def get_max_date_from_athena() -> str:
 
 
 def request_results_from_api(start_date: str, end_date: str) -> dict:
-
-    URL = "https://www.winner.co.il/api/v2/publicapi/GetResults"
     headers = {
         "accept": "application/json",
         "accept-language": "en-US,en;q=0.9",
@@ -55,7 +53,7 @@ def request_results_from_api(start_date: str, end_date: str) -> dict:
     }
 
     try:
-        response = requests.post(URL, headers=headers, json=data)
+        response = requests.post(RESULTS_URL, headers=headers, json=data)
     except Exception as e:
         logger.error("An error occurred during the API request:", str(e))
     return response

@@ -10,6 +10,7 @@ import pandas as pd
 import pytz
 import requests
 
+from Bet import Bet
 from scraper.hash import HashGenerator
 from scraper.winner_config import (
     API_URL,
@@ -18,7 +19,6 @@ from scraper.winner_config import (
     SID_MAP,
     headers,
 )
-from Bet import Bet
 
 # Configuration
 ENV = os.environ.get("ENV", "local")
