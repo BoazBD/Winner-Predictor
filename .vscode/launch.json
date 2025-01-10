@@ -19,12 +19,13 @@
             "name": "API Scraper",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/api_request/api_scraper.py",
+            "program": "${workspaceFolder}/scraper/main.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
                 "ENV": "local",
-                "PYTHONPATH": "${workspaceFolder}/"
+                "PYTHONPATH": "${workspaceFolder}/",
+                "PROXY_URL": "_",
             }
         },
         {
@@ -60,7 +61,7 @@
             "justMyCode": true,
             "env": {
                 "ENV": "local",
-                "MODEL_TYPE": "big_games",
+                "MODEL_TYPE": "all_games",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
         },
@@ -69,6 +70,22 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/evaluate_model_on_last_week.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
+                "MODEL_TYPE": "all_games",
+                "MODEL" : "model_1_11.h5",
+                "EPOCHS": "1",
+                "PYTHONPATH": "${workspaceFolder}/",
+                "MAX_SEQ": "11",
+            }
+        },
+        {
+            "name": "evaluate_multiple_models",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/evaluate_multiple_models.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
