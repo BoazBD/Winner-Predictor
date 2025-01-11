@@ -25,7 +25,6 @@
             "env": {
                 "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/",
-                "PROXY_URL": "_",
             }
         },
         {

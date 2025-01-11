@@ -9,6 +9,7 @@ import boto3
 import pandas as pd
 import pytz
 import requests
+from dotenv import load_dotenv
 
 from Bet import Bet
 from scraper.hash import HashGenerator
@@ -19,6 +20,8 @@ from scraper.winner_config import (
     SID_MAP,
     headers,
 )
+
+load_dotenv()
 
 # Configuration
 ENV = os.environ.get("ENV", "local")
