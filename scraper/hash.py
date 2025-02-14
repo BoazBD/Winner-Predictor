@@ -8,7 +8,7 @@ class HashGenerator:
         self, type: str, date: str, league: str, team1: str, team2: str
     ) -> str:
         data_to_hash = f"{type}_{date}_{league}_{team1}_{team2}"
-        return hashlib.sha1(data_to_hash.encode()).hexdigest()[:8]
+        return hashlib.sha1(data_to_hash.encode()).hexdigest()[:16]
 
     def generate_unique_id(self, row):
         if not pd.isnull(row["option3"]):
