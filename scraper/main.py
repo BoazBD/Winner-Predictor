@@ -66,7 +66,7 @@ def fetch_lineChecksum(url: str, proxy_url: str) -> str:
                 timeout=10,
             )
             response.raise_for_status()
-            return json.loads(response.json())["lineChecksum"]
+            return response.json()["lineChecksum"]
     except requests.RequestException as e:
         logger.error("Failed to fetch lineChecksum from the API: %s", e)
         raise
@@ -84,7 +84,7 @@ def fetch_data(url: str, proxy_url: str, lineChecksum: str = "") -> dict:
             response = requests.post(
                 proxy_url, json={"url": complete_url, "headers": headers}, timeout=10
             )
-            return json.loads(response.json())
+            return response.json()
     except requests.RequestException as e:
         logger.error("Failed to fetch data from the API: %s", e)
         raise
