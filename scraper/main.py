@@ -27,6 +27,7 @@ load_dotenv()
 ENV = os.environ.get("ENV", "local")
 PROXY_URL = os.environ.get("PROXY_URL")
 AWS_REGION = os.environ.get("AWS_REGION", "il-central-1")
+LOCAL_CSV_PATH = "bets.csv"
 
 boto3.setup_default_session(region_name=AWS_REGION)
 
@@ -54,13 +55,18 @@ def remove_bidirectional_control_chars(s: str) -> str:
 def fetch_lineChecksum(url: str, proxy_url: str) -> str:
     """Fetch the lineChecksum from the API using the proxy server."""
     try:
-        response = requests.post(
-            proxy_url,
-            json={"url": url, "headers": headers},
-            timeout=10,
-        )
-        response.raise_for_status()
-        return json.loads(response.json())["lineChecksum"]
+        if ENV == "local":
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            return response.json()["lineChecksum"]
+        else:
+            response = requests.post(
+                proxy_url,
+                json={"url": url, "headers": headers},
+                timeout=10,
+            )
+            response.raise_for_status()
+            return json.loads(response.json())["lineChecksum"]
     except requests.RequestException as e:
         logger.error("Failed to fetch lineChecksum from the API: %s", e)
         raise
@@ -70,10 +76,15 @@ def fetch_data(url: str, proxy_url: str, lineChecksum: str = "") -> dict:
     """Fetch data from the API."""
     complete_url = f"{url}?lineChecksum={lineChecksum}"
     try:
-        response = requests.post(
-            proxy_url, json={"url": complete_url, "headers": headers}, timeout=10
-        )
-        return json.loads(response.json())
+        if ENV == "local":
+            response = requests.get(complete_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        else:
+            response = requests.post(
+                proxy_url, json={"url": complete_url, "headers": headers}, timeout=10
+            )
+            return json.loads(response.json())
     except requests.RequestException as e:
         logger.error("Failed to fetch data from the API: %s", e)
         raise
@@ -186,7 +197,7 @@ def main(event, context):
     bet_df["unique_id"] = bet_df.apply(hash_gen.generate_unique_id, axis=1)
 
     if ENV == "local":
-        bet_df.to_csv("bets.csv", index=False)
+        bet_df.to_csv(LOCAL_CSV_PATH, index=False)
     else:
         save_to_s3(
             bet_df,
@@ -208,7 +219,7 @@ def main(event, context):
         "statusCode": 200,
         "body": f"Successfully scraped {rows_processed} rows.",
     }
-    logger.info(f"Successfully wrote {rows_processed} rows.")
+    logger.info(f"Successfully wrote {rows_processed} rows to {LOCAL_CSV_PATH}")
     return response
 
 
