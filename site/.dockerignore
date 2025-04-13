@@ -1,0 +1,31 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Local development
+.idea/
+.vscode/
+
+# Build files
+*.log
+*.swp
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml 

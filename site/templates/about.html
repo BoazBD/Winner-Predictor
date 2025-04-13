@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="modal-backdrop fade show" id="aboutBackdrop"></div>
+<div class="modal fade show" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true" style="display: block;">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aboutModalLabel">About Our Prediction System</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="lead">
+                    Our advanced sports betting prediction system uses machine learning algorithms to analyze historical data and generate accurate predictions for upcoming matches.
+                </p>
+                
+                <h5 class="mt-4">How It Works</h5>
+                <p>
+                    The system analyzes various factors including:
+                </p>
+                <ul class="list-unstyled">
+                    <li class="mb-3">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        Historical match data and team performance
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-people text-success me-2"></i>
+                        Player statistics and team composition
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-calendar-check text-warning me-2"></i>
+                        Recent form and match timing
+                    </li>
+                    <li class="mb-3">
+                        <i class="bi bi-geo-alt text-danger me-2"></i>
+                        Home/Away advantage factors
+                    </li>
+                </ul>
+
+                <h5 class="mt-4">Our Track Record</h5>
+                <p>
+                    With a proven track record of success, our system has consistently delivered accurate predictions across various leagues and competitions. We maintain transparency by showing our prediction accuracy and continuously improving our algorithms based on performance data.
+                </p>
+
+                <div class="alert alert-info mt-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Please note that all predictions are for informational purposes only. Always gamble responsibly and make your own informed decisions.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="/" class="btn btn-secondary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make the entire page clickable to go back
+    document.body.addEventListener('click', function(e) {
+        // Only redirect if clicking on the backdrop or modal itself (not its content)
+        if (e.target.id === 'aboutBackdrop' || e.target.id === 'aboutModal') {
+            window.location.href = '/';
+        }
+    });
+    
+    // Close modal when clicking the close button
+    document.querySelector('.btn-close').addEventListener('click', function() {
+        window.location.href = '/';
+    });
+});
+</script>
+{% endblock %} 

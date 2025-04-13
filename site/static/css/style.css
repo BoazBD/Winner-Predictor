@@ -1,0 +1,664 @@
+:root {
+    --primary-color: #253545;
+    --secondary-color: #4ea8de;
+    --success-color: #48c78e;
+    --danger-color: #f14668;
+    --warning-color: #ffe08a;
+    --background-color: #f5f7fa;
+    --card-background: #ffffff;
+    --text-color: #363636;
+    --text-muted: #6c7686;
+    --border-radius: 12px;
+    --correct-prediction-color: rgba(72, 199, 142, 0.4);  /* More visible green */
+    --incorrect-prediction-color: rgba(241, 70, 104, 0.4);  /* More visible red */
+    --filter-card-bg: #f8f9fa;
+    --filter-card-border: #e9ecef;
+    --filter-card-hover: #e9ecef;
+    --filter-label-color: #495057;
+    --filter-select-bg: #ffffff;
+    --filter-select-border: #ced4da;
+    --filter-select-focus: #80bdff;
+    --filter-select-focus-shadow: rgba(0, 123, 255, 0.25);
+}
+
+body {
+    background-color: var(--background-color);
+    font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.navbar {
+    background-color: var(--primary-color);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    background-color: var(--card-background);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Filter card styles */
+.card.filter-card {
+    background-color: var(--filter-card-bg);
+    border: 1px solid var(--filter-card-border);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    transition: all 0.2s ease;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+.card.filter-card:hover {
+    background-color: var(--filter-card-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.card.filter-card .card-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--filter-card-border);
+}
+
+.card.filter-card .form-label {
+    color: var(--filter-label-color);
+    font-weight: 500;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.card.filter-card .form-select {
+    background-color: var(--filter-select-bg);
+    border: 1px solid var(--filter-select-border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.card.filter-card .form-select:focus {
+    border-color: var(--filter-select-focus);
+    box-shadow: 0 0 0 0.2rem var(--filter-select-focus-shadow);
+}
+
+.card.filter-card .btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+    font-weight: 500;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.card.filter-card .btn-primary:hover {
+    background-color: #1a2530;
+    transform: translateY(-1px);
+}
+
+.card.filter-card .btn-outline-secondary {
+    border: 1px solid var(--filter-card-border);
+    color: var(--text-muted);
+    font-weight: 500;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.card.filter-card .btn-outline-secondary:hover {
+    background-color: var(--filter-card-hover);
+    color: var(--text-color);
+    transform: translateY(-1px);
+}
+
+/* Game card layout adjustments */
+.game-card {
+    position: relative;
+    margin-bottom: 1.5rem;
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.game-card .card-body {
+    padding: 0.75rem;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.game-card .game-info {
+    flex: 0 0 15%;
+    padding-left: 0.5rem;
+    padding-right: 0.25rem;
+}
+
+.game-card .league-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 20px;
+    background-color: rgba(0,0,0,0.05);
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.game-card .match-time {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.game-card .teams-container {
+    flex: 0 0 55%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    padding: 0 0.25rem;
+}
+
+.game-card .team {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-card .team-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-align: center;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.25rem;
+    line-height: 1.2;
+    margin-bottom: 0.2rem;
+}
+
+.game-card .team-odds,
+.game-card .draw-odds {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    display: inline-block;
+    margin-bottom: 0.1rem;
+    height: 24px;
+    line-height: 24px;
+}
+
+/* Styling for predicted odds */
+.game-card .predicted-odds {
+    background-color: rgba(37, 53, 69, 0.1);  /* More subtle version of primary color */
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.game-card .vs-badge {
+    padding: 0.2rem;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+}
+
+.game-card .vs-container {
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-card .prediction-container {
+    flex: 0 0 30%;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-left: 0;
+    position: relative;
+    padding-bottom: 2rem;
+}
+
+.game-card .prediction-label {
+    font-size: 0.6rem;
+    opacity: 0.8;
+    margin-bottom: 0.1rem;
+}
+
+.game-card .prediction-value {
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.game-card .ev-badge {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border-radius: 20px;
+    z-index: 2;
+}
+
+.confidence-meter {
+    height: 4px;
+    border-radius: 2px;
+    background-color: rgba(255,255,255,0.2);
+    margin-top: 0.2rem;
+}
+
+.confidence-meter-fill {
+    height: 100%;
+    border-radius: 2px;
+    background-color: rgba(255,255,255,0.8);
+    transition: width 0.3s ease;
+}
+
+/* Ensure details container is properly positioned */
+.game-card .details-container {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Animated collapse behavior */
+.collapse {
+    display: block;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.collapse.show {
+    max-height: 1000px; /* Large enough to accommodate content */
+    opacity: 1;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    margin-top: 0.5rem;
+    visibility: visible;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease, visibility 0s linear 0s;
+}
+
+/* Media queries */
+@media (max-width: 991px) {
+    .game-card .card-body {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .game-card .game-info,
+    .game-card .teams-container,
+    .game-card .prediction-container {
+        flex: 0 0 100%;
+    }
+    
+    .game-card .teams-container {
+        padding: 0.25rem 0;
+    }
+}
+
+/* Result indicator styles */
+.game-card.prediction-correct {
+    background-color: var(--correct-prediction-color);
+    border: 2px solid var(--success-color);
+}
+
+.game-card.prediction-correct .card-body {
+    border-left: 4px solid var(--success-color);
+}
+
+.game-card.prediction-incorrect {
+    background-color: var(--incorrect-prediction-color);
+    border: 2px solid var(--danger-color);
+}
+
+.game-card.prediction-incorrect .card-body {
+    border-left: 4px solid var(--danger-color);
+}
+
+.result-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 20px;
+    z-index: 2;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-top: -1rem;
+}
+
+.hero-section h1 {
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 2rem;
+}
+
+.hero-section .lead {
+    font-size: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-card i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.stat-card h4 {
+    margin: 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.stat-card p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.modal-backdrop {
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal {
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+.btn-close {
+    opacity: 0.5;
+}
+
+.btn-close:hover {
+    opacity: 0.8;
+}
+
+/* Empty state styling */
+.alert-info {
+    background-color: rgba(78, 168, 222, 0.1);
+    border: 1px solid rgba(78, 168, 222, 0.2);
+    color: var(--primary-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-info i {
+    font-size: 1.2rem;
+    color: var(--secondary-color);
+}
+
+/* Prediction count styling */
+.prediction-count {
+    background-color: rgba(0,0,0,0.03);
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.prediction-count i {
+    font-size: 0.9rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.stat-card i {
+    font-size: 1.5rem;
+}
+
+.stat-card h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.1rem;
+}
+
+.stat-card p {
+    font-size: 0.8rem;
+}
+
+/* About Modal */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1rem 1.5rem;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.btn-close {
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.btn-close:hover {
+    opacity: 1;
+}
+
+.prediction-probability {
+    display: block;
+    font-size: 0.65rem;
+    opacity: 0.9;
+    margin-top: 0.2rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Details toggle styling */
+.details-toggle {
+    position: absolute;
+    bottom: 0.4rem;
+    right: 0.6rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: auto;
+    line-height: 1.2;
+}
+
+.details-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.details-toggle.active {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.details-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.details-toggle.active i {
+    transform: rotate(180deg);
+}
+
+/* Styles for the collapsible details section */
+.details-container {
+    /* Remove border and shadow from the collapsing element */
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.details-content {
+    /* Padding is applied here */
+    /* Add border-top here */
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.details-content h6 {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.2rem !important;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding-bottom: 0.1rem;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.details-content .d-flex {
+    margin-bottom: 0rem !important;
+    font-size: 0.7rem;
+}
+
+.details-content .d-flex .small:first-child {
+    color: var(--text-muted);
+    flex-basis: auto;
+    flex-shrink: 0;
+    margin-right: 0.4rem;
+}
+
+.details-content .d-flex .small.fw-bold {
+    /* REMOVE text-align: right; */
+    /* REMOVE flex-grow: 1; */
+    /* Inherit text alignment (left) */
+}
+
+.details-content .alert {
+    font-size: 0.75rem;
+    margin-bottom: 0;
+    margin-top: 0.4rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.details-content .text-muted strong {
+    color: var(--text-muted);
+}
+
+/* Ensure no double borders */
+.details-container .row > * {
+    padding-right: calc(var(--bs-gutter-x) * .5);
+    padding-left: calc(var(--bs-gutter-x) * .5);
+    margin-top: var(--bs-gutter-y);
+} 

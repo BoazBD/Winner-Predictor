@@ -1,0 +1,56 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+lambda_env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# SSL/TLS
+*.pem
+*.key
+*.crt
+*.csr
+
+# Logs
+*.log
+logs/ 
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

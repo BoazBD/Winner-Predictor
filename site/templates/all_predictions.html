@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">All Predictions</h1>
+        <p class="lead text-muted">Complete list of all AI-powered sports betting predictions</p>
+        <a href="/" class="btn btn-outline-primary mb-3">Back to Profitable Predictions</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card filter-card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Filter Options</h5>
+                <form id="filterForm" method="GET" action="/all">
+                    <div class="mb-3">
+                        <label class="form-label">League</label>
+                        <select class="form-select" name="league">
+                            <option value="">All Leagues</option>
+                            {% for league in leagues %}
+                            <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Prediction Type</label>
+                        <select class="form-select" name="prediction_type">
+                            <option value="">All Predictions</option>
+                            <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
+                            <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
+                            <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="status">
+                            <option value="">All Statuses</option>
+                            <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                            <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Result</label>
+                        <select class="form-select" name="result">
+                            <option value="">All Results</option>
+                            <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option>
+                            <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Expected Value</label>
+                        <select class="form-select" name="ev">
+                            <option value="">All EV</option>
+                            <option value="high" {% if selected_ev == 'high' %}selected{% endif %}>High (>10%)</option>
+                            <option value="medium" {% if selected_ev == 'medium' %}selected{% endif %}>Medium (5-10%)</option>
+                            <option value="low" {% if selected_ev == 'low' %}selected{% endif %}>Low (<5%)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    <a href="/all" class="btn btn-outline-secondary w-100 mt-2">Reset Filters</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0">All Predictions</h2>
+            <div class="prediction-count">
+                <i class="bi bi-list-check"></i>
+                Showing {{ games|length }} predictions
+            </div>
+        </div>
+        
+        {% if games %}
+            {% for game in games %}
+            <div class="card game-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %}">
+                {% if game.expected_value is defined and game.expected_value is not none %}
+                <span class="ev-badge {% if game.expected_value > 0.1 %}bg-success{% elif game.expected_value > 0 %}bg-warning{% else %}bg-danger{% endif %}">
+                    EV: {{ (game.expected_value * 100)|round(1) }}%
+                </span>
+                {% endif %}
+                
+                {% if game.status == 'completed' %}
+                    {% if game.prediction_result == true %}
+                    <span class="result-badge bg-success">
+                        <i class="bi bi-check-circle me-1"></i> Correct
+                    </span>
+                    {% elif game.prediction_result == false %}
+                    <span class="result-badge bg-danger">
+                        <i class="bi bi-x-circle me-1"></i> Incorrect
+                    </span>
+                    {% endif %}
+                {% endif %}
+                
+                <div class="card-body">
+                    <!-- Game Info -->
+                    <div class="game-info">
+                        <span class="league-badge">
+                            <i class="bi bi-trophy me-1"></i>
+                            {{ game.league|default('Unknown League') }}
+                        </span>
+                        <span class="match-time">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            {{ game.match_time.strftime('%Y-%m-%d') }} <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
+                        </span>
+                        <small class="text-muted d-block mt-1">
+                            <i class="bi bi-robot me-1"></i>
+                            {{ game.model_type|default('Not available') }}
+                        </small>
+                    </div>
+                    
+                    <!-- Teams with Odds -->
+                    <div class="teams-container">
+                        <div class="team">
+                            <div class="team-name">{{ game.home_team|default('Home Team') }}</div>
+                            <div class="team-odds {% if game.prediction == 'Home Win' %}predicted-odds{% endif %}">{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</div>
+                            <small class="text-muted">Home</small>
+                        </div>
+                        
+                        <div class="vs-container">
+                            <div class="vs-badge">VS</div>
+                        </div>
+                        
+                        <div class="team">
+                            <div class="team-name">{{ game.away_team|default('Away Team') }}</div>
+                            <div class="team-odds {% if game.prediction == 'Away Win' %}predicted-odds{% endif %}">{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</div>
+                            <small class="text-muted">Away</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Prediction -->
+                    <div class="prediction-container">
+                        <div class="prediction-label">Prediction</div>
+                        <div class="prediction-value">{{ game.prediction }}</div>
+                        <div class="confidence-meter">
+                            <div class="confidence-meter-fill" style="width: {{ game.confidence * 100 }}%"></div>
+                        </div>
+                        <small class="prediction-probability">{{ (game.confidence * 100)|round(1) }}% confidence</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No predictions found matching your filters. Try adjusting your filter criteria.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

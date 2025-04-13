@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  flask-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+      - PORT=8080
+      - HOST=0.0.0.0
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: unless-stopped
+
+  nextjs-frontend:
+    build:
+      context: ./ai-sports-predictions
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_FLASK_API_URL=http://flask-backend:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - flask-backend
+    restart: unless-stopped 

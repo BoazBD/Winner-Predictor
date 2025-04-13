@@ -1,0 +1,6 @@
+pandas==1.5.1
+boto3==1.28.62
+awswrangler==3.5.2  # latest as of now and supports newer pyarrow
+pyarrow==10.0.1
+numpy==1.23.5
+tensorflow==2.16.1

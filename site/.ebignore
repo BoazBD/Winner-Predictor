@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Virtual Environment
+venv/
+web_venv/
+lambda_venv/
+fresh_venv/
+clean_venv/
+
+# Models and Data
+models/
+trained_models/
+*.h5
+*.hdf5
+*.pkl
+*.model
+data/
+*.parquet
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local development
+local_debug.py
+run_local.sh
+test_imports.py
+test_imports.sh
+build_container.sh
+build_and_test_container.sh
+docker-compose.yml
+Dockerfile
+.dockerignore
+Dockerrun.aws.json
+
+# Git
+.git/
+.gitignore
+
+# Misc
+.DS_Store
+*.log 
