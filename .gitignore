@@ -7,3 +7,4 @@ myenv/*
 bets.csv
 .env
 trained_models/
+venv/
