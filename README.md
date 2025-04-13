@@ -5,11 +5,28 @@
 ## Description
 This project is designed to help you spot value bets—those with a positive expected return. The idea is: by looking at how betting odds change over time, the system learns to predict the true chances of game outcomes. When the odds on offer deviate from these predictions, it might signal a smart betting opportunity.
 
+## Live Predictions
+Check out our live prediction site where you can see the model's recommendations in real-time:
+[Winner Predictor Live](http://winner-site.eba-y8huhsgi.il-central-1.elasticbeanstalk.com)
+
+The site displays current profitable betting opportunities identified by our model based on real-time data analysis.
+
+## Machine Learning Model
+Our predictive models have been rigorously developed and refined over time:
+- Trained on multiple years of historical betting data
+- Extensive architecture testing (LSTM, Transformers, and traditional ML models)
+- Hyperparameter optimization through cross-validation
+- Continuous retraining with new data to adapt to market changes and newer data
+
+The final deployed model outperformed all benchmarks in backtesting and continues to show strong performance in live prediction scenarios.
+
 ## How It Works
-1. **Automated Scraping:** Sports data, including the continuously updated odds, is scraped every 15 minutes from a betting website.
-2. **ETL Processing:** The scraped data is then processed, where it undergoes cleaning, transformation, and loading into a data warehouse.
-3. **Model Training:** An optimized LSTM model is trained on historical data. The model learns to predict outcome probabilities based on past trends in the changing odds.
-4. **Prediction Generation:** The model generates predictions for upcoming games. When the site's odds differ significantly from the model's predictions, the system flags these as potential value bets.
+1. **Real-Time Scraping:** Sports data, including the continuously updated odds, is scraped every 15 minutes from a betting website.
+2. **Automated ETL Processing:** The scraped data is immediately processed through our pipeline, where it undergoes cleaning, transformation, and loading into a data warehouse.
+3. **Model Inference:** Our optimized LSTM model, trained on historical data, is queried in real-time with the latest odds data.
+
+All of these processes run continuously in production to ensure you always have access to the most current betting opportunities.
+
 ---
 
 # How to Run the Scraper Locally
