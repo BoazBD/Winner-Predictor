@@ -1,7 +1,4 @@
 import sys
-
-sys.path.append("./")
-
 import logging
 import os
 from datetime import datetime
@@ -11,20 +8,34 @@ import awswrangler as wr
 import boto3
 import pandas as pd
 import requests
+import json
 from dotenv import load_dotenv
 
-from scraper.hash import HashGenerator
-from scraper.winner_config import RESULTS_URL, SID_MAP
+# Add the root directory to sys.path for local testing
+sys.path.append("./")
 
-# Load environment variables
-load_dotenv()
+# Import local modules
+from hash_generator import HashGenerator
+from winner_config import RESULTS_URL, SID_MAP
 
-# Configuration
-ENV = os.environ.get("ENV", "local")
-PROXY_URL = os.environ.get("PROXY_URL")
-
-logging.basicConfig(level=logging.INFO)
+# Configure logging
 logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Environment variables will be set in the Lambda configuration
+ENV = os.environ.get("ENV", "prod")
+PROXY_URL = os.environ.get("PROXY_URL", "")
+
+# Validate environment variables
+if ENV != "local" and not PROXY_URL:
+    logger.error("PROXY_URL environment variable is not set. This is required in non-local environments.")
+
+# Log important configuration
+logger.info(f"Environment: {ENV}")
+logger.info(f"RESULTS_URL: {RESULTS_URL}")
+logger.info(f"PROXY_URL: {PROXY_URL}")
+
+# Set up AWS session with the correct region
 boto3.setup_default_session(region_name="il-central-1")
 
 
@@ -90,32 +101,12 @@ def request_results_from_api(start_date: str, end_date: str) -> dict:
                     self.content = content
                     
                 def json(self):
-                    import json
                     return json.loads(self.content)
             
             return ProxyResponse(response.content)
     except Exception as e:
         logger.error(f"An error occurred during the API request: {str(e)}")
         raise
-
-
-def fetch_and_combine_results(start_date: str, end_date: str) -> pd.DataFrame:
-    current_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
-    all_results = pd.DataFrame()
-
-    while current_date <= end_date:
-        next_date = min(current_date + pd.Timedelta(days=13), end_date)
-        logger.info(f"Fetching results from {current_date} to {next_date}")
-        response = request_results_from_api(
-            current_date.strftime("%Y-%m-%d"), next_date.strftime("%Y-%m-%d")
-        )
-        if response:
-            results_df = process_response(response)
-            all_results = pd.concat([all_results, results_df], ignore_index=True)
-        current_date = next_date + pd.Timedelta(days=1)
-
-    return all_results
 
 
 def process_response(response: dict) -> pd.DataFrame:
@@ -147,6 +138,25 @@ def process_response(response: dict) -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
+def fetch_and_combine_results(start_date: str, end_date: str) -> pd.DataFrame:
+    current_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    all_results = pd.DataFrame()
+
+    while current_date <= end_date:
+        next_date = min(current_date + pd.Timedelta(days=13), end_date)
+        logger.info(f"Fetching results from {current_date} to {next_date}")
+        response = request_results_from_api(
+            current_date.strftime("%Y-%m-%d"), next_date.strftime("%Y-%m-%d")
+        )
+        if response:
+            results_df = process_response(response)
+            all_results = pd.concat([all_results, results_df], ignore_index=True)
+        current_date = next_date + pd.Timedelta(days=1)
+
+    return all_results
+
+
 def save_results_to_s3(results_df: pd.DataFrame):
     try:
         wr.s3.to_parquet(
@@ -163,22 +173,43 @@ def save_results_to_s3(results_df: pd.DataFrame):
         logger.error("An error occurred while saving to S3:", str(e))
 
 
-def main():
-    logger.info(f"Starting get_results script in {ENV} environment")
-    max_previous_date = get_max_date_from_athena()
-    start_date = (pd.to_datetime(max_previous_date) - pd.Timedelta(days=1)).strftime(
-        "%Y-%m-%d"
-    )
-    end_date = (datetime.today()).strftime("%Y-%m-%d")
-    logger.info(f"Fetching results from {start_date} to {end_date}")
-    results_df = fetch_and_combine_results(start_date, end_date)
+def get_results():
+    """Main function to fetch and save results"""
+    logger.info(f"Starting get_results function in {ENV} environment")
+    try:
+        max_previous_date = get_max_date_from_athena()
+        start_date = (pd.to_datetime(max_previous_date) - pd.Timedelta(days=1)).strftime(
+            "%Y-%m-%d"
+        )
+        end_date = (datetime.today()).strftime("%Y-%m-%d")
+        logger.info(f"Fetching results from {start_date} to {end_date}")
+        results_df = fetch_and_combine_results(start_date, end_date)
+        
+        if not results_df.empty:
+            save_results_to_s3(results_df)
+            logger.info(f"Successfully processed {results_df.shape[0]} results")
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": f"Successfully processed {results_df.shape[0]} results"})
+            }
+        else:
+            logger.warning("No results found to save")
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "No results found to save"})
+            }
+    except Exception as e:
+        logger.error(f"Error in get_results Lambda function: {str(e)}")
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
+
+
+def lambda_handler(event, context):
+    """AWS Lambda handler function"""
+    logger.info("Lambda function invoked")
+    logger.info(f"Event: {event}")
     
-    if not results_df.empty:
-        save_results_to_s3(results_df)
-        logger.info(f"Successfully processed {results_df.shape[0]} results")
-    else:
-        logger.warning("No results found to save")
-
-
-if __name__ == "__main__":
-    main()
+    # Call the main function
+    return get_results() 

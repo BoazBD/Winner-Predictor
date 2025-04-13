@@ -14,19 +14,26 @@ logging.basicConfig(
 
 @app.route("/", methods=["POST"])
 def proxy_request():
-    # Get the URL and headers from the request
+    # Get the URL, headers and data from the request
     target_url = request.json.get("url")
-    headers = request.json.get(
-        "headers", {}
-    )  # Default to empty dict if headers not provided
+    headers = request.json.get("headers", {})  # Default to empty dict if headers not provided
+    data = request.json.get("data")  # This will be None if not provided
 
     # Log the received request data
     logging.info(f"Received request: {request.json}")
 
     try:
-        with requests.get(target_url, headers=headers, timeout=10) as response:
-            response.raise_for_status()
-            return response.content
+        # If data is provided, use POST; otherwise use GET
+        if data is not None:
+            logging.info(f"Making POST request to {target_url}")
+            with requests.post(target_url, headers=headers, json=data, timeout=10) as response:
+                response.raise_for_status()
+                return response.content
+        else:
+            logging.info(f"Making GET request to {target_url}")
+            with requests.get(target_url, headers=headers, timeout=10) as response:
+                response.raise_for_status()
+                return response.content
     except requests.exceptions.HTTPError as http_err:
         logging.error(f"HTTP error occurred: {http_err}")
         return (
