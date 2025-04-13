@@ -19,6 +19,8 @@ SID_MAP = {
 }
 HASH_CHECKSUM_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileHashes"
 API_URL = "https://api.winner.co.il/v2/publicapi/GetCMobileLine"
+RESULTS_URL = "https://www.winner.co.il/api/v2/publicapi/GetResults"
+
 
 headers = {
     "Deviceid": f"2e7f{random.randint(0,9)}66a5ff1{random.randint(0,9)}9d4a122e3d{random.randint(0,9)}5b35a0{random.randint(0,9)}",

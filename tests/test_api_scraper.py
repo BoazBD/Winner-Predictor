@@ -26,12 +26,12 @@ class TestApiScraper(unittest.TestCase):
     def setUp(self):
         self.proxy_url = os.environ.get("PROXY_URL")
 
-    @patch("requests.post")
+    @patch("requests.get")
     def test_fetch_data_success(self, mock_get):
         mock_response = MagicMock()
 
         mock_response.status_code = 200
-        mock_response.json.return_value = '{"data": "test"}'
+        mock_response.json.return_value = {"data": "test"}
         mock_get.return_value = mock_response
 
         result = fetch_data(API_URL, lineChecksum="test", proxy_url=self.proxy_url)

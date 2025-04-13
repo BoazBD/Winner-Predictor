@@ -5,4 +5,5 @@ myenv/*
 *chromedriver*
 .DS_Store
 bets.csv
-```
+.env
+trained_models/

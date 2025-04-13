@@ -60,7 +60,7 @@
             "justMyCode": true,
             "env": {
                 "ENV": "local",
-                "MODEL_TYPE": "all_games",
+                "COMPETITION_LEVEL": "big_games",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
         },
@@ -91,6 +91,18 @@
                 "ENV": "local",
                 "MODEL_TYPE": "all_games",
                 "MODEL" : "good_model.h5",
+                "PYTHONPATH": "${workspaceFolder}/"
+            }
+        },
+        {
+            "name": "evaluate_transformers",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/evaluate_transformers.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/"
             }
         }

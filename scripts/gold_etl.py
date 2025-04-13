@@ -21,7 +21,9 @@ def get_tables():
     return odds, results
 
 
-def clean_tables(odds: pd.DataFrame, results: pd.DataFrame) -> pd.DataFrame:
+def clean_tables(
+    odds: pd.DataFrame, results: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     today = datetime.date.today()
     odds = odds[odds["event_date"] < today]
     odds = odds[~odds["option1"].str.contains(r".+ - .+")]  # Buggy odds handler
@@ -111,6 +113,8 @@ def main():
         how="left",
         validate="m:1",
     ).drop(columns=["id"])
+    logger.info("Merged tables successfully")
+    logger.info(f"Unmatched games: {gold['scorea'].isna().sum()}")
     if gold["scorea"].isna().sum() / gold.shape[0] > 0.08:
         raise ValueError("Too many unmatched games")
     gold = gold[gold["scorea"].notnull()]
