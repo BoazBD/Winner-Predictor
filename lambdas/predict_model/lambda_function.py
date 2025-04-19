@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, date
 import logging
 from typing import Tuple, List, Dict, Any
 from decimal import Decimal
+from tensorflow.keras.initializers import Orthogonal
 
 # Set up logging
 logger = logging.getLogger()
@@ -56,8 +57,11 @@ class CustomInputLayer(tf.keras.layers.InputLayer):
             config['input_shape'] = config.pop('batch_shape')[1:]
         return cls(**config)
 
-# Register the custom layer for model loading
-tf.keras.utils.get_custom_objects().update({'CustomInputLayer': CustomInputLayer})
+# Register custom initializers for model loading
+tf.keras.utils.get_custom_objects().update({
+    'CustomInputLayer': CustomInputLayer,
+    'Orthogonal': Orthogonal
+})
 
 # Check if running locally or in Lambda
 IS_LOCAL = os.environ.get('IS_LOCAL', 'False').lower() == 'true'
@@ -106,6 +110,77 @@ def download_model_from_s3():
             s3.download_file(S3_BUCKET, model_key, local_model_path)
             logger.info(f"Model downloaded to {local_model_path}")
             return local_model_path
+        except Exception as e:
+            logger.error(f"Error downloading model: {str(e)}")
+            raise
+
+def list_models_in_s3():
+    """List all models available in the S3 bucket models directory."""
+    if IS_LOCAL:
+        # When running locally, scan the local models directory
+        local_models = []
+        try:
+            for file in os.listdir(LOCAL_MODEL_DIR):
+                if file.endswith('.h5'):
+                    local_models.append({
+                        'key': file,
+                        'local_path': f"{LOCAL_MODEL_DIR}/{file}"
+                    })
+            logger.info(f"Found {len(local_models)} models in local directory")
+            return local_models
+        except Exception as e:
+            logger.error(f"Error listing local models: {str(e)}")
+            # Fall back to default model
+            return [{
+                'key': f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v2.h5",
+                'local_path': f"{LOCAL_MODEL_DIR}/{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v2.h5"
+            }]
+    else:
+        # When running in Lambda, list models from S3
+        models = []
+        try:
+            # List objects in the models prefix
+            response = s3.list_objects_v2(
+                Bucket=S3_BUCKET,
+                Prefix='models/'
+            )
+            
+            # Filter for .h5 files only
+            for item in response.get('Contents', []):
+                if item['Key'].endswith('.h5'):
+                    # Extract the filename
+                    filename = os.path.basename(item['Key'])
+                    # Create a local path in /tmp
+                    local_path = f"/tmp/{filename}"
+                    
+                    models.append({
+                        'key': item['Key'],
+                        'local_path': local_path
+                    })
+            
+            logger.info(f"Found {len(models)} models in S3 bucket")
+            return models
+        except Exception as e:
+            logger.error(f"Error listing models in S3: {str(e)}")
+            # Fall back to default model
+            return [{
+                'key': f"models/{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1.h5",
+                'local_path': f"/tmp/{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1.h5"
+            }]
+
+def download_model(model_info):
+    """Download a specific model from S3."""
+    if IS_LOCAL:
+        # When running locally, just return the local path
+        logger.info(f"Using local model at {model_info['local_path']}")
+        return model_info['local_path']
+    else:
+        # When running in Lambda, download from S3
+        try:
+            logger.info(f"Downloading model from s3://{S3_BUCKET}/{model_info['key']}")
+            s3.download_file(S3_BUCKET, model_info['key'], model_info['local_path'])
+            logger.info(f"Model downloaded to {model_info['local_path']}")
+            return model_info['local_path']
         except Exception as e:
             logger.error(f"Error downloading model: {str(e)}")
             raise
@@ -296,7 +371,7 @@ def preprocess_data(df):
 
 def make_predictions(model, valid_game_data, model_name):
     """Make predictions for all games with enough historical data."""
-    logger.info("Making predictions")
+    logger.info(f"Making predictions with model {model_name}")
     
     # Initialize list for game predictions
     all_game_predictions = []
@@ -310,7 +385,7 @@ def make_predictions(model, valid_game_data, model_name):
             
             # Make prediction
             prediction = model.predict(features.reshape(1, int(MAX_SEQ), 3), verbose=0)
-            logger.info(f"Prediction for game {game_id}: {prediction}")
+            logger.info(f"Prediction for game {game_id} with model {model_name}: {prediction}")
             
             # Extract game information
             home_team = info.get('option1')
@@ -368,8 +443,11 @@ def make_predictions(model, valid_game_data, model_name):
                 'game_time': game_time,
                 'match_time_str': match_time_str,
                 'prediction_timestamp': prediction_timestamp,
+                # Set the prediction field to the best outcome name
+                'prediction': best_outcome['name'],
                 # Model metadata
-                'model_name': model_name,
+                'model_name': model_name,  # Store the specific model name used for prediction
+                'model_type': model_name.split('_')[0],  # Extract the model type (lstm, bert, etc.)
                 # All odds
                 'home_odds': home_odds,
                 'draw_odds': draw_odds,
@@ -397,138 +475,184 @@ def make_predictions(model, valid_game_data, model_name):
             all_game_predictions.append(game_prediction)
             
     except Exception as e:
-        logger.error(f"Error during model prediction: {str(e)}")
+        logger.error(f"Error during model prediction with model {model_name}: {str(e)}")
     
     # Sort by expected value (highest first)
     all_game_predictions.sort(key=lambda x: x['expected_value'], reverse=True)
     
     # Count profitable predictions
     profitable_count = len([p for p in all_game_predictions if p['is_profitable']])
-    logger.info(f"Found {len(all_game_predictions)} games, of which {profitable_count} have profitable predictions")
+    logger.info(f"Model {model_name} found {len(all_game_predictions)} games, of which {profitable_count} have profitable predictions")
     
     return all_game_predictions
 
-def save_predictions(all_game_predictions):
-    """Save predictions either to DynamoDB (in Lambda) or CSV (locally)."""
+def save_predictions(all_game_predictions, existing_predictions_by_model={}):
+    """Save all predictions to DynamoDB, allowing multiple profitable outcomes for the same game."""
     if IS_LOCAL:
         # When running locally, save to CSV
-        logger.info(f"Saving {len(all_game_predictions)} game predictions to {LOCAL_OUTPUT_FILE}")
-        
-        # Convert list of dictionaries to DataFrame
-        df = pd.DataFrame(all_game_predictions)
-        
-        # Save to CSV
-        df.to_csv(LOCAL_OUTPUT_FILE, index=False)
-        logger.info(f"Successfully saved predictions to {LOCAL_OUTPUT_FILE}")
-    else:
-        # When running in Lambda, save to both DynamoDB tables
-        logger.info(f"Saving {len(all_game_predictions)} game predictions to DynamoDB tables")
-        
-        # Get DynamoDB tables
-        all_predictions_table = dynamodb.Table(ALL_PREDICTIONS_TABLE)
-        profitable_games_table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
-        
-        timestamp = datetime.now().isoformat()
-        
-        # Helper function to convert floats to Decimal
-        def convert_floats_to_decimal(obj):
-            if isinstance(obj, float):
-                return Decimal(str(obj))
-            elif isinstance(obj, date):
-                return obj.isoformat()
-            elif isinstance(obj, dict):
-                return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [convert_floats_to_decimal(i) for i in obj]
-            else:
-                return obj
-        
-        # Save all predictions to the all-predicted-games table
-        logger.info(f"Saving all {len(all_game_predictions)} predictions to {ALL_PREDICTIONS_TABLE}")
-        with all_predictions_table.batch_writer() as batch:
-            for game in all_game_predictions:
-                # Add timestamp and make sure all values are serializable
-                game['timestamp'] = timestamp
-                
-                # Convert all float values to Decimal
-                game_dict = convert_floats_to_decimal(game)
-                
-                # Add to DynamoDB
-                try:
-                    batch.put_item(Item=game_dict)
-                except Exception as e:
-                    logger.error(f"Error saving game prediction for {game['id']} to {ALL_PREDICTIONS_TABLE}: {str(e)}")
-        
-        # Filter for profitable predictions only - games with at least one profitable outcome
-        profitable_predictions = [game for game in all_game_predictions if 
-                                 (game['home_win_is_profitable'] or 
-                                  game['draw_is_profitable'] or 
-                                  game['away_win_is_profitable'])]
-        
-        # Save only profitable predictions to the profitable-games table
-        logger.info(f"Saving {len(profitable_predictions)} profitable predictions to {PROFITABLE_GAMES_TABLE}")
-        with profitable_games_table.batch_writer() as batch:
-            for game in profitable_predictions:
-                # Add timestamp and make sure all values are serializable
-                game['timestamp'] = timestamp
-                
-                # Convert all float values to Decimal
-                game_dict = convert_floats_to_decimal(game)
-                
-                # Add to DynamoDB
-                try:
-                    batch.put_item(Item=game_dict)
-                except Exception as e:
-                    logger.error(f"Error saving game prediction for {game['id']} to {PROFITABLE_GAMES_TABLE}: {str(e)}")
-        
-        logger.info(f"Successfully saved all game predictions to DynamoDB tables")
-
-def check_existing_games(unique_ids):
-    """Check if games already exist in the profitable games DynamoDB table."""
-    if IS_LOCAL:
-        logger.info("Running locally, skipping DynamoDB check")
-        return []
-    
-    logger.info(f"Checking for existing games in {PROFITABLE_GAMES_TABLE}")
-    
-    # Get DynamoDB client for batch operations
-    dynamodb_client = boto3.client('dynamodb', region_name=AWS_REGION)
-    
-    # Initialize list for existing games
-    existing_profitable_games = []
-    
-    # Process in batches of 100 (DynamoDB batch operation limit)
-    batch_size = 100
-    for i in range(0, len(unique_ids), batch_size):
-        batch_ids = unique_ids[i:i+batch_size]
-        
-        # Prepare batch get request for profitable-games table
-        profitable_games_request = {
-            PROFITABLE_GAMES_TABLE: {
-                'Keys': [{'id': {'S': game_id}} for game_id in batch_ids],
-                'ProjectionExpression': 'id'
-            }
-        }
-        
         try:
-            # Execute batch get for profitable-games table
-            profitable_games_response = dynamodb_client.batch_get_item(
-                RequestItems=profitable_games_request
+            logger.info(f"Saving predictions to {LOCAL_OUTPUT_FILE}")
+            
+            # Convert predictions to DataFrame
+            predictions_df = pd.DataFrame(all_game_predictions)
+            
+            # Save to CSV
+            predictions_df.to_csv(LOCAL_OUTPUT_FILE, index=False)
+            
+            logger.info(f"Successfully saved predictions to {LOCAL_OUTPUT_FILE}")
+            
+        except Exception as e:
+            logger.error(f"Error saving predictions to CSV: {e}")
+    else:
+        # When running in Lambda, save to DynamoDB
+        try:
+            logger.info(f"Saving predictions to DynamoDB tables: {ALL_PREDICTIONS_TABLE} and {PROFITABLE_GAMES_TABLE}")
+            
+            # Create DynamoDB resource and tables
+            dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
+            all_predictions_table = dynamodb.Table(ALL_PREDICTIONS_TABLE)
+            profitable_games_table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
+            
+            # Track success and error counts
+            saved_count = 0
+            profitable_saved_count = 0
+            skipped_count = 0
+            error_count = 0
+            
+            # Save each prediction individually
+            for i, game in enumerate(all_game_predictions):
+                try:
+                    # Get required fields
+                    game_id = game['id']
+                    model_name = game.get('model_name', MODEL_TYPE)
+                    
+                    # Generate timestamp if not present
+                    if 'timestamp' not in game:
+                        game['timestamp'] = datetime.now().isoformat()
+                    
+                    # Create model_timestamp composite sort key
+                    game['model_timestamp'] = f"{model_name}#{game['timestamp']}"
+                    
+                    # Set game_id to be consistent
+                    game['game_id'] = game_id
+                    
+                    # Add is_profitable as a numeric attribute for GSI
+                    is_profitable = (
+                        game.get('home_win_is_profitable', False) or
+                        game.get('draw_is_profitable', False) or
+                        game.get('away_win_is_profitable', False)
+                    )
+                    game['is_profitable'] = 1 if is_profitable else 0
+                    
+                    # Convert all float values to Decimal
+                    game_dict = convert_floats_to_decimal(game)
+                    
+                    # Always save to all_predictions_table
+                    all_predictions_table.put_item(Item=game_dict)
+                    saved_count += 1
+                    
+                    # Check if we should save to profitable_games_table
+                    if is_profitable:
+                        # Check which outcomes are profitable
+                        profitable_outcomes = []
+                        
+                        if game.get('home_win_is_profitable', False):
+                            profitable_outcomes.append({
+                                'outcome': 'Home Win',
+                                'probability': game.get('home_win_prob', 0),
+                                'ev': game.get('home_win_ev', 0),
+                                'odds': game.get('home_odds', 0)
+                            })
+                            
+                        if game.get('draw_is_profitable', False):
+                            profitable_outcomes.append({
+                                'outcome': 'Draw',
+                                'probability': game.get('draw_prob', 0),
+                                'ev': game.get('draw_ev', 0),
+                                'odds': game.get('draw_odds', 0)
+                            })
+                            
+                        if game.get('away_win_is_profitable', False):
+                            profitable_outcomes.append({
+                                'outcome': 'Away Win',
+                                'probability': game.get('away_win_prob', 0),
+                                'ev': game.get('away_win_ev', 0),
+                                'odds': game.get('away_odds', 0)
+                            })
+                        
+                        # Sort outcomes by expected value (highest first)
+                        profitable_outcomes.sort(key=lambda x: x['ev'], reverse=True)
+                        
+                        # Add a profitable entry for each profitable outcome
+                        for profitable_idx, profitable_outcome in enumerate(profitable_outcomes):
+                            # Create a copy of the game dict for this specific outcome
+                            outcome_game_dict = game_dict.copy()
+                            
+                            # Set the prediction to this outcome
+                            outcome_game_dict['prediction'] = profitable_outcome['outcome']
+                            
+                            # Add unique ID suffix for additional profitable outcomes (after the first one)
+                            if profitable_idx > 0:
+                                outcome_game_dict['id'] = f"{game_id}_{profitable_outcome['outcome'].replace(' ', '_')}"
+                                outcome_game_dict['game_id'] = outcome_game_dict['id']
+                                
+                                # Update model_timestamp to avoid overwriting
+                                outcome_game_dict['model_timestamp'] = f"{model_name}#{profitable_outcome['outcome']}#{game_dict['timestamp']}"
+                            
+                            # Save each profitable outcome
+                            profitable_games_table.put_item(Item=outcome_game_dict)
+                            profitable_saved_count += 1
+                    
+                except Exception as e:
+                    error_count += 1
+                    logger.error(f"Error saving prediction {i} for game {game['id']} with model {game.get('model_name', MODEL_TYPE)}: {str(e)}")
+            
+            logger.info(f"Successfully saved {saved_count} predictions to {ALL_PREDICTIONS_TABLE}")
+            logger.info(f"Added {profitable_saved_count} profitable predictions to {PROFITABLE_GAMES_TABLE}")
+            logger.info(f"Encountered {error_count} errors during saving")
+
+        except Exception as e:
+            logger.error(f"Error saving predictions to DynamoDB: {e}")
+            raise
+
+def check_existing_predictions(model_name):
+    """Check for existing profitable predictions for this model in DynamoDB."""
+    if IS_LOCAL:
+        logger.info("Running locally, skipping DynamoDB check for existing predictions")
+        return {}
+    
+    # Get the profitable predictions table
+    table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
+    existing_predictions = {}
+    
+    try:
+        # Query for all profitable predictions for this model
+        response = table.query(
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('model_name').eq(model_name)
+        )
+        
+        # Process items and add to dictionary
+        for item in response.get('Items', []):
+            existing_predictions[item['game_id']] = item
+        
+        # Handle pagination if needed
+        while 'LastEvaluatedKey' in response:
+            response = table.query(
+                KeyConditionExpression=boto3.dynamodb.conditions.Key('model_name').eq(model_name),
+                ExclusiveStartKey=response['LastEvaluatedKey']
             )
             
-            # Process profitable-games response
-            if PROFITABLE_GAMES_TABLE in profitable_games_response.get('Responses', {}):
-                items = profitable_games_response['Responses'][PROFITABLE_GAMES_TABLE]
-                for item in items:
-                    game_id = item['id']['S']
-                    existing_profitable_games.append(game_id)
-                    
-        except Exception as e:
-            logger.error(f"Error in batch checking games in DynamoDB: {str(e)}")
+            # Add newly retrieved items
+            for item in response.get('Items', []):
+                existing_predictions[item['game_id']] = item
+                
+        logger.info(f"Found {len(existing_predictions)} existing profitable predictions for model {model_name}")
+        
+        return existing_predictions
     
-    logger.info(f"Found {len(existing_profitable_games)} existing profitable games in {PROFITABLE_GAMES_TABLE}")
-    
-    return existing_profitable_games
+    except Exception as e:
+        logger.error(f"Error checking for existing predictions for model {model_name}: {str(e)}")
+        return {}
 
 def clear_dynamodb_tables():
     """Clear all items from both DynamoDB tables."""
@@ -545,36 +669,60 @@ def clear_dynamodb_tables():
         # Clear all-predicted-games table
         all_predictions_table = dynamo_resource.Table(ALL_PREDICTIONS_TABLE)
         
+        # For our new schema, we need to get both game_id and model_timestamp
         # Scan for all items
         scan_response = all_predictions_table.scan(
-            ProjectionExpression='id, prediction_timestamp'
+            ProjectionExpression='game_id, model_timestamp'
         )
         items = scan_response.get('Items', [])
+        
+        # Handle pagination if needed
+        while 'LastEvaluatedKey' in scan_response:
+            scan_response = all_predictions_table.scan(
+                ProjectionExpression='game_id, model_timestamp',
+                ExclusiveStartKey=scan_response['LastEvaluatedKey']
+            )
+            items.extend(scan_response.get('Items', []))
         
         logger.info(f"Found {len(items)} items in {ALL_PREDICTIONS_TABLE} table")
         
         # Delete all items in batches
         with all_predictions_table.batch_writer() as batch:
             for item in items:
-                batch.delete_item(Key={'id': item['id']})
+                batch.delete_item(Key={
+                    'game_id': item['game_id'],
+                    'model_timestamp': item['model_timestamp']
+                })
         
         logger.info(f"Successfully cleared {len(items)} items from {ALL_PREDICTIONS_TABLE} table")
         
         # Clear profitable-games table
         profitable_games_table = dynamo_resource.Table(PROFITABLE_GAMES_TABLE)
         
+        # For our new schema, we need to get both model_name and game_id
         # Scan for all items
         scan_response = profitable_games_table.scan(
-            ProjectionExpression='id, prediction_timestamp'
+            ProjectionExpression='model_name, game_id'
         )
         items = scan_response.get('Items', [])
+        
+        # Handle pagination if needed
+        while 'LastEvaluatedKey' in scan_response:
+            scan_response = profitable_games_table.scan(
+                ProjectionExpression='model_name, game_id',
+                ExclusiveStartKey=scan_response['LastEvaluatedKey']
+            )
+            items.extend(scan_response.get('Items', []))
         
         logger.info(f"Found {len(items)} items in {PROFITABLE_GAMES_TABLE} table")
         
         # Delete all items in batches
         with profitable_games_table.batch_writer() as batch:
             for item in items:
-                batch.delete_item(Key={'id': item['id']})
+                batch.delete_item(Key={
+                    'model_name': item['model_name'],
+                    'game_id': item['game_id']
+                })
         
         logger.info(f"Successfully cleared {len(items)} items from {PROFITABLE_GAMES_TABLE} table")
         
@@ -583,6 +731,140 @@ def clear_dynamodb_tables():
     except Exception as e:
         logger.error(f"Error clearing DynamoDB tables: {str(e)}")
         return False
+
+def ensure_dynamodb_tables_exist():
+    """Ensure DynamoDB tables exist with proper indexes."""
+    if IS_LOCAL:
+        logger.info("Running locally, skipping DynamoDB table creation")
+        return
+    
+    try:
+        # Create DynamoDB client and resource
+        dynamodb_client = boto3.client('dynamodb', region_name=AWS_REGION)
+        dynamodb_resource = boto3.resource('dynamodb', region_name=AWS_REGION)
+        
+        # Check if all-predictions table exists
+        all_predictions_exists = False
+        try:
+            dynamodb_resource.Table(ALL_PREDICTIONS_TABLE).table_status
+            all_predictions_exists = True
+            logger.info(f"Table {ALL_PREDICTIONS_TABLE} exists")
+        except:
+            all_predictions_exists = False
+            logger.info(f"Table {ALL_PREDICTIONS_TABLE} does not exist")
+        
+        # Create all-predictions table if it doesn't exist
+        if not all_predictions_exists:
+            logger.info(f"Creating {ALL_PREDICTIONS_TABLE} table with GSIs")
+            dynamodb_client.create_table(
+                TableName=ALL_PREDICTIONS_TABLE,
+                KeySchema=[
+                    {'AttributeName': 'game_id', 'KeyType': 'HASH'},  # Partition key
+                    {'AttributeName': 'model_timestamp', 'KeyType': 'RANGE'}  # Sort key
+                ],
+                AttributeDefinitions=[
+                    {'AttributeName': 'game_id', 'AttributeType': 'S'},
+                    {'AttributeName': 'model_timestamp', 'AttributeType': 'S'},
+                    {'AttributeName': 'model_name', 'AttributeType': 'S'},
+                    {'AttributeName': 'timestamp', 'AttributeType': 'S'},
+                    {'AttributeName': 'is_profitable', 'AttributeType': 'N'}
+                ],
+                GlobalSecondaryIndexes=[
+                    {
+                        'IndexName': 'ModelTimeIndex',
+                        'KeySchema': [
+                            {'AttributeName': 'model_name', 'KeyType': 'HASH'},
+                            {'AttributeName': 'timestamp', 'KeyType': 'RANGE'}
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 5,
+                            'WriteCapacityUnits': 5
+                        }
+                    },
+                    {
+                        'IndexName': 'ModelIsProfitableIndex',
+                        'KeySchema': [
+                            {'AttributeName': 'model_name', 'KeyType': 'HASH'},
+                            {'AttributeName': 'is_profitable', 'KeyType': 'RANGE'}
+                        ],
+                        'Projection': {
+                            'ProjectionType': 'ALL'
+                        },
+                        'ProvisionedThroughput': {
+                            'ReadCapacityUnits': 5,
+                            'WriteCapacityUnits': 5
+                        }
+                    }
+                ],
+                BillingMode='PROVISIONED',
+                ProvisionedThroughput={
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
+                }
+            )
+            logger.info(f"Waiting for {ALL_PREDICTIONS_TABLE} table to be created...")
+            waiter = dynamodb_client.get_waiter('table_exists')
+            waiter.wait(TableName=ALL_PREDICTIONS_TABLE)
+            logger.info(f"Table {ALL_PREDICTIONS_TABLE} created successfully")
+        
+        # Check if profitable-predictions table exists
+        profitable_games_exists = False
+        try:
+            dynamodb_resource.Table(PROFITABLE_GAMES_TABLE).table_status
+            profitable_games_exists = True
+            logger.info(f"Table {PROFITABLE_GAMES_TABLE} exists")
+        except:
+            profitable_games_exists = False
+            logger.info(f"Table {PROFITABLE_GAMES_TABLE} does not exist")
+            
+        # Create profitable-predictions table if it doesn't exist
+        if not profitable_games_exists:
+            logger.info(f"Creating {PROFITABLE_GAMES_TABLE} table")
+            dynamodb_client.create_table(
+                TableName=PROFITABLE_GAMES_TABLE,
+                KeySchema=[
+                    {'AttributeName': 'model_name', 'KeyType': 'HASH'},  # Partition key
+                    {'AttributeName': 'game_id', 'KeyType': 'RANGE'}  # Sort key
+                ],
+                AttributeDefinitions=[
+                    {'AttributeName': 'model_name', 'AttributeType': 'S'},
+                    {'AttributeName': 'game_id', 'AttributeType': 'S'}
+                ],
+                BillingMode='PROVISIONED',
+                ProvisionedThroughput={
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
+                }
+            )
+            logger.info(f"Waiting for {PROFITABLE_GAMES_TABLE} table to be created...")
+            waiter = dynamodb_client.get_waiter('table_exists')
+            waiter.wait(TableName=PROFITABLE_GAMES_TABLE)
+            logger.info(f"Table {PROFITABLE_GAMES_TABLE} created successfully")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error ensuring DynamoDB tables exist: {e}")
+        return False
+
+def convert_floats_to_decimal(obj):
+    """
+    Convert all float values in a nested object to Decimal for DynamoDB.
+    DynamoDB doesn't support float values directly, so we need to convert them to Decimal.
+    """
+    if isinstance(obj, float):
+        return Decimal(str(obj))
+    elif isinstance(obj, date):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_floats_to_decimal(i) for i in obj]
+    else:
+        return obj
 
 def lambda_handler(event, context):
     """Main Lambda function handler."""
@@ -601,6 +883,10 @@ def lambda_handler(event, context):
         }
 
     try:
+        # Ensure DynamoDB tables exist with proper indexes
+        if not IS_LOCAL:
+            ensure_dynamodb_tables_exist()
+        
         # Step 1: Fetch game data (from Athena in Lambda, from local file locally)
         games_df = fetch_games_from_athena()
 
@@ -608,84 +894,197 @@ def lambda_handler(event, context):
         unique_game_ids = games_df['unique_id'].unique().tolist()
         logger.info(f"Found {len(unique_game_ids)} unique games in the dataset")
 
-        # Step 2: Check which games already exist in profitable games DynamoDB table
-        existing_profitable_games = check_existing_games(unique_game_ids)
-
-        # Filter out games that already exist in the profitable games table
-        games_to_process = []
-        for game_id in unique_game_ids:
-            if game_id in existing_profitable_games:
-                # Skip games that exist in the profitable games table
-                logger.info(f"Skipping game {game_id} as it already exists in {PROFITABLE_GAMES_TABLE}")
-                continue
-            else:
-                games_to_process.append(game_id)
-
-        logger.info(f"Filtered to {len(games_to_process)} games that need prediction")
-
-        # If all games already exist in profitable games table, exit early
-        if len(games_to_process) == 0:
-            logger.info(f"All games already exist in {PROFITABLE_GAMES_TABLE}. Exiting early.")
-            return {
-                'statusCode': 200,
-                'body': json.dumps(f'All {len(unique_game_ids)} games already exist in {PROFITABLE_GAMES_TABLE}. No new predictions needed.')
-            }
-
-        # Filter the dataframe to only include games that need processing
-        filtered_games_df = games_df[games_df['unique_id'].isin(games_to_process)]
-        logger.info(f"Filtered dataset contains {filtered_games_df['unique_id'].nunique()} unique games")
-
-        # Step 3: Load the model
-        logger.info(f"Loading model {MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}")
-        local_model_path = download_model_from_s3()
+        # Step 2: Preprocess data once for all models
+        valid_game_data = preprocess_data(games_df)
         
-        # Extract model version from the model path
-        if IS_LOCAL:
-            model_version = "v2"  # Local version
-        else:
-            model_version = "v1"  # Default AWS version
-            # Try to extract version from filename if possible
-            if '_v' in local_model_path:
-                try:
-                    model_version = local_model_path.split('_v')[1].split('.')[0]
-                    model_version = f"v{model_version}"
-                except:
-                    pass
-        
-        # Create full model name
-        model_name = f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_{model_version}"
-        logger.info(f"Using model: {model_name}")
-
-        # Load model using Keras load_model function
-        loaded_model = load_model(local_model_path)
-        logger.info(f"Successfully loaded model from {local_model_path}")
-
-        # Step 4: Preprocess the data
-        valid_game_data = preprocess_data(filtered_games_df)
-
-        # Step 5: Check if there are any games with enough data points
+        # Check if there are any games with enough data points
         if len(valid_game_data) == 0:
             logger.warning("No games with enough data points found. Exiting early.")
             return {
                 'statusCode': 200,
-                'body': json.dumps(f'Processed {filtered_games_df["unique_id"].nunique()} games but none had enough data points for prediction.')
+                'body': json.dumps(f'Processed {games_df["unique_id"].nunique()} games but none had enough data points for prediction.')
             }
+        
+        # Step 3: Get list of all available models
+        models_list = list_models_in_s3()
+        logger.info(f"Found {len(models_list)} models to process")
+        
+        # Track all predictions across all models
+        all_predictions_across_models = []
+        
+        # Stats tracking dictionaries for each model
+        model_prediction_counts = {}
+        model_profitable_counts = {}
+        model_skipped_counts = {}
+        
+        # Keep track of all existing predictions by model
+        all_existing_predictions = {}
+        
+        # Step 4: Process each model
+        for model_info in models_list:
+            try:
+                # Get model name from the key
+                model_filename = os.path.basename(model_info['key'])
+                
+                # Extract model details from filename
+                model_parts = model_filename.split('.')[0].split('_')
+                if len(model_parts) >= 3:
+                    model_type = model_parts[0]
+                    epochs = model_parts[1]
+                    max_seq = model_parts[2]
+                    # Extract version if available (v1, v2, etc.)
+                    model_version = "v1"  # Default
+                    if len(model_parts) > 3 and model_parts[3].startswith('v'):
+                        model_version = model_parts[3]
+                else:
+                    # If filename doesn't match expected pattern, use defaults
+                    model_type = MODEL_TYPE
+                    epochs = EPOCHS
+                    max_seq = MAX_SEQ
+                    model_version = "v1"
+                
+                model_name = f"{model_type}_{epochs}_{max_seq}_{model_version}"
+                logger.info(f"Processing model: {model_name}")
 
-        # Step 6: Make predictions for all games
-        all_game_predictions = make_predictions(loaded_model, valid_game_data, model_name)
-
-        # Step 7: Save predictions (to DynamoDB in Lambda, to CSV locally)
-        if all_game_predictions:
-            save_predictions(all_game_predictions)
+                # Check which games already have predictions from this model
+                existing_predictions = check_existing_predictions(model_name)
+                
+                # Store for later use
+                all_existing_predictions[model_name] = existing_predictions
+                
+                # Initialize stats tracking for this model if not already done
+                if model_name not in model_prediction_counts:
+                    model_prediction_counts[model_name] = 0
+                    model_profitable_counts[model_name] = 0
+                    model_skipped_counts[model_name] = 0
+                
+                # Track skipped predictions for reporting
+                model_skipped_counts[model_name] = len(existing_predictions)
+                
+                # Filter valid_game_data to only include games that don't already have profitable predictions
+                # from this model. Games with non-profitable predictions will be processed again.
+                model_games_to_process = []
+                for game in valid_game_data:
+                    game_id = game['game_id']
+                    # Check if this game_id exists in the predictions AND is profitable
+                    if game_id not in existing_predictions:
+                        # No prediction for this game, process it
+                        model_games_to_process.append(game)
+                    elif existing_predictions[game_id].get('is_profitable', 0) != 1:
+                        # Prediction exists but it's not profitable, process it again
+                        model_games_to_process.append(game)
+                        logger.info(f"Re-processing game {game_id} for model {model_name} - has prediction but not profitable")
+                    else:
+                        # Game already has a profitable prediction from this model, skip it
+                        logger.info(f"Skipping game {game_id} for model {model_name} - already has profitable prediction")
+                
+                logger.info(f"Model {model_name} will process {len(model_games_to_process)} games out of {len(valid_game_data)} valid games")
+                
+                # If all games already have predictions from this model, skip to the next model
+                if len(model_games_to_process) == 0:
+                    logger.info(f"All games already have predictions from model {model_name}. Skipping to next model.")
+                    continue
+                
+                # Download and load model
+                local_model_path = download_model(model_info)
+                loaded_model = load_model(local_model_path)
+                logger.info(f"Successfully loaded model from {local_model_path}")
+                
+                # Make predictions with this model
+                model_predictions = make_predictions(loaded_model, model_games_to_process, model_name)
+                
+                # Track statistics for this model
+                model_prediction_counts[model_name] = len(model_predictions)
+                model_profitable_counts[model_name] = len([p for p in model_predictions if 
+                    p.get('home_win_is_profitable', False) or 
+                    p.get('draw_is_profitable', False) or 
+                    p.get('away_win_is_profitable', False)])
+                
+                # Add predictions to the complete list
+                all_predictions_across_models.extend(model_predictions)
+                
+                # Clean up to free memory
+                del loaded_model
+                import gc
+                gc.collect()
+                
+            except Exception as e:
+                logger.error(f"Error processing model {model_info['key']}: {str(e)}")
+                # Initialize stats for failed models
+                model_name = os.path.basename(model_info['key']).split('.')[0]
+                model_prediction_counts[model_name] = 0
+                model_profitable_counts[model_name] = 0
+                model_skipped_counts[model_name] = 0
+                # Continue to next model
+                continue
+        
+        # Step 5: Save all predictions (to DynamoDB in Lambda, to CSV locally)
+        if all_predictions_across_models:
+            save_predictions(all_predictions_across_models, all_existing_predictions)
+            # Count profitable predictions for the response
+            profitable_count = len([p for p in all_predictions_across_models if p['is_profitable']])
+            logger.info(f"Saved predictions from {len(models_list)} models with {profitable_count} profitable predictions")
         else:
-            logger.info("No predictions made")
-
-        # Count profitable predictions for the response
-        profitable_count = len([p for p in all_game_predictions if p['is_profitable']])
+            logger.info("No predictions made from any model")
+        
+        # Step 6: Generate summary report
+        logger.info("\n" + "="*95)
+        logger.info(" "*25 + "PREDICTION SUMMARY REPORT")
+        logger.info("="*95)
+        
+        # Overall stats
+        total_predictions = len(all_predictions_across_models)
+        total_profitable = sum(model_profitable_counts.values())
+        total_skipped = sum(model_skipped_counts.values())
+        logger.info(f"Total predictions made: {total_predictions}")
+        logger.info(f"Total predictions skipped (already in DB): {total_skipped}")
+        
+        if total_predictions > 0:
+            profit_percentage = (total_profitable/total_predictions)*100
+            logger.info(f"Total profitable predictions: {total_profitable} ({profit_percentage:.1f}% profitable)")
+        else:
+            logger.info(f"Total profitable predictions: 0 (0.0% profitable)")
+        
+        # Per-model stats
+        logger.info("\nPredictions by model:")
+        logger.info("-"*95)
+        
+        # Format as a table with headers
+        logger.info(f"{'MODEL NAME':<30} {'PREDICTIONS':<15} {'PROFITABLE':<15} {'SKIPPED':<15} {'PERCENTAGE':<15}")
+        logger.info("-"*95)
+        
+        # Sort models by number of profitable predictions (descending)
+        sorted_models = sorted(model_prediction_counts.keys(), 
+                              key=lambda x: model_profitable_counts.get(x, 0) + model_skipped_counts.get(x, 0), 
+                              reverse=True)
+        
+        # Track total skipped predictions
+        total_skipped = sum(model_skipped_counts.values())
+        
+        for model_name in sorted_models:
+            pred_count = model_prediction_counts.get(model_name, 0)
+            profitable_count = model_profitable_counts.get(model_name, 0)
+            skipped_count = model_skipped_counts.get(model_name, 0)
+            
+            if pred_count > 0:
+                profit_percent = (profitable_count / pred_count) * 100
+                logger.info(f"{model_name:<30} {pred_count:<15d} {profitable_count:<15d} {skipped_count:<15d} {profit_percent:.<14.1f}%")
+            else:
+                if skipped_count > 0:
+                    # If we only skipped games and didn't make any new predictions
+                    logger.info(f"{model_name:<30} {'0':<15} {'0':<15} {skipped_count:<15d} {'N/A':<15}")
+                else:
+                    # No predictions and no skipped games
+                    logger.info(f"{model_name:<30} {'0':<15} {'0':<15} {'0':<15} {'0.0':<14}%")
+        
+        logger.info("-"*95)
+        # Add summary line for skipped predictions
+        logger.info(f"{'TOTALS':<30} {total_predictions:<15d} {total_profitable:<15d} {total_skipped:<15d}")
+        logger.info("="*95)
 
         return {
             'statusCode': 200,
-            'body': json.dumps(f'Successfully processed {len(games_to_process)} new games and saved {len(all_game_predictions)} game predictions to {ALL_PREDICTIONS_TABLE}, of which {profitable_count} profitable predictions were saved to {PROFITABLE_GAMES_TABLE}')
+            'body': json.dumps(f'Successfully processed predictions using {len(models_list)} models and saved {len(all_predictions_across_models)} predictions to {ALL_PREDICTIONS_TABLE}, of which {len([p for p in all_predictions_across_models if p["is_profitable"]])} profitable predictions were saved to {PROFITABLE_GAMES_TABLE}')
         }
 
     except Exception as e:

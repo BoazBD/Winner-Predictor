@@ -161,6 +161,21 @@ body {
     margin-bottom: 0.25rem;
 }
 
+.game-card .model-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 20px;
+    background-color: rgba(78, 168, 222, 0.15);
+    color: var(--secondary-color);
+    margin-bottom: 0.25rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .game-card .match-time {
     display: block;
     font-size: 0.7rem;
@@ -381,37 +396,51 @@ body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .stat-card {
-    background-color: white;
-    border-radius: 10px;
-    padding: 1rem;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+    position: relative;
 }
 
 .stat-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
 .stat-card i {
-    font-size: 1.5rem;
-    color: var(--primary-color);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
 }
 
 .stat-card h4 {
-    margin: 0.5rem 0;
     font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.5px;
 }
 
 .stat-card p {
-    margin: 0;
-    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (min-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 .modal-backdrop {
@@ -486,37 +515,6 @@ body {
 
 .prediction-count i {
     font-size: 0.9rem;
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    margin-top: 0.5rem;
-}
-
-.stat-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(0,0,0,0.1);
-}
-
-.stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.stat-card i {
-    font-size: 1.5rem;
-}
-
-.stat-card h4 {
-    font-size: 1.1rem;
-    margin-bottom: 0.1rem;
-}
-
-.stat-card p {
-    font-size: 0.8rem;
 }
 
 /* About Modal */
@@ -661,4 +659,69 @@ body {
     padding-right: calc(var(--bs-gutter-x) * .5);
     padding-left: calc(var(--bs-gutter-x) * .5);
     margin-top: var(--bs-gutter-y);
+}
+
+/* Model filter container */
+.model-filter-container {
+    background-color: var(--filter-card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    margin-bottom: 1.5rem;
+}
+
+.model-filter-container .filter-title {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.model-filter-container .btn-group {
+    flex-wrap: wrap;
+}
+
+.model-filter-container .btn {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 1rem;
+    transition: all 0.2s ease;
+    white-space: normal;
+    word-wrap: break-word;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.model-filter-container .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.model-filter-container .btn-outline-primary {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.model-filter-container .btn-outline-primary:hover {
+    background-color: rgba(37, 53, 69, 0.1);
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .model-filter-container .btn-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .model-filter-container .btn {
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 100%;
+    }
 } 

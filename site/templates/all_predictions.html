@@ -1,146 +1,407 @@
 {% extends "base.html" %}
 
 {% block content %}
+<!-- Debug info -->
+<div class="alert alert-info d-none">
+    Total games: {{ games|length }}
+    Primary games: {{ games|selectattr("is_primary", "defined")|selectattr("is_primary")|list|length }}
+    Non-primary games: {{ games|selectattr("is_primary", "defined")|rejectattr("is_primary")|list|length }}
+</div>
+
 <div class="row mb-4">
     <div class="col">
-        <h1 class="display-4">All Predictions</h1>
+        <h1 class="display-5 text-primary">All Predictions</h1>
         <p class="lead text-muted">Complete list of all AI-powered sports betting predictions</p>
         <a href="/" class="btn btn-outline-primary mb-3">Back to Profitable Predictions</a>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <div class="card filter-card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Filter Options</h5>
-                <form id="filterForm" method="GET" action="/all">
-                    <div class="mb-3">
-                        <label class="form-label">League</label>
-                        <select class="form-select" name="league">
-                            <option value="">All Leagues</option>
-                            {% for league in leagues %}
-                            <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
-                            {% endfor %}
-                        </select>
+    <div class="col-md-3">
+        <div class="accordion mb-4" id="filterAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="filterHeader">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#filterContent" aria-expanded="true" aria-controls="filterContent">
+                        <strong><i class="bi bi-funnel-fill me-2"></i>Filter Options</strong>
+                    </button>
+                </h2>
+                <div id="filterContent" class="accordion-collapse collapse show" aria-labelledby="filterHeader">
+                    <div class="accordion-body p-3">
+                        <form id="filterForm" method="GET" action="/all">
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">League</label>
+                                <select class="form-select form-select-sm" name="league">
+                                    <option value="">All Leagues</option>
+                                    {% for league in leagues %}
+                                    <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold">Model Type</label>
+                                <div class="dropdown model-dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" 
+                                            type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span>
+                                            {% if selected_model %}
+                                                {{ selected_model }}
+                                            {% else %}
+                                                All Models
+                                            {% endif %}
+                                        </span>
+                                        <i class="bi bi-chevron-down ms-2"></i>
+                                    </button>
+                                    <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
+                                        <li><a class="dropdown-item model-item {% if not selected_model %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% for model in model_types %}
+                                        <li><a class="dropdown-item model-item {% if selected_model == model %}active{% endif %}" href="javascript:void(0)" data-value="{{ model }}">{{ model }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                    <input type="hidden" name="model_type" id="modelTypeInput" value="{{ selected_model }}">
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Prediction</label>
+                                    <select class="form-select form-select-sm" name="prediction_type">
+                                        <option value="">All</option>
+                                        <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
+                                        <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
+                                        <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Status</label>
+                                    <select class="form-select form-select-sm" name="status">
+                                        <option value="">All</option>
+                                        <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                                        <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">Result</label>
+                                    <select class="form-select form-select-sm" name="result">
+                                        <option value="">All</option>
+                                        <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option>
+                                        <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-bold">EV</label>
+                                    <select class="form-select form-select-sm" name="ev">
+                                        <option value="">All</option>
+                                        <option value="high" {% if selected_ev == 'high' %}selected{% endif %}>High</option>
+                                        <option value="medium" {% if selected_ev == 'medium' %}selected{% endif %}>Medium</option>
+                                        <option value="low" {% if selected_ev == 'low' %}selected{% endif %}>Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2 mt-3">
+                                <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
+                                <a href="/all" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
+                            </div>
+                        </form>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Prediction Type</label>
-                        <select class="form-select" name="prediction_type">
-                            <option value="">All Predictions</option>
-                            <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
-                            <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
-                            <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" name="status">
-                            <option value="">All Statuses</option>
-                            <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
-                            <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Result</label>
-                        <select class="form-select" name="result">
-                            <option value="">All Results</option>
-                            <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option>
-                            <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Expected Value</label>
-                        <select class="form-select" name="ev">
-                            <option value="">All EV</option>
-                            <option value="high" {% if selected_ev == 'high' %}selected{% endif %}>High (>10%)</option>
-                            <option value="medium" {% if selected_ev == 'medium' %}selected{% endif %}>Medium (5-10%)</option>
-                            <option value="low" {% if selected_ev == 'low' %}selected{% endif %}>Low (<5%)</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-                    <a href="/all" class="btn btn-outline-secondary w-100 mt-2">Reset Filters</a>
-                </form>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">All Predictions</h2>
-            <div class="prediction-count">
-                <i class="bi bi-list-check"></i>
-                Showing {{ games|length }} predictions
+            <h2 class="fs-4 mb-0 text-primary">All Predictions</h2>
+            {% set primary_game_count = games|selectattr("is_primary", "defined")|selectattr("is_primary")|list|length %}
+            <div class="prediction-count badge bg-dark text-white rounded-pill fs-6 py-2 px-3">
+                <i class="bi bi-list-check me-1"></i>
+                {{ primary_game_count }} games 
+                <span class="small text-light">({{ games|length }} predictions total)</span>
             </div>
         </div>
         
         {% if games %}
+            {# Group predictions by game ID and model #}
+            {% set game_dict = {} %}
             {% for game in games %}
-            <div class="card game-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %}">
-                {% if game.expected_value is defined and game.expected_value is not none %}
-                <span class="ev-badge {% if game.expected_value > 0.1 %}bg-success{% elif game.expected_value > 0 %}bg-warning{% else %}bg-danger{% endif %}">
-                    EV: {{ (game.expected_value * 100)|round(1) }}%
-                </span>
+                {% set key = game.id ~ '_' ~ game.model_name %}
+                {% if key not in game_dict %}
+                    {% set _ = game_dict.__setitem__(key, []) %}
                 {% endif %}
+                {# Append the game to the list for this key #}
+                {% set _ = game_dict[key].append(game) %}
+            {% endfor %}
+            
+            {# Process each group #}
+            {% for key, game_group in game_dict.items() %}
+                {% set primary_game = none %}
+                {% set history_games = [] %}
                 
-                {% if game.status == 'completed' %}
-                    {% if game.prediction_result == true %}
-                    <span class="result-badge bg-success">
-                        <i class="bi bi-check-circle me-1"></i> Correct
-                    </span>
-                    {% elif game.prediction_result == false %}
-                    <span class="result-badge bg-danger">
-                        <i class="bi bi-x-circle me-1"></i> Incorrect
-                    </span>
+                {# Find the primary game (marked by backend) and collect history games #}
+                {% for g in game_group %}
+                    {% if g.is_primary %}
+                        {% set primary_game = g %}
+                    {% else %}
+                        {% set _ = history_games.append(g) %}
                     {% endif %}
-                {% endif %}
+                {% endfor %}
                 
-                <div class="card-body">
-                    <!-- Game Info -->
-                    <div class="game-info">
-                        <span class="league-badge">
-                            <i class="bi bi-trophy me-1"></i>
-                            {{ game.league|default('Unknown League') }}
-                        </span>
-                        <span class="match-time">
-                            <i class="bi bi-calendar-event me-1"></i>
-                            {{ game.match_time.strftime('%Y-%m-%d') }} <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
-                        </span>
-                        <small class="text-muted d-block mt-1">
-                            <i class="bi bi-robot me-1"></i>
-                            {{ game.model_type|default('Not available') }}
-                        </small>
-                    </div>
-                    
-                    <!-- Teams with Odds -->
-                    <div class="teams-container">
-                        <div class="team">
-                            <div class="team-name">{{ game.home_team|default('Home Team') }}</div>
-                            <div class="team-odds {% if game.prediction == 'Home Win' %}predicted-odds{% endif %}">{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</div>
-                            <small class="text-muted">Home</small>
+                {# If no game is explicitly marked as primary, assume the first one is (after sorting) #}
+                {% if primary_game is none and game_group %}
+                    {# Sort group by prediction timestamp (newest first) if available #}
+                    {% set sorted_group = game_group|sort(attribute='prediction_timestamp', reverse=true) if game_group[0].prediction_timestamp is defined else game_group %}
+                    {% set primary_game = sorted_group[0] %}
+                    {% set history_games = sorted_group[1:] %}
+                {% endif %}
+
+                {# Only display if we found a primary game #}
+                {% if primary_game %}
+                    {# Render the primary game card #}
+                    <div class="card prediction-card {% if primary_game.status == 'completed' %}{% if primary_game.prediction_result == true %}prediction-correct{% elif primary_game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %} mb-3">
+                        {% if primary_game.status == 'completed' %}
+                            {% if primary_game.prediction_result == true %}
+                                <span class="result-badge bg-success"><i class="bi bi-check-circle me-1"></i> Correct</span>
+                            {% elif primary_game.prediction_result == false %}
+                                <span class="result-badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incorrect</span>
+                            {% endif %}
+                        {% endif %}
+
+                        <div class="card-header bg-light py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="league-badge badge bg-secondary">
+                                        <i class="bi bi-trophy me-1"></i>
+                                        {{ primary_game.league|default('Unknown League') }}
+                                    </span>
+                                    <span class="match-time badge bg-light text-dark border">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        {{ primary_game.match_time.strftime('%Y-%m-%d') }} 
+                                        <strong>{{ primary_game.match_time.strftime('%H:%M') }}</strong>
+                                    </span>
+                                </div>
+                                <div class="model-badge">
+                                    <i class="bi bi-robot me-1"></i>
+                                    <span class="fw-medium small">{{ primary_game.model_name|default('Unknown Model') }}</span>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="vs-container">
-                            <div class="vs-badge">VS</div>
-                        </div>
-                        
-                        <div class="team">
-                            <div class="team-name">{{ game.away_team|default('Away Team') }}</div>
-                            <div class="team-odds {% if game.prediction == 'Away Win' %}predicted-odds{% endif %}">{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</div>
-                            <small class="text-muted">Away</small>
+                        <div class="card-body py-3">
+                            <div class="row">
+                                <!-- Teams and odds section -->
+                                <div class="col-md-5">
+                                    <div class="match-teams-container mb-3">
+                                        <div class="d-flex justify-content-between align-items-center teams-display">
+                                            <!-- Home Team -->
+                                            <div class="team-column text-center">
+                                                <div class="team-badge {% if primary_game.home_win_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2">{{ primary_game.home_team|default('Home Team') }}</div>
+                                                    <div class="odds-badge {% if primary_game.home_win_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if primary_game.odds.home is not none %}{{ primary_game.odds.home }}{% else %}-{% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="outcome-label">Home</div>
+                                            </div>
+                                            
+                                            <!-- Draw Column -->
+                                            <div class="team-column text-center mx-2">
+                                                <div class="team-badge {% if primary_game.draw_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2">Draw</div>
+                                                    <div class="odds-badge {% if primary_game.draw_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if primary_game.odds.draw is not none %}{{ primary_game.odds.draw }}{% else %}-{% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="outcome-label">Draw</div>
+                                            </div>
+                                            
+                                            <!-- Away Team -->
+                                            <div class="team-column text-center">
+                                                <div class="team-badge {% if primary_game.away_win_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2">{{ primary_game.away_team|default('Away Team') }}</div>
+                                                    <div class="odds-badge {% if primary_game.away_win_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if primary_game.odds.away is not none %}{{ primary_game.odds.away }}{% else %}-{% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="outcome-label">Away</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="prediction-timestamp small text-muted">
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        {% if primary_game.prediction_timestamp %}
+                                            Predicted: 
+                                            {% if primary_game.prediction_timestamp is not string %}
+                                                {{ primary_game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                            {% else %}
+                                                {% if 'T' in primary_game.prediction_timestamp %}
+                                                    {{ primary_game.prediction_timestamp.split('T')[0] }} {{ primary_game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                {% else %}
+                                                    {{ primary_game.prediction_timestamp }}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            No timestamp
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Prediction Data Column -->
+                                <div class="col-md-7">
+                                    <!-- All Predictions with Probabilities and EVs -->
+                                    <div class="prediction-stats-container">
+                                        <h6 class="text-primary fw-bold mb-2"><i class="bi bi-graph-up me-1"></i>Prediction Analysis</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered mb-2">
+                                                <thead class="table-primary">
+                                                    <tr>
+                                                        <th>Outcome</th>
+                                                        <th>Probability</th>
+                                                        <th>Odds</th>
+                                                        <th>EV</th>
+                                                        <th class="text-center">Profitable</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="fw-medium">Home Win</td>
+                                                        <td>{{ (primary_game.home_win_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if primary_game.odds.home is not none %}{{ primary_game.odds.home }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (primary_game.home_win_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if primary_game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-medium">Draw</td>
+                                                        <td>{{ (primary_game.draw_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if primary_game.odds.draw is not none %}{{ primary_game.odds.draw }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (primary_game.draw_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if primary_game.draw_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-medium">Away Win</td>
+                                                        <td>{{ (primary_game.away_win_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if primary_game.odds.away is not none %}{{ primary_game.odds.away }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (primary_game.away_win_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if primary_game.away_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- History toggle button -->
+                                    <button class="btn btn-sm btn-outline-primary toggle-history mt-2" 
+                                            data-game-model="{{ key }}" 
+                                            data-history-count="{{ history_games|length }}">
+                                        <i class="bi bi-clock-history me-1"></i>
+                                        <span class="show-text">Show past predictions</span>
+                                        <span class="hide-text d-none">Hide past predictions</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Prediction -->
-                    <div class="prediction-container">
-                        <div class="prediction-label">Prediction</div>
-                        <div class="prediction-value">{{ game.prediction }}</div>
-                        <div class="confidence-meter">
-                            <div class="confidence-meter-fill" style="width: {{ game.confidence * 100 }}%"></div>
-                        </div>
-                        <small class="prediction-probability">{{ (game.confidence * 100)|round(1) }}% confidence</small>
+                    <!-- Historical predictions container -->
+                    <div id="history-container-{{ key }}" class="history-container" style="display:none;">
+                        {% if history_games|length > 0 %}
+                            {% for historical_game in history_games|sort(attribute='prediction_timestamp', reverse=true) %}
+                                <div class="card prediction-card history-prediction mb-3" data-game-model="{{ key }}" data-index="{{ loop.index }}">
+                                    <div class="card-header bg-info text-white py-2">
+                                        <i class="bi bi-clock-history me-1"></i> Previous Prediction #{{ loop.index }}
+                                        <small class="ms-2">
+                                            {% if historical_game.prediction_timestamp %}
+                                                {% if historical_game.prediction_timestamp is not string %}
+                                                    {{ historical_game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    {% if 'T' in historical_game.prediction_timestamp %}
+                                                        {{ historical_game.prediction_timestamp.split('T')[0] }} {{ historical_game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                    {% else %}
+                                                        {{ historical_game.prediction_timestamp }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                Unknown date
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="card-body py-2">
+                                        <!-- Historical odds display -->
+                                        <div class="historical-odds mb-3">
+                                            <h6 class="text-info fw-bold mb-2 small"><i class="bi bi-graph-up me-1"></i>Odds at Time of Prediction</h6>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="text-center px-2">
+                                                    <div class="small fw-bold">{{ primary_game.home_team }}</div>
+                                                    <span class="badge bg-light text-dark {% if historical_game.home_win_is_profitable %}badge-profitable{% endif %}">
+                                                        {% if historical_game.odds.home is not none %}{{ historical_game.odds.home }}{% else %}-{% endif %}
+                                                    </span>
+                                                </div>
+                                                <div class="text-center px-2">
+                                                    <div class="small fw-bold">Draw</div>
+                                                    <span class="badge bg-light text-dark {% if historical_game.draw_is_profitable %}badge-profitable{% endif %}">
+                                                        {% if historical_game.odds.draw is not none %}{{ historical_game.odds.draw }}{% else %}-{% endif %}
+                                                    </span>
+                                                </div>
+                                                <div class="text-center px-2">
+                                                    <div class="small fw-bold">{{ primary_game.away_team }}</div>
+                                                    <span class="badge bg-light text-dark {% if historical_game.away_win_is_profitable %}badge-profitable{% endif %}">
+                                                        {% if historical_game.odds.away is not none %}{{ historical_game.odds.away }}{% else %}-{% endif %}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- All Predictions with Probabilities and EVs -->
+                                        <div class="prediction-stats-container">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered mb-0">
+                                                    <thead class="table-info text-dark">
+                                                        <tr>
+                                                            <th>Outcome</th>
+                                                            <th>Probability</th>
+                                                            <th>Odds</th>
+                                                            <th>EV</th>
+                                                            <th class="text-center">Profitable</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="fw-medium">Home Win</td>
+                                                            <td>{{ (historical_game.home_win_prob * 100)|round(1) }}%</td>
+                                                            <td>{% if historical_game.odds.home is not none %}{{ historical_game.odds.home }}{% else %}-{% endif %}</td>
+                                                            <td>{{ (historical_game.home_win_ev * 100)|round(1) }}%</td>
+                                                            <td class="text-center">{% if historical_game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="fw-medium">Draw</td>
+                                                            <td>{{ (historical_game.draw_prob * 100)|round(1) }}%</td>
+                                                            <td>{% if historical_game.odds.draw is not none %}{{ historical_game.odds.draw }}{% else %}-{% endif %}</td>
+                                                            <td>{{ (historical_game.draw_ev * 100)|round(1) }}%</td>
+                                                            <td class="text-center">{% if historical_game.draw_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="fw-medium">Away Win</td>
+                                                            <td>{{ (historical_game.away_win_prob * 100)|round(1) }}%</td>
+                                                            <td>{% if historical_game.odds.away is not none %}{{ historical_game.odds.away }}{% else %}-{% endif %}</td>
+                                                            <td>{{ (historical_game.away_win_ev * 100)|round(1) }}%</td>
+                                                            <td class="text-center">{% if historical_game.away_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="alert alert-info mt-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No past predictions available for this game.
+                            </div>
+                        {% endif %}
                     </div>
-                </div>
-            </div>
+                {% endif %}
             {% endfor %}
         {% else %}
             <div class="alert alert-info">
@@ -150,4 +411,313 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Debug info
+    console.log("Document loaded, initializing JS...");
+    
+    // Count displayed games
+    const primaryGameCards = document.querySelectorAll('.prediction-card:not(.history-prediction)');
+    console.log(`Displaying ${primaryGameCards.length} primary game cards`);
+    
+    // Model dropdown selection handler
+    const modelItems = document.querySelectorAll('.model-item');
+    const modelTypeInput = document.getElementById('modelTypeInput');
+    
+    if (modelItems.length > 0 && modelTypeInput) {
+        // Handle dropdown item clicks
+        modelItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Update the hidden input field
+                modelTypeInput.value = this.getAttribute('data-value');
+                
+                // Update the dropdown button text
+                const dropdownButton = document.getElementById('modelFilterDropdown');
+                if (dropdownButton) {
+                    const buttonText = dropdownButton.querySelector('span');
+                    if (buttonText) {
+                        buttonText.textContent = this.textContent.trim() === 'All Models' ? 'All Models' : this.textContent.trim();
+                    }
+                }
+                
+                // Submit the form
+                document.getElementById('filterForm').submit();
+            });
+        });
+    }
+    
+    // Handle history toggle buttons
+    const allHistoryButtons = document.querySelectorAll('.toggle-history');
+    console.log("Total history buttons found: " + allHistoryButtons.length);
+    
+    allHistoryButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const gameModelKey = this.getAttribute('data-game-model');
+            const historyContainer = document.getElementById('history-container-' + gameModelKey);
+            const showText = this.querySelector('.show-text');
+            const hideText = this.querySelector('.hide-text');
+            const historyCount = parseInt(this.getAttribute('data-history-count'), 10);
+            
+            console.log("History button clicked for " + gameModelKey + " with " + historyCount + " history items.");
+            
+            // Toggle visibility of history container
+            if (historyContainer) {
+                console.log("History container found: " + historyContainer.id);
+                if (historyContainer.style.display === 'none') {
+                    // Only show if there's actual content or the 'no past predictions' message
+                    if (historyCount > 0 || historyContainer.querySelector('.alert-info')) {
+                        historyContainer.style.display = 'block';
+                        showText.classList.add('d-none');
+                        hideText.classList.remove('d-none');
+                        this.classList.remove('btn-outline-primary');
+                        this.classList.add('btn-primary');
+                    } else {
+                         console.log("No history items or message to show for " + gameModelKey);
+                    }
+                } else {
+                    historyContainer.style.display = 'none';
+                    showText.classList.remove('d-none');
+                    hideText.classList.add('d-none');
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-outline-primary');
+                }
+            } else {
+                console.warn("No history container found for " + gameModelKey);
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Layout & General Styling */
+.prediction-card {
+    position: relative;
+    margin-bottom: 15px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s;
+}
+
+.prediction-card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    border-color: #dee2e6;
+}
+
+/* Team display */
+.match-teams-container {
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.teams-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+.team-column {
+    flex: 1;
+    min-width: 0;
+    padding: 0 2px;
+}
+
+.team-badge {
+    padding: 8px 4px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    background-color: white;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.active-prediction {
+    background-color: #e6f7ed;
+    border-color: #28a745;
+}
+
+.team-name {
+    font-size: 0.8rem;
+    max-width: 100%;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.2;
+    min-height: 2.4rem;
+    word-break: break-word;
+    margin: 0 auto;
+}
+
+/* For the "vs" text, keep it centered and not wrapped */
+.team-column:nth-child(2) .team-name {
+    -webkit-line-clamp: 1;
+    line-height: 1.2;
+    min-height: 1.2rem;
+}
+
+.odds-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: bold;
+    font-size: 0.85rem;
+    margin-top: auto;
+}
+
+.highlighted-odds {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-profitable {
+    border: 2px solid #28a745 !important;
+    color: #155724 !important;
+    background-color: #d4edda !important;
+}
+
+.outcome-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* History styling */
+.history-prediction {
+    border-left: 3px solid #0dcaf0;
+    background-color: #f8f9fa;
+}
+
+.history-container {
+    margin-left: 15px;
+    margin-bottom: 20px;
+    border-left: 2px dashed #dee2e6;
+    padding-left: 15px; /* Increased padding */
+    padding-top: 10px; /* Added top padding */
+}
+
+/* Status indicators */
+.prediction-correct {
+    border-left: 4px solid #198754;
+}
+
+.prediction-incorrect {
+    border-left: 4px solid #dc3545;
+}
+
+.result-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Table styles */
+.prediction-stats-container .table {
+    font-size: 0.85rem;
+}
+
+.prediction-stats-container th {
+    font-weight: 600;
+}
+
+.toggle-history {
+    transition: all 0.2s;
+    margin-top: 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    display: inline-block;
+    float: right;
+    width: auto !important;
+}
+
+.toggle-history:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Historical odds display */
+.historical-odds {
+    background-color: #f0f8ff;
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px dashed #0dcaf0;
+}
+
+/* Filter panel */
+.accordion-button:not(.collapsed) {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,.125);
+}
+
+/* Make labels and text more compact */
+.form-select-sm, .btn-sm, .small {
+    font-size: 0.85rem;
+}
+
+/* Make sure mobile is optimized */
+@media (max-width: 767.98px) {
+    .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+    
+    .prediction-card .card-body {
+        padding: 12px;
+    }
+    
+    .prediction-stats-container {
+        margin-top: 15px;
+    }
+    
+    .team-column {
+        padding: 0 2px;
+    }
+    
+    .team-badge {
+        padding: 6px 3px;
+    }
+    
+    .team-name {
+        font-size: 0.75rem;
+        min-height: 2.2rem;
+    }
+    
+    .odds-badge {
+        font-size: 0.75rem;
+        padding: 2px 6px;
+    }
+}
+</style>
 {% endblock %} 

@@ -18,41 +18,62 @@
         <div class="col-lg-7">
             <div class="stats-grid">
                 <div class="stat-card bg-primary bg-opacity-10 p-3 rounded-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-graph-up-arrow text-primary fs-4 me-2"></i>
-                        <div>
-                            <h4 class="text-primary mb-0">{{ stats.win_rate }}%</h4>
-                            <p class="text-muted small mb-0">Win Rate</p>
-                        </div>
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-graph-up-arrow text-primary fs-4 mb-2"></i>
+                        <h4 class="text-primary mb-1">{{ stats.win_rate }}%</h4>
+                        <p class="text-muted small mb-0">Win Rate</p>
                     </div>
                 </div>
                 <div class="stat-card bg-success bg-opacity-10 p-3 rounded-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-currency-dollar text-success fs-4 me-2"></i>
-                        <div>
-                            <h4 class="text-success mb-0">{{ stats.avg_roi }}%</h4>
-                            <p class="text-muted small mb-0">Average ROI</p>
-                        </div>
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-currency-dollar text-success fs-4 mb-2"></i>
+                        <h4 class="text-success mb-1">{{ stats.avg_roi }}%</h4>
+                        <p class="text-muted small mb-0">Average ROI</p>
                     </div>
                 </div>
                 <div class="stat-card bg-warning bg-opacity-10 p-3 rounded-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-trophy text-warning fs-4 me-2"></i>
-                        <div>
-                            <h4 class="text-warning mb-0">{{ stats.successful_bets }}/{{ stats.successful_bets + stats.unsuccessful_bets }}</h4>
-                            <p class="text-muted small mb-0">Successful Bets</p>
-                        </div>
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-trophy text-warning fs-4 mb-2"></i>
+                        <h4 class="text-warning mb-1">{{ stats.successful_bets }}/{{ stats.successful_bets + stats.unsuccessful_bets }}</h4>
+                        <p class="text-muted small mb-0">Successful Bets</p>
                     </div>
                 </div>
                 <div class="stat-card bg-info bg-opacity-10 p-3 rounded-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-calendar-check text-info fs-4 me-2"></i>
-                        <div>
-                            <h4 class="text-info mb-0">{{ stats.total_predictions }}</h4>
-                            <p class="text-muted small mb-0">Total Predictions</p>
-                        </div>
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center">
+                        <i class="bi bi-calendar-check text-info fs-4 mb-2"></i>
+                        <h4 class="text-info mb-1">{{ stats.total_predictions }}</h4>
+                        <p class="text-muted small mb-0">Total Predictions</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add model toggle section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="model-filter-container d-flex align-items-center">
+            <h5 class="filter-title mb-0 me-3">Filter by Model:</h5>
+            <div class="dropdown model-dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" 
+                        type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span>
+                        {% if selected_model %}
+                            {{ selected_model }}
+                        {% else %}
+                            All Models
+                        {% endif %}
+                    </span>
+                    <i class="bi bi-chevron-down ms-2"></i>
+                </button>
+                <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
+                    <li><a class="dropdown-item {% if not selected_model %}active{% endif %}" href="/">All Models</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for model in model_types %}
+                    <li><a class="dropdown-item {% if selected_model == model %}active{% endif %}" href="/?model_type={{ model }}">{{ model }}</a></li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>
@@ -93,9 +114,17 @@
                             <i class="bi bi-calendar-event me-1"></i>
                             {{ game.match_time.strftime('%Y-%m-%d') }} <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
                         </span>
-                        <small class="text-muted d-block mt-1">
+                        <div class="model-badge mt-1">
                             <i class="bi bi-robot me-1"></i>
-                            {{ game.model_type|default('Not available') }}
+                            <span class="fw-medium">{{ game.model_name|default('Unknown Model') }}</span>
+                        </div>
+                        <small class="text-muted d-block mt-1">
+                            <i class="bi bi-clock-history me-1"></i>
+                            {% if game.timestamp %}
+                                Predicted: {{ game.timestamp.split('T')[0] if 'T' in game.timestamp else game.timestamp }}
+                            {% else %}
+                                No timestamp
+                            {% endif %}
                         </small>
                     </div>
                     
@@ -316,7 +345,7 @@
         {% else %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                No profitable predictions found at this time. Check back later for new opportunities.
+                No profitable predictions found for the selected model. Try another model or check back later.
             </div>
         {% endif %}
     </div>
@@ -324,9 +353,6 @@
 {% endblock %}
 
 {% block scripts %}
-{# Original script removed #}
-
-{# Optional: Add script to toggle button active class/icon if needed #}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var collapseElements = document.querySelectorAll('.collapse');

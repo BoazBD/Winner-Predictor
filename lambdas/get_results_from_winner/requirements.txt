@@ -1,5 +1,5 @@
 awswrangler==2.20.1
-pyarrow==10.0.1
+pyarrow>=14.0.1
 boto3==1.24.59
 pandas==1.4.3
 requests==2.28.1

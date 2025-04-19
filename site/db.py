@@ -8,6 +8,7 @@ import sqlite3
 import json
 import numpy as np
 from decimal import Decimal
+from boto3.dynamodb.conditions import Attr, Key
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -401,143 +402,83 @@ def get_latest_games():
         return get_latest_games_from_parquet()
 
 def get_profitable_games_from_dynamodb():
-    """Get profitable game predictions from DynamoDB"""
+    """
+    Retrieves all profitable game predictions directly from the profitable-games DynamoDB table.
+    
+    Returns:
+        list: A list of profitable game predictions, with past games grouped by game_id and model_name
+              and future games kept individually (not grouped).
+    """
+    logger.info("Retrieving games directly from profitable-games table")
+    
+    # Add region name explicitly to ensure connection works
+    dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+    table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
+    
+    profitable_games = []
+    
     try:
-        # Create DynamoDB client
-        dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
-        table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
+        # Scan the profitable-games table to get all games
+        logger.info(f"Scanning {PROFITABLE_GAMES_TABLE} table")
         
-        logger.info(f"Fetching profitable games from DynamoDB table: {PROFITABLE_GAMES_TABLE}")
+        try:
+            count_response = table.scan(Select='COUNT')
+            total_items = count_response.get('Count', 0)
+            logger.info(f"Table {PROFITABLE_GAMES_TABLE} contains {total_items} total items")
+        except Exception as e:
+            logger.warning(f"Error counting items in DynamoDB table: {e}")
         
-        # Since the table only contains profitable games, we don't need to filter
+        # Scan the table for all items
         response = table.scan()
+        items = response.get('Items', [])
+        logger.info(f"Found {len(items)} games in profitable-games table")
         
-        # Format the data for our application
-        games = []
-        for item in response.get('Items', []):
-            # Parse match time 
-            match_time = None
-            
-            # Try to get match_time from match_time_str first (newest format)
-            if 'match_time_str' in item:
-                try:
-                    match_time = datetime.strptime(item['match_time_str'], '%Y-%m-%d %H:%M')
-                except Exception as e:
-                    logger.warning(f"Failed to parse match_time_str: {e}")
-                    match_time = None
-            
-            # If match_time is still None, try to combine event_date and game_time
-            if match_time is None and 'event_date' in item and 'game_time' in item:
-                try:
-                    match_time_str = f"{item['event_date']} {item['game_time']}"
-                    match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
-                except Exception as e:
-                    logger.warning(f"Failed to parse event_date and game_time: {e}")
-                    match_time = None
-            
-            # If match_time is still None, fall back to game_date (old format)
-            if match_time is None and 'game_date' in item:
-                try:
-                    date_str = item['game_date']
-                    # Check if game_date already has time component
-                    if ' ' in date_str:
-                        match_time = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
-                    else:
-                        match_time = datetime.strptime(date_str, '%Y-%m-%d')
-                except Exception as e:
-                    logger.warning(f"Failed to parse game_date: {e}")
-                    match_time = datetime.now()
-            
-            # Final fallback if match_time is still None
-            if match_time is None:
-                match_time = datetime.now()
-                logger.warning("Using current time as fallback for match_time")
-            
-            # Format odds for display
-            odds = {
-                'home': float(item.get('home_odds', 0)),
-                'draw': float(item.get('draw_odds', 0)),
-                'away': float(item.get('away_odds', 0))
-            }
-            
-            # Create game object
-            game = {
-                'id': item.get('id', ''),
-                'result_id': item.get('result_id', None),  # Include result_id field
-                'home_team': item.get('home_team', ''),
-                'away_team': item.get('away_team', ''),
-                'league': item.get('league', ''),
-                'match_time': match_time,
-                'odds': odds,
-                'status': item.get('status', 'pending'),
-                'last_updated': item.get('timestamp', datetime.now().isoformat()),
-                'model_type': f"{MODEL_TYPE}_v2",
-                
-                # Model probabilities
-                'home_win_prob': float(item.get('home_win_prob', 0.0)),
-                'draw_prob': float(item.get('draw_prob', 0.0)),
-                'away_win_prob': float(item.get('away_win_prob', 0.0)),
-                
-                # Expected values
-                'home_win_ev': float(item.get('home_win_ev', 0.0)),
-                'draw_ev': float(item.get('draw_ev', 0.0)),
-                'away_win_ev': float(item.get('away_win_ev', 0.0)),
-                
-                # Profitable flags
-                'home_win_is_profitable': bool(item.get('home_win_is_profitable', False)),
-                'draw_is_profitable': bool(item.get('draw_is_profitable', False)),
-                'away_win_is_profitable': bool(item.get('away_win_is_profitable', False)),
-                
-                # For backward compatibility with templates
-                'is_profitable': bool(item.get('home_win_is_profitable', False) or 
-                                     item.get('draw_is_profitable', False) or 
-                                     item.get('away_win_is_profitable', False)),
-                
-                # Find the highest EV and use it for sorting
-                'expected_value': max(
-                    float(item.get('home_win_ev', 0.0)),
-                    float(item.get('draw_ev', 0.0)),
-                    float(item.get('away_win_ev', 0.0))
-                ),
-                
-                # For template compatibility - use highest EV outcome
-                'prediction': (
-                    "Home Win" if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
-                                float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
-                    "Draw" if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
-                            float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
-                    "Away Win"
-                ),
-                'confidence': (
-                    float(item.get('home_win_prob', 0.0)) if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
-                                                        float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
-                    float(item.get('draw_prob', 0.0)) if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
-                                                    float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
-                    float(item.get('away_win_prob', 0.0))
-                ),
-                
-                # Add result fields
-                'prediction_result': item.get('prediction_result', None),
-                'actual_result': item.get('actual_result', None),
-                'home_score': item.get('home_score', None),
-                'away_score': item.get('away_score', None),
-                'final_home_score': item.get('final_home_score', None),
-                'final_away_score': item.get('final_away_score', None),
-                'result_updated_at': item.get('result_updated_at', None)
-            }
-            
-            games.append(game)
+        # Process items from the scan response
+        profitable_games = process_dynamodb_items(items)
         
-        # Sort by expected value (highest first)
-        games.sort(key=lambda x: x.get('expected_value', 0), reverse=True)
-        
-        logger.info(f"Retrieved {len(games)} profitable games from DynamoDB table {PROFITABLE_GAMES_TABLE}")
-        return games
+        # Handle pagination if needed
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                ExclusiveStartKey=response['LastEvaluatedKey']
+            )
+            more_items = response.get('Items', [])
+            logger.info(f"Found {len(more_items)} more games in profitable-games table")
+            profitable_games.extend(process_dynamodb_items(more_items))
+                
     except Exception as e:
-        logger.error(f"Error retrieving games from DynamoDB: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Failed to retrieve profitable games: {e}")
         return []
+    
+    # Get current time for separating past and future games
+    now = datetime.now()
+    
+    # Separate future and past games
+    future_games = [game for game in profitable_games if game['match_time'] > now]
+    past_games = [game for game in profitable_games if game['match_time'] <= now]
+    
+    logger.info(f"Found {len(future_games)} future profitable games")
+    logger.info(f"Found {len(past_games)} past profitable games")
+    
+    # Group past games by game_id and model_name
+    # This ensures we don't show duplicate past games with the same model
+    grouped_past_games = {}
+    for game in past_games:
+        key = (game['id'], game['model_name'])
+        if key not in grouped_past_games or game['match_time'] > grouped_past_games[key]['match_time']:
+            grouped_past_games[key] = game
+    
+    # Combine future games (not grouped) with past games (grouped)
+    combined_games = future_games + list(grouped_past_games.values())
+    
+    # Sort by match time (future games first) and expected value (highest first)
+    sorted_games = sorted(
+        combined_games, 
+        key=lambda x: (x['match_time'] > now, x['match_time'], -x['expected_value']),
+        reverse=True  # Reverse the sort to put newest games first
+    )
+    
+    logger.info(f"Returning {len(sorted_games)} profitable games in total")
+    return sorted_games
 
 def get_all_predictions_from_dynamodb():
     """Get all game predictions from DynamoDB"""
@@ -548,11 +489,11 @@ def get_all_predictions_from_dynamodb():
         
         logger.info(f"Fetching all predictions from DynamoDB table: {ALL_PREDICTIONS_TABLE}")
         
-        # Scan the entire table
+        # Scan the table to get all games
         response = table.scan()
         
         # Format the data for our application
-        games = []
+        all_predictions = []
         for item in response.get('Items', []):
             # Parse match time 
             match_time = None
@@ -599,9 +540,19 @@ def get_all_predictions_from_dynamodb():
                 'away': float(item.get('away_odds', 0))
             }
             
+            # Get the ID - could be either prediction_id + game_id (new schema) or just id (old schema)
+            prediction_id = item.get('prediction_id', item.get('id', ''))
+            game_id = item.get('game_id', item.get('id', ''))
+            timestamp = item.get('timestamp', datetime.now().isoformat())
+            
+            # Get model information - make sure to include full model_name
+            model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
+            
             # Create game object
             game = {
-                'id': item.get('id', ''),
+                'id': game_id,                   # Original game ID
+                'prediction_id': prediction_id,  # Unique prediction ID
+                'timestamp': timestamp,          # When the prediction was made
                 'result_id': item.get('result_id', None),  # Include result_id field
                 'home_team': item.get('home_team', ''),
                 'away_team': item.get('away_team', ''),
@@ -610,7 +561,8 @@ def get_all_predictions_from_dynamodb():
                 'odds': odds,
                 'status': item.get('status', 'pending'),
                 'last_updated': item.get('timestamp', datetime.now().isoformat()),
-                'model_type': f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}",
+                'model_name': model_name,  # Full model name
+                'model_type': item.get('model_type', model_name.split('_')[0]),  # Model type (e.g., lstm) for compatibility
                 
                 # Model probabilities
                 'home_win_prob': float(item.get('home_win_prob', 0.0)),
@@ -627,12 +579,12 @@ def get_all_predictions_from_dynamodb():
                 'draw_is_profitable': bool(item.get('draw_is_profitable', False)),
                 'away_win_is_profitable': bool(item.get('away_win_is_profitable', False)),
                 
-                # For backward compatibility with templates
+                # Overall profitable flag
                 'is_profitable': bool(item.get('home_win_is_profitable', False) or 
                                      item.get('draw_is_profitable', False) or 
                                      item.get('away_win_is_profitable', False)),
                 
-                # Find the highest EV and use it for sorting
+                # Overall expected value (maximum of all outcomes) for sorting
                 'expected_value': max(
                     float(item.get('home_win_ev', 0.0)),
                     float(item.get('draw_ev', 0.0)),
@@ -655,7 +607,7 @@ def get_all_predictions_from_dynamodb():
                     float(item.get('away_win_prob', 0.0))
                 ),
                 
-                # Add result fields
+                # Add result fields if available
                 'prediction_result': item.get('prediction_result', None),
                 'actual_result': item.get('actual_result', None),
                 'home_score': item.get('home_score', None),
@@ -665,15 +617,369 @@ def get_all_predictions_from_dynamodb():
                 'result_updated_at': item.get('result_updated_at', None)
             }
             
-            games.append(game)
+            all_predictions.append(game)
         
-        # Sort by expected value (highest first)
-        games.sort(key=lambda x: x.get('expected_value', 0), reverse=True)
+        # Separate future and past games
+        current_time = datetime.now()
+        future_games = []
+        past_games = []
         
-        logger.info(f"Retrieved {len(games)} predictions from DynamoDB table {ALL_PREDICTIONS_TABLE}")
-        return games
+        for game in all_predictions:
+            if game.get('match_time', current_time) > current_time:
+                future_games.append(game)
+            else:
+                past_games.append(game)
+        
+        # Group only the past games by game_id
+        past_games_by_id = {}
+        for game in past_games:
+            game_id = game['id']
+            timestamp = game.get('timestamp', '')
+            
+            if game_id not in past_games_by_id or timestamp > past_games_by_id[game_id].get('timestamp', ''):
+                past_games_by_id[game_id] = game
+            
+        # Combine future games (ungrouped) and past games (grouped)
+        model_predictions = future_games + list(past_games_by_id.values())
+        
+        # Sort by match time (newest first) then by expected value (highest first)
+        if model_predictions:
+            model_predictions.sort(key=lambda x: (
+                # First sort by whether the game is in the future (upcoming games first)
+                0 if x.get('match_time', current_time) > current_time else 1,
+                # Then sort by match_time (newest first)
+                -x.get('match_time', current_time).timestamp(),
+                # Finally sort by expected value (highest first)
+                -x.get('expected_value', 0)
+            ))
+        
+        logger.info(f"Retrieved {len(model_predictions)} predictions for model {model_name} from DynamoDB ({len(future_games)} future, {len(past_games_by_id)} past)")
+        return model_predictions
     except Exception as e:
-        logger.error(f"Error retrieving predictions from DynamoDB: {e}")
+        logger.error(f"Error retrieving game predictions from DynamoDB: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+def get_predictions_by_model_from_dynamodb(model_name):
+    """Get all game predictions for a specific model from DynamoDB"""
+    try:
+        # Create DynamoDB client
+        dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+        table = dynamodb.Table(ALL_PREDICTIONS_TABLE)
+        
+        logger.info(f"Fetching predictions for model {model_name} from DynamoDB table: {ALL_PREDICTIONS_TABLE}")
+        
+        # If model name contains underscores, like lstm_32_5, match the full name
+        # If model name is a single term like 'lstm', match any model starting with that
+        if '_' in model_name:
+            # Exact match for full model name
+            filter_expression = Attr('model_name').eq(model_name)
+        else:
+            # Prefix match for model type
+            filter_expression = Attr('model_name').begins_with(model_name)
+        
+        # Scan the table with the filter
+        response = table.scan(
+            FilterExpression=filter_expression
+        )
+        
+        # Format the data for our application
+        all_predictions = []
+        for item in response.get('Items', []):
+            # Parse match time 
+            match_time = None
+            
+            # Try to get match_time from match_time_str first (newest format)
+            if 'match_time_str' in item:
+                try:
+                    match_time = datetime.strptime(item['match_time_str'], '%Y-%m-%d %H:%M')
+                except Exception as e:
+                    logger.warning(f"Failed to parse match_time_str: {e}")
+                    match_time = None
+            
+            # If match_time is still None, try to combine event_date and game_time
+            if match_time is None and 'event_date' in item and 'game_time' in item:
+                try:
+                    match_time_str = f"{item['event_date']} {item['game_time']}"
+                    match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
+                except Exception as e:
+                    logger.warning(f"Failed to parse event_date and game_time: {e}")
+                    match_time = None
+            
+            # If match_time is still None, fall back to game_date (old format)
+            if match_time is None and 'game_date' in item:
+                try:
+                    date_str = item['game_date']
+                    # Check if game_date already has time component
+                    if ' ' in date_str:
+                        match_time = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+                    else:
+                        match_time = datetime.strptime(date_str, '%Y-%m-%d')
+                except Exception as e:
+                    logger.warning(f"Failed to parse game_date: {e}")
+                    match_time = datetime.now()
+            
+            # Final fallback if match_time is still None
+            if match_time is None:
+                match_time = datetime.now()
+                logger.warning("Using current time as fallback for match_time")
+            
+            # Format odds for display
+            odds = {
+                'home': float(item.get('home_odds', 0)),
+                'draw': float(item.get('draw_odds', 0)),
+                'away': float(item.get('away_odds', 0))
+            }
+            
+            # Get the ID - could be either prediction_id + game_id (new schema) or just id (old schema)
+            prediction_id = item.get('prediction_id', item.get('id', ''))
+            game_id = item.get('game_id', item.get('id', ''))
+            timestamp = item.get('timestamp', datetime.now().isoformat())
+            
+            # Get model information - make sure to include full model_name
+            item_model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
+            
+            # Create game object
+            game = {
+                'id': game_id,                   # Original game ID
+                'prediction_id': prediction_id,  # Unique prediction ID
+                'timestamp': timestamp,          # When the prediction was made
+                'result_id': item.get('result_id', None),  # Include result_id field
+                'home_team': item.get('home_team', ''),
+                'away_team': item.get('away_team', ''),
+                'league': item.get('league', ''),
+                'match_time': match_time,
+                'odds': odds,
+                'status': item.get('status', 'pending'),
+                'last_updated': item.get('timestamp', datetime.now().isoformat()),
+                'model_name': item_model_name,  # Full model name
+                'model_type': item.get('model_type', item_model_name.split('_')[0]),  # Model type (e.g., lstm) for compatibility
+                
+                # Model probabilities
+                'home_win_prob': float(item.get('home_win_prob', 0.0)),
+                'draw_prob': float(item.get('draw_prob', 0.0)),
+                'away_win_prob': float(item.get('away_win_prob', 0.0)),
+                
+                # Expected values
+                'home_win_ev': float(item.get('home_win_ev', 0.0)),
+                'draw_ev': float(item.get('draw_ev', 0.0)),
+                'away_win_ev': float(item.get('away_win_ev', 0.0)),
+                
+                # Profitable flags
+                'home_win_is_profitable': bool(item.get('home_win_is_profitable', False)),
+                'draw_is_profitable': bool(item.get('draw_is_profitable', False)),
+                'away_win_is_profitable': bool(item.get('away_win_is_profitable', False)),
+                
+                # Overall profitable flag
+                'is_profitable': bool(item.get('home_win_is_profitable', False) or 
+                                     item.get('draw_is_profitable', False) or 
+                                     item.get('away_win_is_profitable', False)),
+                
+                # Overall expected value (maximum of all outcomes) for sorting
+                'expected_value': max(
+                    float(item.get('home_win_ev', 0.0)),
+                    float(item.get('draw_ev', 0.0)),
+                    float(item.get('away_win_ev', 0.0))
+                ),
+                
+                # For template compatibility - use highest EV outcome
+                'prediction': (
+                    "Home Win" if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
+                                float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                    "Draw" if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
+                            float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                    "Away Win"
+                ),
+                'confidence': (
+                    float(item.get('home_win_prob', 0.0)) if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
+                                                        float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                    float(item.get('draw_prob', 0.0)) if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
+                                                    float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                    float(item.get('away_win_prob', 0.0))
+                ),
+                
+                # Add result fields if available
+                'prediction_result': item.get('prediction_result', None),
+                'actual_result': item.get('actual_result', None),
+                'home_score': item.get('home_score', None),
+                'away_score': item.get('away_score', None),
+                'final_home_score': item.get('final_home_score', None),
+                'final_away_score': item.get('final_away_score', None),
+                'result_updated_at': item.get('result_updated_at', None)
+            }
+            
+            all_predictions.append(game)
+        
+        # Separate future and past games
+        current_time = datetime.now()
+        future_games = []
+        past_games = []
+        
+        for game in all_predictions:
+            if game.get('match_time', current_time) > current_time:
+                future_games.append(game)
+            else:
+                past_games.append(game)
+        
+        # Group only the past games by game_id
+        past_games_by_id = {}
+        for game in past_games:
+            game_id = game['id']
+            timestamp = game.get('timestamp', '')
+            
+            if game_id not in past_games_by_id or timestamp > past_games_by_id[game_id].get('timestamp', ''):
+                past_games_by_id[game_id] = game
+            
+        # Combine future games (ungrouped) and past games (grouped)
+        model_predictions = future_games + list(past_games_by_id.values())
+        
+        # Sort by match time (newest first) then by expected value (highest first)
+        if model_predictions:
+            model_predictions.sort(key=lambda x: (
+                # First sort by whether the game is in the future (upcoming games first)
+                0 if x.get('match_time', current_time) > current_time else 1,
+                # Then sort by match_time (newest first)
+                -x.get('match_time', current_time).timestamp(),
+                # Finally sort by expected value (highest first)
+                -x.get('expected_value', 0)
+            ))
+        
+        logger.info(f"Retrieved {len(model_predictions)} predictions for model {model_name} from DynamoDB ({len(future_games)} future, {len(past_games_by_id)} past)")
+        return model_predictions
+    except Exception as e:
+        logger.error(f"Error retrieving predictions for model {model_name} from DynamoDB: {e}")
         import traceback
         traceback.print_exc()
         return [] 
+
+def process_dynamodb_items(items):
+    """Process DynamoDB items into a format usable by the application"""
+    processed_items = []
+    
+    for item in items:
+        # Parse match time 
+        match_time = None
+        
+        # Try to get match_time from match_time_str first (newest format)
+        if 'match_time_str' in item:
+            try:
+                match_time = datetime.strptime(item['match_time_str'], '%Y-%m-%d %H:%M')
+            except Exception as e:
+                logger.warning(f"Failed to parse match_time_str: {e}")
+                match_time = None
+        
+        # If match_time is still None, try to combine event_date and game_time
+        if match_time is None and 'event_date' in item and 'game_time' in item:
+            try:
+                match_time_str = f"{item['event_date']} {item['game_time']}"
+                match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
+            except Exception as e:
+                logger.warning(f"Failed to parse event_date and game_time: {e}")
+                match_time = None
+        
+        # If match_time is still None, fall back to game_date (old format)
+        if match_time is None and 'game_date' in item:
+            try:
+                date_str = item['game_date']
+                # Check if game_date already has time component
+                if ' ' in date_str:
+                    match_time = datetime.strptime(date_str, '%Y-%m-%d %H:%M')
+                else:
+                    match_time = datetime.strptime(date_str, '%Y-%m-%d')
+            except Exception as e:
+                logger.warning(f"Failed to parse game_date: {e}")
+                match_time = datetime.now()
+        
+        # Final fallback if match_time is still None
+        if match_time is None:
+            match_time = datetime.now()
+            logger.warning("Using current time as fallback for match_time")
+        
+        # Format odds for display
+        odds = {
+            'home': float(item.get('home_odds', 0)),
+            'draw': float(item.get('draw_odds', 0)),
+            'away': float(item.get('away_odds', 0))
+        }
+        
+        # Get the ID - could be either prediction_id + game_id (new schema) or just id (old schema)
+        prediction_id = item.get('prediction_id', item.get('id', ''))
+        game_id = item.get('game_id', item.get('id', ''))
+        timestamp = item.get('timestamp', datetime.now().isoformat())
+        
+        # Get model information - make sure to include full model_name
+        model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
+            
+        # Create game object
+        game = {
+            'id': game_id,                   # Original game ID
+            'prediction_id': prediction_id,  # Unique prediction ID
+            'timestamp': timestamp,          # When the prediction was made
+            'result_id': item.get('result_id', None),  # Include result_id field
+            'home_team': item.get('home_team', ''),
+            'away_team': item.get('away_team', ''),
+            'league': item.get('league', ''),
+            'match_time': match_time,
+            'odds': odds,
+            'status': item.get('status', 'pending'),
+            'last_updated': item.get('timestamp', datetime.now().isoformat()),
+            'model_name': model_name,  # Full model name
+            'model_type': item.get('model_type', model_name.split('_')[0]),  # Model type (e.g., lstm) for compatibility
+            
+            # Model probabilities
+            'home_win_prob': float(item.get('home_win_prob', 0.0)),
+            'draw_prob': float(item.get('draw_prob', 0.0)),
+            'away_win_prob': float(item.get('away_win_prob', 0.0)),
+            
+            # Expected values
+            'home_win_ev': float(item.get('home_win_ev', 0.0)),
+            'draw_ev': float(item.get('draw_ev', 0.0)),
+            'away_win_ev': float(item.get('away_win_ev', 0.0)),
+            
+            # Profitable flags
+            'home_win_is_profitable': bool(item.get('home_win_is_profitable', False)),
+            'draw_is_profitable': bool(item.get('draw_is_profitable', False)),
+            'away_win_is_profitable': bool(item.get('away_win_is_profitable', False)),
+            
+            # Overall profitable flag
+            'is_profitable': bool(item.get('home_win_is_profitable', False) or 
+                                  item.get('draw_is_profitable', False) or 
+                                  item.get('away_win_is_profitable', False)),
+            
+            # Overall expected value (maximum of all outcomes) for sorting
+            'expected_value': max(
+                float(item.get('home_win_ev', 0.0)),
+                float(item.get('draw_ev', 0.0)),
+                float(item.get('away_win_ev', 0.0))
+            ),
+            
+            # For template compatibility - use highest EV outcome
+            'prediction': (
+                "Home Win" if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
+                            float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                "Draw" if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
+                        float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                "Away Win"
+            ),
+            'confidence': (
+                float(item.get('home_win_prob', 0.0)) if (float(item.get('home_win_ev', 0.0)) >= float(item.get('draw_ev', 0.0)) and 
+                                                     float(item.get('home_win_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                float(item.get('draw_prob', 0.0)) if (float(item.get('draw_ev', 0.0)) >= float(item.get('home_win_ev', 0.0)) and 
+                                                 float(item.get('draw_ev', 0.0)) >= float(item.get('away_win_ev', 0.0))) else
+                float(item.get('away_win_prob', 0.0))
+            ),
+            
+            # Add result fields if available
+            'prediction_result': item.get('prediction_result', None),
+            'actual_result': item.get('actual_result', None),
+            'home_score': item.get('home_score', None),
+            'away_score': item.get('away_score', None),
+            'final_home_score': item.get('final_home_score', None),
+            'final_away_score': item.get('final_away_score', None),
+            'result_updated_at': item.get('result_updated_at', None)
+        }
+        
+        processed_items.append(game)
+    
+    return processed_items 

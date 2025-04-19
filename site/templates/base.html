@@ -8,11 +8,11 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <!-- Local CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -28,60 +28,283 @@
     </script>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #2ecc71;
-            --danger-color: #e74c3c;
-            --warning-color: #f1c40f;
+            --primary-color: #164bc5;
+            --primary-light: #e1ebff;
+            --primary-dark: #0d2d77;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+            --info-color: #17a2b8;
+            --body-bg: #f9fafb;
+            --card-bg: #ffffff;
+            --navbar-bg: #0a1e4f;
         }
         
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--body-bg);
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #4a5568;
+            line-height: 1.6;
+            padding-top: 70px;
         }
         
+        /* Modern Navbar */
         .navbar {
-            background-color: var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: var(--navbar-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
         }
         
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-size: 1.35rem;
+        }
+        
+        .navbar-brand .bi {
+            color: var(--warning-color);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            padding: 8px 15px !important;
+            border-radius: 6px;
+            transition: all 0.3s;
+            margin: 0 3px;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        /* Card Styling */
         .card {
             border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background-color: var(--card-bg);
         }
         
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            font-weight: 600;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        /* Badges and Status Indicators */
+        .badge {
+            padding: 0.5em 0.8em;
+            border-radius: 6px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .status-badge {
             padding: 0.5em 1em;
             border-radius: 20px;
             font-weight: 600;
+            letter-spacing: 0.5px;
         }
         
-        .confidence-meter {
-            height: 8px;
-            border-radius: 4px;
-            background-color: #e9ecef;
+        /* Buttons */
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 20px;
+            letter-spacing: 0.3px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
-        .confidence-meter-fill {
-            height: 100%;
-            border-radius: 4px;
-            background-color: var(--secondary-color);
-            transition: width 0.3s ease;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        
+        /* Table styling */
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table thead th {
+            background-color: #f8f9fa;
+            border-top: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            color: var(--secondary-color);
+        }
+        
+        .table-bordered th, .table-bordered td {
+            border: 1px solid #edf2f7;
+        }
+        
+        /* Modern Footer */
+        .footer {
+            background-color: #ffffff;
+            border-top: 1px solid #edf2f7;
+            padding: 25px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+            margin-top: 60px;
+        }
+        
+        /* Form Controls */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 10px 15px;
+            height: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(22, 75, 197, 0.2);
+        }
+        
+        /* Enhanced dropdown styling */
+        .dropdown-menu {
+            max-height: 300px;
+            overflow-y: auto;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 10px;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin-bottom: 3px;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--primary-light);
+        }
+
+        .dropdown-item.active, 
+        .dropdown-item:active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .dropdown-divider {
+            margin: 8px 0;
+            opacity: 0.1;
+        }
+
+        .model-dropdown {
+            min-width: 250px;
+        }
+
+        .model-dropdown .dropdown-toggle {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+        
+        /* Content containers */
+        .container {
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 1rem;
+        }
+        
+        .display-5, .display-6 {
+            font-weight: 700;
+        }
+        
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+        
+        /* Make small text legible */
+        .small, small {
+            font-size: 85%;
+            font-weight: 400;
+        }
+        
+        /* Ensure model names don't break the layout */
+        .dropdown-item {
+            white-space: normal;
+            word-wrap: break-word;
+        }
+        
+        /* Media Queries */
+        @media (max-width: 991.98px) {
+            .container {
+                max-width: 100%;
+            }
+            
+            body {
+                padding-top: 60px;
+            }
+            
+            .navbar {
+                padding: 10px 0;
+            }
+            
+            .navbar-collapse {
+                background-color: var(--navbar-bg);
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="bi bi-trophy-fill me-2"></i>
-                Sports Predictions
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Winner Predictions
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -89,30 +312,75 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                            <i class="bi bi-house-door me-1"></i> Home
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/all">All Predictions</a>
+                        <a class="nav-link {% if request.path == '/all' %}active{% endif %}" href="/all">
+                            <i class="bi bi-list-ul me-1"></i> All Predictions
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/about">About</a>
+                        <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="/about">
+                            <i class="bi bi-info-circle me-1"></i> About
+                        </a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        {% block content %}{% endblock %}
+    <div class="container my-4 fade-in">
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
     </div>
 
-    <footer class="footer mt-5 py-3 bg-light">
-        <div class="container text-center">
-            <span class="text-muted">© 2025 Sports Predictions. All rights reserved.</span>
+    <footer class="footer py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <span class="copyright text-muted">&copy; 2025 Winner Predictions. All rights reserved.</span>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-inline text-center text-md-end mb-0">
+                        <li class="list-inline-item">
+                            <a href="#" class="text-decoration-none text-muted">
+                                <i class="bi bi-twitter"></i>
+                            </a>
+                        </li>
+                        <li class="list-inline-item ms-3">
+                            <a href="#" class="text-decoration-none text-muted">
+                                <i class="bi bi-facebook"></i>
+                            </a>
+                        </li>
+                        <li class="list-inline-item ms-3">
+                            <a href="#" class="text-decoration-none text-muted">
+                                <i class="bi bi-instagram"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add active class to current page in navbar
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentLocation = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+                if (currentLocation === linkPath) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html> 
