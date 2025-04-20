@@ -81,7 +81,7 @@ def get_pending_profitable_games_from_dynamodb() -> List[Dict]:
         profitable_games_table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
         logger.info(f"Fetching past, unprocessed games from DynamoDB table: {PROFITABLE_GAMES_TABLE}")
 
-        three_hours_ago = datetime.now() - timedelta(hours=3)
+        # three_hours_ago = datetime.now() - timedelta(hours=3) # Removed time filtering
 
         # Scan for games that are NOT marked as completed
         filter_expression = Attr('status').ne('completed') | Attr('status').not_exists()
@@ -110,17 +110,20 @@ def get_pending_profitable_games_from_dynamodb() -> List[Dict]:
                  else:
                      logger.warning(f"Skipping profitable game {item.get('prediction_id', 'unknown')} due to missing time information")
                      continue
+            
+            # Removed time check - add all non-completed items that have time info
+            pending_profitable_games.append(item)
 
-            try:
-                match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
-                if match_time < three_hours_ago:
-                    pending_profitable_games.append(item)
-            except ValueError:
-                logger.warning(f"Could not parse match_time_str '{match_time_str}' for prediction {item.get('prediction_id', 'unknown')} in {PROFITABLE_GAMES_TABLE}")
-            except Exception as e:
-                 logger.error(f"Error processing time for prediction {item.get('prediction_id', 'unknown')} in {PROFITABLE_GAMES_TABLE}: {str(e)}")
+            # try:
+            #     match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
+            #     if match_time < three_hours_ago: # Removed this condition
+            #         pending_profitable_games.append(item) 
+            # except ValueError:
+            #     logger.warning(f"Could not parse match_time_str '{match_time_str}' for prediction {item.get('prediction_id', 'unknown')} in {PROFITABLE_GAMES_TABLE}")
+            # except Exception as e:
+            #      logger.error(f"Error processing time for prediction {item.get('prediction_id', 'unknown')} in {PROFITABLE_GAMES_TABLE}: {str(e)}")
 
-        logger.info(f"Found {len(pending_profitable_games)} past profitable games that need result updates")
+        logger.info(f"Found {len(pending_profitable_games)} past profitable games that need result updates") # Log might now show all non-completed games
         return pending_profitable_games
     
     except Exception as e:
@@ -159,26 +162,28 @@ def calculate_final_score(option: str, score: int) -> float:
 def determine_bet_result(game: Dict, results_df: pd.DataFrame) -> Optional[Dict]:
     """
     Determine if the prediction for a game was correct based on the actual result.
-    Uses game_id from the profitable game item to match results.
+    Uses result_id from the profitable game item to match results in the Athena DataFrame.
     
     Args:
         game: Game dict from DynamoDB (profitable-games table)
-        results_df: DataFrame with game results from Athena
+        results_df: DataFrame with game results from Athena (where 'id' column matches 'result_id')
     
     Returns:
         Dictionary with result information or None if no result found
     """
     try:
         result_row = pd.DataFrame() 
-        game_id = game.get('game_id') # Use game_id from the profitable game item
+        # Use result_id from the profitable game item to match with 'id' in results_df
+        res_id = game.get('result_id') 
 
-        if not game_id:
-            logger.warning(f"Skipping profitable game prediction {game.get('prediction_id')} as it lacks a game_id.")
+        if not res_id:
+            logger.warning(f"Skipping profitable game prediction {game.get('prediction_id', game.get('game_id', 'unknown'))} as it lacks a result_id.")
             return None
 
-        result_row = results_df[results_df['id'] == game_id]
+        # Find the result row in results_df where the 'id' column matches the profitable game's result_id
+        result_row = results_df[results_df['id'] == res_id]
         if result_row.empty:
-             logger.info(f"No result found using game_id {game_id} for prediction {game.get('prediction_id')}")
+             logger.info(f"No result found using result_id {res_id} for prediction {game.get('prediction_id', game.get('game_id', 'unknown'))}")
              return None
 
         # Extract scores
@@ -280,19 +285,26 @@ def update_dynamodb_with_results(updated_games: List[Dict]):
         for game in updated_games:
             try:
                 processed_game = convert_floats_to_decimal(game)
-                prediction_id = processed_game.get('prediction_id') 
+                # Get identifiers for logging - prediction_id might be missing
+                game_id = processed_game.get('game_id')
+                model_name = processed_game.get('model_name')
+                prediction_id = processed_game.get('prediction_id', f'{game_id}_{model_name}') # Construct fallback for logging if needed
+                game_status = processed_game.get('status')
                 
-                if not prediction_id:
-                     logger.error(f"Skipping profitable game update due to missing prediction_id: {game}")
-                     failed_count += 1
-                     continue
+                # Primary key is model_name + game_id, ensure they exist
+                if not game_id or not model_name:
+                    logger.error(f"Skipping profitable game update due to missing game_id or model_name: {processed_game}")
+                    failed_count += 1
+                    continue
+                 
+                logger.info(f"Attempting to update item with Key: (model: {model_name}, game: {game_id}), Status: {game_status}") 
                 
-                # Use PutItem to update the item in profitable-games table
+                # Use PutItem - it uses the table's primary key (model_name, game_id) to update
                 batch.put_item(Item=processed_game)
                 updated_count += 1
                 
             except Exception as e:
-                logger.error(f"Failed to update profitable game {game.get('prediction_id', 'unknown')} in DynamoDB: {str(e)}", exc_info=True)
+                logger.error(f"Failed to update profitable game (prediction_id: {prediction_id}): {str(e)}", exc_info=True)
                 failed_count += 1
 
     logger.info(f"DynamoDB batch update complete for {PROFITABLE_GAMES_TABLE}. Successfully updated: {updated_count}, Failed: {failed_count}")
@@ -303,7 +315,7 @@ def lambda_handler(event, context):
     
     try:
         results_df = fetch_results_from_athena()
-        pending_profitable_games = get_pending_profitable_games_from_dynamodb() # Updated function call
+        pending_profitable_games = get_pending_profitable_games_from_dynamodb()
         
         if not pending_profitable_games:
             logger.info("No pending profitable games found that need result updates")
@@ -313,31 +325,54 @@ def lambda_handler(event, context):
             }
         
         updated_games = []
+        processed_ids = set() # Keep track of IDs processed in this run
+
         for game in pending_profitable_games:
+            # We use model_name + game_id as the functional primary key
+            game_id = game.get('game_id')
+            model_name = game.get('model_name')
+            primary_key_tuple = (model_name, game_id)
+            prediction_id_for_logging = game.get('prediction_id', f'{game_id}_{model_name}') # Use for logging if actual is missing
+
+            if not game_id or not model_name:
+                 logger.warning(f"Skipping item due to missing game_id or model_name: {game}")
+                 continue
+
+            # Double-check status 
+            if game.get('status') == 'completed':
+                 logger.info(f"Skipping {prediction_id_for_logging} as its status is already 'completed'.")
+                 continue
+
+            # Prevent processing the same item (model+game) multiple times within the same run
+            if primary_key_tuple in processed_ids:
+                 logger.info(f"Skipping {prediction_id_for_logging} as it was already processed in this run.")
+                 continue
+                 
             result = determine_bet_result(game, results_df)
             if result:
                 updated_game = update_game_with_result(game, result)
                 updated_games.append(updated_game)
-                
-                prediction_id = game.get('prediction_id', 'unknown')
+                processed_ids.add(primary_key_tuple) # Mark composite key as processed
+
+                # Log the result
                 home_team = game.get('home_team', 'unknown')
                 away_team = game.get('away_team', 'unknown')
                 result_correct = result.get('prediction_result', False)
                 actual_result = result.get('actual_result', 'unknown')
                 
-                logger.info(f"Profitable Prediction {prediction_id} ({home_team} vs {away_team}): " 
+                logger.info(f"Result for {prediction_id_for_logging} ({home_team} vs {away_team}): " 
                            f"Actual {actual_result}, Correct: {result_correct}")
             else:
-                 logger.info(f"No result found in Athena for profitable prediction {game.get('prediction_id')}, game_id {game.get('game_id')}")
+                 logger.info(f"No result found in Athena for profitable prediction {prediction_id_for_logging}, game_id {game_id}")
 
-        logger.info(f"Processed {len(pending_profitable_games)} pending profitable games, found results for {len(updated_games)} games")
+        logger.info(f"Processed {len(pending_profitable_games)} pending profitable games fetched, found results for {len(updated_games)} games to update")
         
         if updated_games:
             update_dynamodb_with_results(updated_games)
         
         return {
             'statusCode': 200,
-            'body': json.dumps(f'Successfully processed {len(pending_profitable_games)} profitable games, updated {len(updated_games)} with results')
+            'body': json.dumps(f'Successfully processed {len(pending_profitable_games)} profitable games fetched, updated {len(updated_games)} with results')
         }
     
     except Exception as e:

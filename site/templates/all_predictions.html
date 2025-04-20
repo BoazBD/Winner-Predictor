@@ -27,68 +27,68 @@
                 </h2>
                 <div id="filterContent" class="accordion-collapse collapse show" aria-labelledby="filterHeader">
                     <div class="accordion-body p-3">
-                        <form id="filterForm" method="GET" action="/all">
+                <form id="filterForm" method="GET" action="/all">
                             <div class="mb-2">
                                 <label class="form-label small fw-bold">League</label>
                                 <select class="form-select form-select-sm" name="league">
-                                    <option value="">All Leagues</option>
-                                    {% for league in leagues %}
-                                    <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
+                            <option value="">All Leagues</option>
+                            {% for league in leagues %}
+                            <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                             <div class="mb-2">
                                 <label class="form-label small fw-bold">Model Type</label>
-                                <div class="dropdown model-dropdown">
+                        <div class="dropdown model-dropdown">
                                     <button class="btn btn-sm btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" 
-                                            type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <span>
-                                            {% if selected_model %}
-                                                {{ selected_model }}
-                                            {% else %}
-                                                All Models
-                                            {% endif %}
-                                        </span>
-                                        <i class="bi bi-chevron-down ms-2"></i>
-                                    </button>
-                                    <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
-                                        <li><a class="dropdown-item model-item {% if not selected_model %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        {% for model in model_types %}
-                                        <li><a class="dropdown-item model-item {% if selected_model == model %}active{% endif %}" href="javascript:void(0)" data-value="{{ model }}">{{ model }}</a></li>
-                                        {% endfor %}
-                                    </ul>
-                                    <input type="hidden" name="model_type" id="modelTypeInput" value="{{ selected_model }}">
-                                </div>
-                            </div>
+                                    type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span>
+                                    {% if selected_model %}
+                                        {{ selected_model }}
+                                    {% else %}
+                                        All Models
+                                    {% endif %}
+                                </span>
+                                <i class="bi bi-chevron-down ms-2"></i>
+                            </button>
+                            <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
+                                <li><a class="dropdown-item model-item {% if not selected_model %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% for model in model_types %}
+                                <li><a class="dropdown-item model-item {% if selected_model == model %}active{% endif %}" href="javascript:void(0)" data-value="{{ model }}">{{ model }}</a></li>
+                                {% endfor %}
+                            </ul>
+                            <input type="hidden" name="model_type" id="modelTypeInput" value="{{ selected_model }}">
+                        </div>
+                    </div>
                             <div class="row mb-2">
                                 <div class="col-6">
                                     <label class="form-label small fw-bold">Prediction</label>
                                     <select class="form-select form-select-sm" name="prediction_type">
                                         <option value="">All</option>
-                                        <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
-                                        <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
-                                        <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
-                                    </select>
-                                </div>
+                            <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
+                            <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
+                            <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
+                        </select>
+                    </div>
                                 <div class="col-6">
                                     <label class="form-label small fw-bold">Status</label>
                                     <select class="form-select form-select-sm" name="status">
                                         <option value="">All</option>
-                                        <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
-                                        <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
-                                    </select>
-                                </div>
+                            <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                            <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-6">
                                     <label class="form-label small fw-bold">Result</label>
                                     <select class="form-select form-select-sm" name="result">
                                         <option value="">All</option>
-                                        <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option>
-                                        <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option>
-                                    </select>
-                                </div>
+                            <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option>
+                            <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option>
+                        </select>
+                    </div>
                                 <div class="col-6">
                                     <label class="form-label small fw-bold">EV</label>
                                     <select class="form-select form-select-sm" name="ev">
@@ -96,7 +96,7 @@
                                         <option value="high" {% if selected_ev == 'high' %}selected{% endif %}>High</option>
                                         <option value="medium" {% if selected_ev == 'medium' %}selected{% endif %}>Medium</option>
                                         <option value="low" {% if selected_ev == 'low' %}selected{% endif %}>Low</option>
-                                    </select>
+                        </select>
                                 </div>
                             </div>
                             <div class="d-grid gap-2 mt-3">
@@ -153,35 +153,38 @@
                     {% set primary_game = sorted_group[0] %}
                     {% set history_games = sorted_group[1:] %}
                 {% endif %}
-
+                
                 {# Only display if we found a primary game #}
                 {% if primary_game %}
                     {# Render the primary game card #}
                     <div class="card prediction-card {% if primary_game.status == 'completed' %}{% if primary_game.prediction_result == true %}prediction-correct{% elif primary_game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %} mb-3">
-                        {% if primary_game.status == 'completed' %}
-                            {% if primary_game.prediction_result == true %}
-                                <span class="result-badge bg-success"><i class="bi bi-check-circle me-1"></i> Correct</span>
-                            {% elif primary_game.prediction_result == false %}
-                                <span class="result-badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incorrect</span>
-                            {% endif %}
-                        {% endif %}
-
                         <div class="card-header bg-light py-2">
                             <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <span class="league-badge badge bg-secondary">
-                                        <i class="bi bi-trophy me-1"></i>
+                                <!-- Left side: League and Time -->
+                                <div class="d-flex align-items-center">
+                                    <span class="league-badge badge bg-secondary me-2">
+                            <i class="bi bi-trophy me-1"></i>
                                         {{ primary_game.league|default('Unknown League') }}
-                                    </span>
+                        </span>
                                     <span class="match-time badge bg-light text-dark border">
-                                        <i class="bi bi-calendar-event me-1"></i>
+                            <i class="bi bi-calendar-event me-1"></i>
                                         {{ primary_game.match_time.strftime('%Y-%m-%d') }} 
                                         <strong>{{ primary_game.match_time.strftime('%H:%M') }}</strong>
-                                    </span>
+                        </span>
                                 </div>
-                                <div class="model-badge">
-                                    <i class="bi bi-robot me-1"></i>
-                                    <span class="fw-medium small">{{ primary_game.model_name|default('Unknown Model') }}</span>
+                                <!-- Right side: Model and Result Badge -->
+                                <div class="d-flex align-items-center">
+                                    <div class="model-badge me-2">
+                            <i class="bi bi-robot me-1"></i>
+                                        <span class="fw-medium small">{{ primary_game.model_name|default('Unknown Model') }}</span>
+                                    </div>
+                                    {% if primary_game.status == 'completed' %}
+                                        {% if primary_game.prediction_result == true %}
+                                            <span class="result-badge bg-success"><i class="bi bi-check-circle me-1"></i> Correct</span>
+                                        {% elif primary_game.prediction_result == false %}
+                                            <span class="result-badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incorrect</span>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -228,7 +231,7 @@
                                     </div>
                                     
                                     <div class="prediction-timestamp small text-muted">
-                                        <i class="bi bi-clock-history me-1"></i>
+                            <i class="bi bi-clock-history me-1"></i>
                                         {% if primary_game.prediction_timestamp %}
                                             Predicted: 
                                             {% if primary_game.prediction_timestamp is not string %}
@@ -240,12 +243,12 @@
                                                     {{ primary_game.prediction_timestamp }}
                                                 {% endif %}
                                             {% endif %}
-                                        {% else %}
-                                            No timestamp
-                                        {% endif %}
+                            {% else %}
+                                No timestamp
+                            {% endif %}
                                     </div>
-                                </div>
-                                
+                    </div>
+                    
                                 <!-- Prediction Data Column -->
                                 <div class="col-md-7">
                                     <!-- All Predictions with Probabilities and EVs -->
@@ -287,8 +290,8 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                    </div>
-                                    
+                        </div>
+                        
                                     <!-- History toggle button -->
                                     <button class="btn btn-sm btn-outline-primary toggle-history mt-2" 
                                             data-game-model="{{ key }}" 
@@ -298,7 +301,7 @@
                                         <span class="hide-text d-none">Hide past predictions</span>
                                     </button>
                                 </div>
-                            </div>
+                        </div>
                         </div>
                     </div>
                     
@@ -389,10 +392,10 @@
                                                         </tr>
                                                     </tbody>
                                                 </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
                             {% endfor %}
                         {% else %}
                             <div class="alert alert-info mt-3">
@@ -624,15 +627,17 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .result-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 5px 10px;
+    padding: 4px 8px;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    z-index: 1;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.card-header > .d-flex > .d-flex {
+    flex-shrink: 0;
 }
 
 /* Table styles */

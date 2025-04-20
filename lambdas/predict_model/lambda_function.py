@@ -393,7 +393,8 @@ def make_predictions(model, valid_game_data, model_name):
             event_date = info.get('event_date')
             game_time = info.get('time')
             league = info.get('league')
-            result_id = game_id  # Set result_id to be the same as the game's unique_id
+            # Extract the result_id directly from the api_odds data (info object)
+            result_id = info.get('result_id') 
             
             # Get odds
             home_odds = float(info.get('ratio1'))

@@ -197,9 +197,10 @@ def calculate_prediction_stats(games):
 @app.route('/')
 def index():
     try:
-        # Get the selected model filter
-        selected_model = request.args.get('model_type', '')
-        logger.info(f"Model filter selected: '{selected_model}'")
+        # Get the selected model filter, default to 'lstm_100_12_v1'
+        DEFAULT_MODEL = 'lstm_100_12_v1'
+        selected_model = request.args.get('model_type', DEFAULT_MODEL) 
+        logger.info(f"Selected model (default '{DEFAULT_MODEL}'): '{selected_model}'")
         
         # Get profitable predictions
         if USE_DYNAMODB:
@@ -284,7 +285,9 @@ def all_predictions():
     try:
         # Get filter parameters from request
         selected_league = request.args.get('league', '')
-        selected_model = request.args.get('model_type', '')
+        # Use default model if none selected
+        DEFAULT_MODEL = 'lstm_100_12_v1' 
+        selected_model = request.args.get('model_type') or DEFAULT_MODEL
         selected_prediction = request.args.get('prediction_type', '')
         selected_status = request.args.get('status', '')
         selected_result = request.args.get('result', '')
@@ -399,8 +402,11 @@ def all_predictions():
         upcoming_games = [g for g in filtered_games if g.get('match_time', current_time) > current_time]
         logger.info(f"Found {len(upcoming_games)} upcoming games out of {len(filtered_games)} filtered games")
         
-        # Calculate statistics
-        stats = calculate_prediction_stats(processed_games)
+        # Calculate statistics based on the filtered games
+        stats = calculate_prediction_stats(filtered_games)
+
+        # Sort the final filtered games by match time (newest first)
+        filtered_games.sort(key=lambda x: x.get('match_time', datetime.min), reverse=True)
         
         return render_template('all_predictions.html', 
                               games=filtered_games, 

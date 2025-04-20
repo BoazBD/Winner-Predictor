@@ -10,6 +10,7 @@ ATHENA_DATABASE=${ATHENA_DATABASE:-"winner-db"}
 ALL_PREDICTIONS_TABLE=${ALL_PREDICTIONS_TABLE:-"all-predicted-games"}
 PROFITABLE_GAMES_TABLE=${PROFITABLE_GAMES_TABLE:-"profitable-games"}
 RESULTS_TABLE=${RESULTS_TABLE:-"results"}
+ATHENA_OUTPUT_BUCKET=${ATHENA_OUTPUT_BUCKET:-"winner-athena-output"}
 
 echo "Starting deployment process..."
 
@@ -57,7 +58,7 @@ if ! aws lambda get-function --function-name $LAMBDA_FUNCTION_NAME --region $AWS
         --role $ROLE_ARN \
         --timeout 300 \
         --memory-size 1024 \
-        --environment "Variables={CUSTOM_AWS_REGION=$AWS_REGION,ATHENA_DATABASE=$ATHENA_DATABASE,ALL_PREDICTIONS_TABLE=$ALL_PREDICTIONS_TABLE,PROFITABLE_GAMES_TABLE=$PROFITABLE_GAMES_TABLE,ATHENA_OUTPUT_BUCKET=winner-athena-output}" \
+        --environment "Variables={CUSTOM_AWS_REGION=$AWS_REGION,ATHENA_DATABASE=$ATHENA_DATABASE,ALL_PREDICTIONS_TABLE=$ALL_PREDICTIONS_TABLE,PROFITABLE_GAMES_TABLE=$PROFITABLE_GAMES_TABLE,RESULTS_TABLE=$RESULTS_TABLE,ATHENA_OUTPUT_BUCKET=$ATHENA_OUTPUT_BUCKET}" \
         --region $AWS_REGION
 else
     echo "Updating Lambda function: $LAMBDA_FUNCTION_NAME"
@@ -71,15 +72,15 @@ else
         --function-name $LAMBDA_FUNCTION_NAME \
         --timeout 300 \
         --memory-size 1024 \
-        --environment "Variables={CUSTOM_AWS_REGION=$AWS_REGION,ATHENA_DATABASE=$ATHENA_DATABASE,ALL_PREDICTIONS_TABLE=$ALL_PREDICTIONS_TABLE,PROFITABLE_GAMES_TABLE=$PROFITABLE_GAMES_TABLE,ATHENA_OUTPUT_BUCKET=winner-athena-output}" \
+        --environment "Variables={CUSTOM_AWS_REGION=$AWS_REGION,ATHENA_DATABASE=$ATHENA_DATABASE,ALL_PREDICTIONS_TABLE=$ALL_PREDICTIONS_TABLE,PROFITABLE_GAMES_TABLE=$PROFITABLE_GAMES_TABLE,RESULTS_TABLE=$RESULTS_TABLE,ATHENA_OUTPUT_BUCKET=$ATHENA_OUTPUT_BUCKET}" \
         --region $AWS_REGION
 fi
 
-# 9. Set up CloudWatch Events Rule for scheduled execution
+# 9. Set up CloudWatch Events Rule
 echo "Setting up CloudWatch Events Rule..."
 RULE_NAME="$LAMBDA_FUNCTION_NAME-schedule"
 
-# Create or update the rule to run daily
+# Create or update the rule
 aws events put-rule \
     --name $RULE_NAME \
     --schedule-expression "rate(12 hours)" \
@@ -87,6 +88,12 @@ aws events put-rule \
     --region $AWS_REGION
 
 # Add permission to Lambda
+# Attempt to remove old permission first, ignore errors if it doesn't exist
+aws lambda remove-permission \
+    --function-name $LAMBDA_FUNCTION_NAME \
+    --statement-id "AllowExecutionFromCloudWatch" \
+    --region $AWS_REGION 2>/dev/null || true
+
 aws lambda add-permission \
     --function-name $LAMBDA_FUNCTION_NAME \
     --statement-id "AllowExecutionFromCloudWatch" \
