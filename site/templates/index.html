@@ -68,8 +68,6 @@
                     <i class="bi bi-chevron-down ms-2"></i>
                 </button>
                 <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
-                    <li><a class="dropdown-item {% if not selected_model %}active{% endif %}" href="/">All Models</a></li>
-                    <li><hr class="dropdown-divider"></li>
                     {% for model in model_types %}
                     <li><a class="dropdown-item {% if selected_model == model %}active{% endif %}" href="/?model_type={{ model }}">{{ model }}</a></li>
                     {% endfor %}
@@ -85,12 +83,6 @@
         {% if games %}
             {% for game in games %}
             <div class="card game-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %}">
-                {% if game.expected_value is defined and game.expected_value is not none and game.expected_value > 0 %}
-                <span class="ev-badge {% if game.expected_value > 0.1 %}bg-success{% else %}bg-warning{% endif %}">
-                    EV: {{ (game.expected_value * 100)|round(1) }}%
-                </span>
-                {% endif %}
-                
                 {% if game.status == 'completed' %}
                     {% if game.prediction_result == true %}
                     <span class="result-badge bg-success">
@@ -102,14 +94,20 @@
                     </span>
                     {% endif %}
                 {% endif %}
-                
+                {% if game.expected_value is defined and game.expected_value is not none and game.expected_value > 0 %}
+                <span class="ev-badge {% if game.expected_value > 0.1 %}bg-success{% else %}bg-warning{% endif %}">
+                    EV: {{ (game.expected_value * 100)|round(1) }}%
+                </span>
+                {% endif %}
                 <div class="card-body py-2">
                     <!-- Game Info -->
                     <div class="game-info">
-                        <span class="league-badge">
-                            <i class="bi bi-trophy me-1"></i>
-                            {{ game.league|default('Unknown League') }}
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="league-badge">
+                                <i class="bi bi-trophy me-1"></i>
+                                {{ game.league|default('Unknown League') }}
+                            </span>
+                        </div>
                         <span class="match-time">
                             <i class="bi bi-calendar-event me-1"></i>
                             {{ game.match_time.strftime('%Y-%m-%d') }} <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
@@ -118,10 +116,15 @@
                             <i class="bi bi-robot me-1"></i>
                             <span class="fw-medium">{{ game.model_name|default('Unknown Model') }}</span>
                         </div>
-                        <small class="text-muted d-block mt-1">
+                        <small class="text-muted d-block mt-1 predicted-timestamp">
                             <i class="bi bi-clock-history me-1"></i>
                             {% if game.timestamp %}
-                                Predicted: {{ game.timestamp.split('T')[0] if 'T' in game.timestamp else game.timestamp }}
+                                {% if 'T' in game.timestamp %}
+                                    {% set dt = game.timestamp.split('T') %}
+                                    Predicted: {{ dt[0] }} {{ dt[1][:5] }}
+                                {% else %}
+                                    Predicted: {{ game.timestamp[:16] }}
+                                {% endif %}
                             {% else %}
                                 No timestamp
                             {% endif %}
@@ -129,29 +132,34 @@
                     </div>
                     
                     <!-- Teams with Odds -->
-                    <div class="teams-container my-2" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; column-gap: 0.0rem;">
+                    <div class="teams-container my-2">
                         <div class="team d-flex flex-column align-items-center text-center">
                             <div class="team-name mb-1">{{ game.home_team|default('Home Team') }}</div>
-                            <div class="text-center">
-                                <div class="team-odds {% if game.prediction == 'Home Win' %}predicted-odds{% endif %}">{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</div>
-                                <div class="fw-bold text-dark small mt-1">Home</div>
+                            <div class="odds-score-vertical mb-1">
+                                <span class="team-odds {% if game.prediction == 'Home Win' %}predicted-odds{% endif %}">{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</span>
+                                <span class="final-score-badge" style="{% if not (game.status == 'completed' and game.final_home_score is not none) %}visibility: hidden;{% endif %}">
+                                    {% if game.status == 'completed' and game.final_home_score is not none %}{{ game.final_home_score }}{% else %}-{% endif %}
+                                </span>
                             </div>
+                            <div class="fw-bold text-dark small">Home</div>
                         </div>
-                        
-                        <div class="vs-container d-flex flex-column align-items-center text-center">
-                            <div class="vs-badge mb-1">VS</div>
-                            <div class="text-center">
-                                <div class="draw-odds {% if game.prediction == 'Draw' %}predicted-odds{% endif %}">{% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}</div>
-                                <div class="fw-bold text-dark small mt-1">Draw</div>
+                        <div class="team d-flex flex-column align-items-center text-center">
+                            <div class="team-name mb-1" style="visibility: hidden;">placeholder</div>
+                            <div class="odds-score-vertical mb-1">
+                                <span class="draw-odds {% if game.prediction == 'Draw' %}predicted-odds{% endif %}">{% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}</span>
+                                <span class="final-score-badge" style="{% if not (game.status == 'completed') %}visibility: hidden;{% endif %}">-</span>
                             </div>
+                            <div class="fw-bold text-dark small">Draw</div>
                         </div>
-                        
                         <div class="team d-flex flex-column align-items-center text-center">
                             <div class="team-name mb-1">{{ game.away_team|default('Away Team') }}</div>
-                            <div class="text-center">
-                                <div class="team-odds {% if game.prediction == 'Away Win' %}predicted-odds{% endif %}">{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</div>
-                                <div class="fw-bold text-dark small mt-1">Away</div>
+                            <div class="odds-score-vertical mb-1">
+                                <span class="team-odds {% if game.prediction == 'Away Win' %}predicted-odds{% endif %}">{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</span>
+                                <span class="final-score-badge" style="{% if not (game.status == 'completed' and game.final_away_score is not none) %}visibility: hidden;{% endif %}">
+                                    {% if game.status == 'completed' and game.final_away_score is not none %}{{ game.final_away_score }}{% else %}-{% endif %}
+                                </span>
                             </div>
+                            <div class="fw-bold text-dark small">Away</div>
                         </div>
                     </div>
                     

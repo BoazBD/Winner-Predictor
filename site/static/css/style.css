@@ -39,12 +39,17 @@ body {
 }
 
 .card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     border: none;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     transition: all 0.3s ease;
     overflow: hidden;
     background-color: var(--card-background);
+    padding: 0;
+    width: 100%;
 }
 
 .card:hover {
@@ -130,100 +135,124 @@ body {
 /* Game card layout adjustments */
 .game-card {
     position: relative;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.4rem;
     max-width: 100%;
     height: auto;
     overflow: visible;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .game-card .card-body {
-    padding: 0.75rem;
     display: flex;
-    flex-wrap: nowrap;
+    flex-direction: row;
     align-items: center;
-    gap: 0.25rem;
+    justify-content: space-between;
+    padding: 0.3rem 0.25rem;
+    gap: 0;
+    width: 100%;
 }
 
 .game-card .game-info {
-    flex: 0 0 15%;
-    padding-left: 0.5rem;
-    padding-right: 0.25rem;
+    flex: 1.5;
+    min-width: 170px;
+    max-width: 230px;
+    padding: 0 0.05rem;
+    margin: 0;
+    text-align: left;
 }
 
 .game-card .league-badge {
     display: inline-block;
-    padding: 0.15rem 0.5rem;
+    padding: 0.1rem 0.4rem;
     font-size: 0.7rem;
     font-weight: 600;
     border-radius: 20px;
     background-color: rgba(0,0,0,0.05);
     color: var(--text-muted);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-card .model-badge {
     display: inline-block;
-    padding: 0.15rem 0.5rem;
+    padding: 0.1rem 0.4rem;
     font-size: 0.7rem;
     font-weight: 600;
     border-radius: 20px;
     background-color: rgba(78, 168, 222, 0.15);
     color: var(--secondary-color);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.game-card .match-time {
-    display: block;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-}
-
-.game-card .teams-container {
-    flex: 0 0 55%;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    margin: 0;
-    padding: 0 0.25rem;
-}
-
-.game-card .team {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.game-card .match-time,
+.predicted-timestamp {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .game-card .team-name {
+    font-size: 0.78rem;
+    min-height: 22px;
     font-weight: 600;
-    font-size: 0.85rem;
-    text-align: center;
-    min-height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 0.25rem;
-    line-height: 1.2;
-    margin-bottom: 0.2rem;
+    padding: 0;
+    line-height: 1.1;
+    margin-bottom: 0.1rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+.teams-container {
+    display: grid !important;
+    grid-template-columns: minmax(65px, 1fr) minmax(5px, auto) minmax(65px, 1fr) !important;
+    align-items: end;
+    column-gap: 0 !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    flex: 0.8;
+    min-width: 170px;
+    max-width: 190px;
+    width: auto;
+    justify-content: center;
+}
+
+.game-card .team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    width: 100%;
 }
 
 .game-card .team-odds,
 .game-card .draw-odds {
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.9em;
     color: var(--primary-color);
-    background-color: rgba(0,0,0,0.05);
+    background: rgba(0,0,0,0.05);
     border-radius: 4px;
-    padding: 0.1rem 0.4rem;
+    padding: 0.01em 0.15em;
+    margin-bottom: 0.01em;
     display: inline-block;
-    margin-bottom: 0.1rem;
-    height: 24px;
-    line-height: 24px;
+    min-width: 1.5em;
+    text-align: center;
 }
 
 /* Styling for predicted odds */
@@ -234,53 +263,68 @@ body {
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.game-card .vs-badge {
-    padding: 0.2rem;
-    background-color: #f8f9fa;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-weight: 700;
-    font-size: 0.75rem;
-    margin-bottom: 0.2rem;
-}
-
 .game-card .vs-container {
-    margin: 0 0.5rem;
+    margin: 0 -10px !important;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: auto;
+    min-width: auto;
+    padding: 0 !important;
+}
+
+.game-card .vs-badge {
+    padding: 0 !important;
+    background-color: transparent;
+    width: auto;
+    height: auto;
+    font-weight: 700;
+    font-size: 0.7rem;
+    margin: 0 !important;
 }
 
 .game-card .prediction-container {
-    flex: 0 0 30%;
-    background-color: var(--primary-color);
-    color: white;
-    padding: 0.4rem 0.6rem;
-    border-radius: var(--border-radius);
-    text-align: center;
-    margin-left: 0;
-    position: relative;
-    padding-bottom: 2rem;
+    flex: 1.5;
+    min-width: 180px;
+    max-width: 240px;
+    padding: 0.1rem 0.05rem;
+    margin: 0;
+    text-align: right;
 }
 
 .game-card .prediction-label {
     font-size: 0.6rem;
     opacity: 0.8;
-    margin-bottom: 0.1rem;
+    margin-bottom: 0.02rem;
+    margin-top: 0;
 }
 
 .game-card .prediction-value {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
     font-weight: 700;
     font-size: 0.85rem;
+    margin-top: 0;
+    margin-bottom: 0.05rem;
+    padding-left: 0.05rem;
+}
+
+.game-card .confidence-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-top: 0.05rem;
+    margin-bottom: 0.05rem;
+    padding-left: 0.05rem;
 }
 
 .game-card .ev-badge {
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-    padding: 0.1rem 0.4rem;
+    top: 0.3rem;
+    right: 0.3rem;
+    padding: 0.1rem 0.3rem;
     font-size: 0.65rem;
     font-weight: 600;
     border-radius: 20px;
@@ -330,17 +374,43 @@ body {
 @media (max-width: 991px) {
     .game-card .card-body {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.2rem;
+        align-items: center;
+        padding: 0.35rem 0.3rem;
     }
     
     .game-card .game-info,
-    .game-card .teams-container,
     .game-card .prediction-container {
         flex: 0 0 100%;
+        max-width: 100%;
+        min-width: 100%;
+        margin: 0;
+        text-align: center;
+        padding: 0.1rem;
+    }
+    
+    .game-info-content {
+        align-items: center;
+        padding-right: 0;
+    }
+
+    .game-card .prediction-container {
+        text-align: center;
+    }
+    
+    .game-card .prediction-value, 
+    .game-card .confidence-container {
+        justify-content: center;
+        align-items: center;
+        padding-left: 0;
     }
     
     .game-card .teams-container {
-        padding: 0.25rem 0;
+        padding: 0.05rem 0;
+        margin: 0 auto !important;
+        max-width: 280px;
+        width: 280px;
+        min-width: 280px;
     }
 }
 
@@ -364,14 +434,29 @@ body {
 }
 
 .result-badge {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.7rem;
+    display: inline-block;
+    padding: 0.08rem 0.25rem;
+    font-size: 0.62rem;
     font-weight: 600;
     border-radius: 20px;
-    z-index: 2;
+    color: white;
+    white-space: nowrap;
+    margin-bottom: 0.2rem;
+    min-width: unset;
+    max-width: 90px;
+}
+
+.game-card .final-score {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-top: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    min-width: 24px;
+    display: inline-block;
+    height: 22px;
+    line-height: 22px;
 }
 
 /* Hero Section */
@@ -724,4 +809,107 @@ body {
         margin-bottom: 0;
         width: 100%;
     }
+}
+
+.odds-score-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-height: 1.7em;
+}
+
+.final-score-badge {
+    display: inline-block;
+    min-width: 1.8em;
+    text-align: center;
+    font-size: 0.95em;
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 0.2em;
+}
+
+.odds-score-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 1.5em;
+    min-height: 1.5em;
+    margin-bottom: 0.04em;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.team-odds, .draw-odds {
+    font-weight: 700;
+    font-size: 0.9em;
+    color: var(--primary-color);
+    background: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    padding: 0.01em 0.15em;
+    margin-bottom: 0.01em;
+    display: inline-block;
+    min-width: 1.5em;
+    text-align: center;
+}
+
+.final-score-badge {
+    font-size: 0.85em;
+    color: #888;
+    background: #f3f3f3;
+    border-radius: 4px;
+    min-width: 1.6em;
+    text-align: center;
+    margin-top: 0.05em;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.predicted-timestamp {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Left align team names in their cells */
+.game-card .team:first-child .team-name {
+    text-align: center;
+}
+
+/* Right align team names in their cells */
+.game-card .team:last-child .team-name {
+    text-align: center;
+}
+
+/* Container for left-aligned game info content */
+.game-info-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    max-width: 100%;
+    padding-right: 0.05rem;
+    padding-left: 0.05rem;
+}
+
+.game-card .league-badge,
+.game-card .model-badge,
+.game-card .match-time,
+.predicted-timestamp {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.middle-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 auto;
 } 
