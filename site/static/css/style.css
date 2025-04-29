@@ -149,16 +149,19 @@ body {
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.3rem 0.25rem;
+    justify-content: space-evenly;
+    padding: 0.3rem 1.2rem;
     gap: 0;
     width: 100%;
+    margin: 0;
+    max-width: none;
 }
 
+/* Adjust section widths to balance the layout with new spacing */
 .game-card .game-info {
-    flex: 1.5;
-    min-width: 170px;
-    max-width: 230px;
+    flex: 1.25;
+    min-width: 150px;
+    max-width: 210px;
     padding: 0 0.05rem;
     margin: 0;
     text-align: left;
@@ -220,18 +223,19 @@ body {
 
 .teams-container {
     display: grid !important;
-    grid-template-columns: minmax(65px, 1fr) minmax(5px, auto) minmax(65px, 1fr) !important;
+    grid-template-columns: minmax(65px, 1fr) minmax(10px, auto) minmax(65px, 1fr) !important;
     align-items: end;
-    column-gap: 0 !important;
+    column-gap: 10px !important;
     padding: 0 !important;
     margin: 0 auto !important;
-    flex: 0.8;
-    min-width: 170px;
-    max-width: 190px;
+    flex: 0.85;
+    min-width: 180px;
+    max-width: 200px;
     width: auto;
     justify-content: center;
 }
 
+/* Adjust team width to bring odds closer */
 .game-card .team {
     display: flex;
     flex-direction: column;
@@ -239,6 +243,7 @@ body {
     justify-content: flex-start;
     text-align: center;
     width: 100%;
+    max-width: none;
 }
 
 .game-card .team-odds,
@@ -253,41 +258,44 @@ body {
     display: inline-block;
     min-width: 1.5em;
     text-align: center;
+    border: 1.5px solid var(--primary-color);
+    box-sizing: border-box;
+    transition: border-color 0.2s, background 0.2s;
 }
 
 /* Styling for predicted odds */
 .game-card .predicted-odds {
-    background-color: rgba(37, 53, 69, 0.1);  /* More subtle version of primary color */
-    color: var(--primary-color);
-    border: 1px solid var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    background-color: #ffe08a !important; /* Vibrant yellow */
+    color: #253545 !important; /* Dark text for contrast */
+    border: 1.5px solid #f1b800 !important; /* Only color, not thickness */
+    box-shadow: 0 0 4px 1px #ffe08a60;
+    position: relative;
+    z-index: 1;
 }
 
 .game-card .vs-container {
-    margin: 0 -10px !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    min-width: auto;
-    padding: 0 !important;
+    margin: 0 10px;
+    min-width: 30px;
 }
 
 .game-card .vs-badge {
-    padding: 0 !important;
-    background-color: transparent;
-    width: auto;
-    height: auto;
-    font-weight: 700;
-    font-size: 0.7rem;
-    margin: 0 !important;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: bold;
+    font-size: 1.2rem;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid #dee2e6;
 }
 
 .game-card .prediction-container {
-    flex: 1.5;
-    min-width: 180px;
-    max-width: 240px;
+    flex: 1.25;
+    min-width: 160px;
+    max-width: 220px;
     padding: 0.1rem 0.05rem;
     margin: 0;
     text-align: right;
@@ -407,10 +415,10 @@ body {
     
     .game-card .teams-container {
         padding: 0.05rem 0;
-        margin: 0 auto !important;
-        max-width: 280px;
-        width: 280px;
-        min-width: 280px;
+        margin: 0.5rem auto !important;
+        max-width: 250px;
+        width: 250px;
+        min-width: 250px;
     }
 }
 
@@ -912,4 +920,60 @@ body {
     justify-content: center;
     align-items: center;
     flex: 0 0 auto;
+}
+
+/* Add this after the .draw-odds or .odds-score-vertical styles */
+.vs-badge-x {
+    position: absolute;
+    left: 50%;
+    top: -32px;
+    transform: translateX(-50%);
+    background: none;
+    color: #6c757d;
+    font-weight: bold;
+    font-size: 1.1rem;
+    width: auto;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    border: none;
+    z-index: 2;
+    box-shadow: none;
+    pointer-events: none;
+    padding: 0;
+}
+
+/* Responsive adjustment for mobile */
+@media (max-width: 576px) {
+    .vs-badge-x {
+        font-size: 0.95rem;
+        top: -26px;
+    }
+}
+
+/* Add text-center to Prediction Analysis table cells */
+.prediction-stats-container td {
+    text-align: center;
+}
+
+/* Keep the first column (Outcome) left-aligned for readability */
+.prediction-stats-container td:first-child {
+    text-align: left;
+}
+
+/* Make sure the icons in the last column stay centered */
+.prediction-stats-container td:last-child {
+    text-align: center;
+}
+
+/* Make sure table header text is centered too */
+.prediction-stats-container th {
+    text-align: center;
+}
+
+/* Keep the first header (Outcome) left-aligned for consistency */
+.prediction-stats-container th:first-child {
+    text-align: left;
 } 

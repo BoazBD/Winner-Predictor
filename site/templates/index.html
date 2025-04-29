@@ -143,11 +143,12 @@
                             </div>
                             <div class="fw-bold text-dark small">Home</div>
                         </div>
-                        <div class="team d-flex flex-column align-items-center text-center">
+                        <div class="team d-flex flex-column align-items-center text-center position-relative">
                             <div class="team-name mb-1" style="visibility: hidden;">placeholder</div>
-                            <div class="odds-score-vertical mb-1">
+                            <div class="odds-score-vertical mb-1 position-relative">
                                 <span class="draw-odds {% if game.prediction == 'Draw' %}predicted-odds{% endif %}">{% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}</span>
                                 <span class="final-score-badge" style="{% if not (game.status == 'completed') %}visibility: hidden;{% endif %}">-</span>
+                                <span class="vs-badge-x">X</span>
                             </div>
                             <div class="fw-bold text-dark small">Draw</div>
                         </div>

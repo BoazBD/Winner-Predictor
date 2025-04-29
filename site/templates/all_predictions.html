@@ -198,7 +198,7 @@
                                             <!-- Home Team -->
                                             <div class="team-column text-center">
                                                 <div class="team-badge {% if primary_game.home_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2">{{ primary_game.home_team|default('Home Team') }}</div>
+                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if primary_game.home_team|default('Home Team')|length <= 15 else 'false' }}">{{ primary_game.home_team|default('Home Team') }}</div>
                                                     <div class="odds-badge {% if primary_game.home_win_is_profitable %}highlighted-odds{% endif %}">
                                                         {% if primary_game.odds.home is not none %}{{ primary_game.odds.home }}{% else %}-{% endif %}
                                                     </div>
@@ -209,7 +209,7 @@
                                             <!-- Draw Column -->
                                             <div class="team-column text-center mx-2">
                                                 <div class="team-badge {% if primary_game.draw_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2">Draw</div>
+                                                    <div class="team-name fw-bold mb-2" data-short="true">Draw</div>
                                                     <div class="odds-badge {% if primary_game.draw_is_profitable %}highlighted-odds{% endif %}">
                                                         {% if primary_game.odds.draw is not none %}{{ primary_game.odds.draw }}{% else %}-{% endif %}
                                                     </div>
@@ -220,7 +220,7 @@
                                             <!-- Away Team -->
                                             <div class="team-column text-center">
                                                 <div class="team-badge {% if primary_game.away_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2">{{ primary_game.away_team|default('Away Team') }}</div>
+                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if primary_game.away_team|default('Away Team')|length <= 15 else 'false' }}">{{ primary_game.away_team|default('Away Team') }}</div>
                                                     <div class="odds-badge {% if primary_game.away_win_is_profitable %}highlighted-odds{% endif %}">
                                                         {% if primary_game.odds.away is not none %}{{ primary_game.odds.away }}{% else %}-{% endif %}
                                                     </div>
@@ -426,6 +426,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const primaryGameCards = document.querySelectorAll('.prediction-card:not(.history-prediction)');
     console.log(`Displaying ${primaryGameCards.length} primary game cards`);
     
+    // Update data-short attribute for all team names
+    document.querySelectorAll('.team-name').forEach(function(el) {
+        // Change threshold to 15 characters
+        if (el.textContent.trim().length <= 15) {
+            el.setAttribute('data-short', 'true');
+        } else {
+            el.setAttribute('data-short', 'false');
+        }
+    });
+    
     // Model dropdown selection handler
     const modelItems = document.querySelectorAll('.model-item');
     const modelTypeInput = document.getElementById('modelTypeInput');
@@ -520,70 +530,106 @@ document.addEventListener('DOMContentLoaded', function() {
 /* Team display */
 .match-teams-container {
     border-radius: 8px;
-    padding: 10px;
+    padding: 15px;
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
+    margin-right: auto;
+    width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .teams-display {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
     align-items: stretch;
+    width: 100%;
+    max-width: 100%;
 }
 
 .team-column {
-    flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     padding: 0 2px;
 }
 
+.team-column.mx-2 {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
 .team-badge {
-    padding: 8px 4px;
+    padding: 10px 8px;
     border-radius: 8px;
     margin-bottom: 5px;
     background-color: white;
     border: 1px solid #e9ecef;
     transition: all 0.2s;
-    height: 100%;
+    width: 100%;
+    min-height: 130px; /* Increased height */
+    height: 130px; /* Increased height */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.team-name {
+    font-size: 1rem; /* Larger font size */
+    width: 100%;
+    overflow: visible; /* Changed to visible to avoid cutoff */
+    line-height: 1.4;
+    word-break: break-word;
+    margin: 0 auto 2px;
+    text-align: center;
+    padding: 0 5px;
+    box-sizing: border-box;
+    height: 4.2rem; /* Increased height */
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* Allow up to 3 lines */
+    -webkit-box-orient: vertical;
+}
+
+/* Specific handling for short team names */
+.team-name[data-short="true"] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    display: block;
+    padding: 0 5px;
+    font-size: 1.1rem; /* Larger font size */
+    height: 1.4rem;
+    line-height: 1.4;
+}
+
+.odds-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    box-sizing: border-box;
+    min-width: 55px;
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .active-prediction {
     background-color: #e6f7ed;
     border-color: #28a745;
-}
-
-.team-name {
-    font-size: 0.8rem;
-    max-width: 100%;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    line-height: 1.2;
-    min-height: 2.4rem;
-    word-break: break-word;
-    margin: 0 auto;
-}
-
-/* For the "vs" text, keep it centered and not wrapped */
-.team-column:nth-child(2) .team-name {
-    -webkit-line-clamp: 1;
-    line-height: 1.2;
-    min-height: 1.2rem;
-}
-
-.odds-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 20px;
-    background-color: #e9ecef;
-    color: #495057;
-    font-weight: bold;
-    font-size: 0.85rem;
-    margin-top: auto;
 }
 
 .highlighted-odds {
@@ -601,20 +647,126 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.75rem;
     color: #6c757d;
     font-weight: 500;
+    margin-top: 4px;
+}
+
+/* Fix card body layout */
+.card-body {
+    padding: 1rem;
+    overflow: hidden; /* Prevent content from spilling out */
+}
+
+.card-body .row {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.card-body .col-md-5 {
+    width: 52% !important; /* Reduced from 55% to 52% */
+    padding-left: 0;
+    padding-right: 10px;
+    flex: 0 0 52% !important; /* Reduced from 55% to 52% */
+    max-width: 52% !important; /* Reduced from 55% to 52% */
+    box-sizing: border-box;
+}
+
+.card-body .col-md-7 {
+    width: 48% !important; /* Increased from 45% to 48% */
+    padding-left: 10px;
+    padding-right: 0;
+    flex: 0 0 48% !important; /* Increased from 45% to 48% */
+    max-width: 48% !important; /* Increased from 45% to 48% */
+    box-sizing: border-box;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+    .card-body .col-md-5,
+    .card-body .col-md-7 {
+        width: 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    .match-teams-container {
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .teams-display {
+        gap: 10px;
+    }
+    
+    .team-badge {
+        min-height: 110px;
+        height: 110px;
+        padding: 8px 5px;
+    }
+    
+    .team-name {
+        font-size: 0.95rem;
+        padding: 0 3px;
+        height: 4rem;
+    }
+    
+    .team-name[data-short="true"] {
+        font-size: 1rem;
+        height: 1.4rem;
+    }
+    
+    .odds-badge {
+        font-size: 0.9rem;
+        padding: 4px 10px;
+        min-width: 50px;
+        bottom: 12px;
+    }
+}
+
+/* Historical odds display */
+.historical-odds {
+    background-color: #f0f8ff;
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px dashed #0dcaf0;
+    overflow: hidden; /* Prevent content from spilling out */
 }
 
 /* History styling */
 .history-prediction {
     border-left: 3px solid #0dcaf0;
     background-color: #f8f9fa;
+    overflow: hidden;
 }
 
 .history-container {
     margin-left: 15px;
     margin-bottom: 20px;
     border-left: 2px dashed #dee2e6;
-    padding-left: 15px; /* Increased padding */
-    padding-top: 10px; /* Added top padding */
+    padding-left: 15px;
+    padding-top: 10px;
+    overflow: hidden;
+}
+
+.toggle-history {
+    transition: all 0.2s;
+    margin-top: 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    display: inline-block;
+    float: right;
+    width: auto !important;
+}
+
+.toggle-history:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 /* Status indicators */
@@ -642,37 +794,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /* Table styles */
 .prediction-stats-container .table {
-    font-size: 0.85rem;
+    font-size: 0.8rem; /* Slightly reduced from 0.85rem */
+    width: 100%;
+    table-layout: fixed;
+    margin-bottom: 0.5rem;
 }
 
-.prediction-stats-container th {
-    font-weight: 600;
+.prediction-stats-container th,
+.prediction-stats-container td {
+    padding: 0.3rem 0.3rem; /* Slightly reduced padding */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.toggle-history {
-    transition: all 0.2s;
-    margin-top: 8px;
-    border-radius: 6px;
-    font-weight: 500;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    padding: 5px 10px;
-    font-size: 0.8rem;
+/* Set specific column widths */
+.prediction-stats-container th:nth-child(1), /* OUTCOME */
+.prediction-stats-container td:nth-child(1) {
+    width: 23%; /* Reduced from 25% to 23% */
+}
+
+.prediction-stats-container th:nth-child(2), /* PROBABILITY */
+.prediction-stats-container td:nth-child(2) {
+    width: 23%; /* Reduced from 25% to 23% */
+}
+
+.prediction-stats-container th:nth-child(3), /* ODDS */
+.prediction-stats-container td:nth-child(3) {
+    width: 16%;
+}
+
+.prediction-stats-container th:nth-child(4), /* EV */
+.prediction-stats-container td:nth-child(4) {
+    width: 16%;
+}
+
+.prediction-stats-container th:nth-child(5), /* PROFITABLE */
+.prediction-stats-container td:nth-child(5) {
+    width: 22%; /* Increased from 18% to 22% */
+    text-align: center;
+}
+
+/* Make profitable column visible */
+.prediction-stats-container th:nth-child(5),
+.prediction-stats-container td:nth-child(5) {
+    padding-left: 0;
+    padding-right: 0;
+    min-width: 50px;
+}
+
+/* Make the icons in the profitable column not cut off */
+.prediction-stats-container td:nth-child(5) i {
+    font-size: 1rem;
     display: inline-block;
-    float: right;
-    width: auto !important;
+    width: auto;
 }
 
-.toggle-history:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* Adjust the header text */
+.prediction-stats-container thead th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    padding: 0.3rem 0.2rem;
 }
 
-/* Historical odds display */
-.historical-odds {
-    background-color: #f0f8ff;
-    border-radius: 8px;
-    padding: 8px;
-    border: 1px dashed #0dcaf0;
+/* Ensure number columns align properly */
+.prediction-stats-container td:nth-child(2), /* PROBABILITY */
+.prediction-stats-container td:nth-child(3), /* ODDS */
+.prediction-stats-container td:nth-child(4) { /* EV */
+    text-align: right;
 }
 
 /* Filter panel */
@@ -723,6 +914,38 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 0.75rem;
         padding: 2px 6px;
     }
+}
+
+/* Ensure table container doesn't overflow */
+.prediction-stats-container {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+/* Make numbers not wrap and align right */
+.prediction-stats-container td:nth-child(2), /* PROBABILITY */
+.prediction-stats-container td:nth-child(3), /* ODDS */
+.prediction-stats-container td:nth-child(4) { /* EV */
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Specific styling for the check/x icons */
+.prediction-stats-container td:nth-child(5) i.bi-check-circle-fill {
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.prediction-stats-container td:nth-child(5) i.bi-x-circle-fill {
+    color: #dc3545;
+    font-size: 1.1rem;
+}
+
+/* Make sure profitable header fits */
+.prediction-stats-container th:nth-child(5) {
+    font-size: 0.7rem;
+    padding-left: 0;
+    padding-right: 0;
 }
 </style>
 {% endblock %} 
