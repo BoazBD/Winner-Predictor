@@ -1,13 +1,12 @@
 # Sports Betting Predictor
 
+## [👉 LIVE PREDICTION SITE 👈](http://winner-site.eba-y8huhsgi.il-central-1.elasticbeanstalk.com)
+
 ---
 
 ## Description
 This project is designed to help you spot value bets—those with a positive expected return. The idea is: by looking at how betting odds change over time, the system learns to predict the true chances of game outcomes. When the odds on offer deviate from these predictions, it might signal a smart betting opportunity.
 
-## Live Predictions
-Check out our live prediction site where you can see the model's recommendations in real-time:
-[Winner Predictor Live](http://winner-site.eba-y8huhsgi.il-central-1.elasticbeanstalk.com)
 
 The site displays current profitable betting opportunities identified by our model based on real-time data analysis.
 
