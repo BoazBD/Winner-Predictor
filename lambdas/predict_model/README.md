@@ -94,4 +94,27 @@ Common issues:
 1. **Lambda timeout**: If the function times out, increase the timeout in the Lambda configuration
 2. **Memory issues**: Increase the allocated memory if the function runs out of memory
 3. **Missing model**: Ensure the model file exists in S3 at `models/${MODEL_TYPE}_${EPOCHS}_${MAX_SEQ}_v1.h5`
-4. **Permissions**: Check that the IAM role has all necessary permissions 
+4. **Permissions**: Check that the IAM role has all necessary permissions
+
+## Updates
+
+### Automated Translation System (Latest Update)
+
+The Lambda function now includes an automated Hebrew to English translation system that:
+
+1. Uses a hybrid approach:
+   - A fallback dictionary for common teams and leagues 
+   - Google Translate API for unknown teams and leagues
+   - In-memory caching to improve performance
+
+2. Benefits:
+   - Automatically handles new teams and leagues without manual updates
+   - Preserves translations for well-known entities
+   - Reduces API calls through caching
+
+The translation system is used to translate:
+- Team names (home and away)
+- League names
+- Any other Hebrew text that requires translation
+
+This improves the readability of predictions for non-Hebrew speakers and ensures consistency in translations. 

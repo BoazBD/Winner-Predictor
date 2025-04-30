@@ -11,10 +11,18 @@ import logging
 from typing import Tuple, List, Dict, Any
 from decimal import Decimal
 from tensorflow.keras.initializers import Orthogonal
+from googletrans import Translator
+from team_translations import TEAM_TRANSLATIONS, get_translation
 
 # Set up logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+# Create a translator instance for use throughout the function
+translator = Translator()
+
+# Initialize translation cache to avoid repeated API calls for the same text
+_translation_cache = {}
 
 BIG_GAMES = [
     "פרמייר ליג",
@@ -366,6 +374,55 @@ def preprocess_data(df):
     logger.info(f"Found {len(valid_game_data)} games with enough data for prediction")
     return valid_game_data
 
+def translate_to_english(text, context=""):
+    """
+    Automatically translate Hebrew text to English using Google Translate API.
+    Includes caching and fallback to known translations.
+    
+    Args:
+        text (str): The Hebrew text to translate
+        context (str): Optional context (e.g., "football team" or "football league")
+    
+    Returns:
+        str: The translated English text
+    """
+    if not text or not isinstance(text, str):
+        return ""
+    
+    # Check if already in English or contains only non-Hebrew characters
+    if all(ord(c) < 1200 for c in text):  # Hebrew Unicode range starts around 1200
+        return text
+        
+    # Check cache first
+    cache_key = f"{text}:{context}"
+    if cache_key in _translation_cache:
+        return _translation_cache[cache_key]
+    
+    # Check fallback dictionary for common terms
+    if text in TEAM_TRANSLATIONS:
+        translated_text = TEAM_TRANSLATIONS[text]
+        logger.info(f"Using fallback translation for '{text}': '{translated_text}'")
+        _translation_cache[cache_key] = translated_text
+        return translated_text
+    
+    try:
+        # Use Google Translate API
+        translation = translator.translate(text, src='iw', dest='en')
+        translated_text = translation.text
+        
+        # Cache the result
+        _translation_cache[cache_key] = translated_text
+        
+        logger.info(f"Translated '{text}' to '{translated_text}'")
+        return translated_text
+    
+    except Exception as e:
+        logger.error(f"Translation error for text '{text}': {str(e)}")
+        
+        # If automatic translation fails, try to clean and return the original text
+        # or use a fallback
+        return text
+
 def make_predictions(model, valid_game_data, model_name):
     """Make predictions for all games with enough historical data."""
     logger.info(f"Making predictions with model {model_name}")
@@ -392,6 +449,11 @@ def make_predictions(model, valid_game_data, model_name):
             league = info.get('league')
             # Extract the result_id directly from the api_odds data (info object)
             result_id = info.get('result_id') 
+            
+            # Translate team names and league to English with context
+            english_home_team = translate_to_english(home_team, "football team")
+            english_away_team = translate_to_english(away_team, "football team")
+            english_league = translate_to_english(league, "football league")
             
             # Get odds
             home_odds = float(info.get('ratio1'))
@@ -437,6 +499,10 @@ def make_predictions(model, valid_game_data, model_name):
                 'home_team': home_team,
                 'away_team': away_team,
                 'league': league,
+                # Store English translations
+                'english_home_team': english_home_team,
+                'english_away_team': english_away_team,
+                'english_league': english_league,
                 'event_date': event_date,
                 'game_time': game_time,
                 'match_time_str': match_time_str,
