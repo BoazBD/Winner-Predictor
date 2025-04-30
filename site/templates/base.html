@@ -288,13 +288,41 @@
             .navbar {
                 padding: 10px 0;
             }
-            
-            .navbar-collapse {
+        }
+        
+        /* Custom navbar styles to ensure visibility */
+        .navbar-menu {
+            display: flex !important;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        
+        /* Hide toggle button on desktop */
+        @media (min-width: 992px) {
+            .navbar-toggler {
+                display: none;
+            }
+        }
+        
+        /* Mobile styles */
+        @media (max-width: 991.98px) {
+            .navbar-menu {
+                position: absolute;
+                top: 100%;
+                right: 0;
                 background-color: var(--navbar-bg);
-                padding: 15px;
-                border-radius: 8px;
-                margin-top: 10px;
+                border-radius: 0 0 8px 8px;
+                padding: 10px 15px;
+                width: 100%;
+                max-width: 300px;
+                flex-direction: column;
                 box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                display: none !important;
+            }
+            
+            .navbar-menu.show {
+                display: flex !important;
             }
         }
     </style>
@@ -306,10 +334,10 @@
                 <i class="bi bi-graph-up-arrow me-2"></i>
                 Winner Predictions
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" id="navbarToggler">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-menu" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
@@ -379,6 +407,34 @@
                     link.classList.add('active');
                 }
             });
+            
+            // Custom script to handle mobile menu toggle
+            const navbarToggler = document.getElementById('navbarToggler');
+            const navbarMenu = document.getElementById('navbarNav');
+            
+            if (navbarToggler && navbarMenu) {
+                navbarToggler.addEventListener('click', function() {
+                    navbarMenu.classList.toggle('show');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    const isClickInside = navbarToggler.contains(event.target) || navbarMenu.contains(event.target);
+                    if (!isClickInside && navbarMenu.classList.contains('show')) {
+                        navbarMenu.classList.remove('show');
+                    }
+                });
+                
+                // Close menu when clicking a link
+                const menuLinks = navbarMenu.querySelectorAll('a');
+                menuLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        if (navbarMenu.classList.contains('show')) {
+                            navbarMenu.classList.remove('show');
+                        }
+                    });
+                });
+            }
         });
     </script>
     {% block scripts %}{% endblock %}

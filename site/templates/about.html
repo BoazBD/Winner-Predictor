@@ -1,73 +1,131 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="modal-backdrop fade show" id="aboutBackdrop"></div>
-<div class="modal fade show" id="aboutModal" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true" style="display: block;">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="aboutModalLabel">About Our Prediction System</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
+<style>
+    .feature-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .feature-icon i {
+        font-size: 1.2rem;
+    }
+    
+    .d-flex:hover .feature-icon {
+        transform: scale(1.1);
+    }
+    
+    .about-card {
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .about-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    }
+</style>
+
+<div class="hero-section mb-4 py-3">
+    <div class="row align-items-center">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold mb-2">About Our Platform</h1>
+            <p class="lead mb-0">Learn how our AI-powered prediction system works</p>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm about-card">
+            <div class="card-body p-4">
+                <h4 class="mb-4 text-primary">Our Prediction System</h4>
+                
                 <p class="lead">
                     Our advanced sports betting prediction system uses machine learning algorithms to analyze historical data and generate accurate predictions for upcoming matches.
                 </p>
                 
-                <h5 class="mt-4">How It Works</h5>
+                <h5 class="mt-4 text-primary">How It Works</h5>
                 <p>
                     The system analyzes various factors including:
                 </p>
-                <ul class="list-unstyled">
-                    <li class="mb-3">
-                        <i class="bi bi-graph-up text-primary me-2"></i>
-                        Historical match data and team performance
-                    </li>
-                    <li class="mb-3">
-                        <i class="bi bi-people text-success me-2"></i>
-                        Player statistics and team composition
-                    </li>
-                    <li class="mb-3">
-                        <i class="bi bi-calendar-check text-warning me-2"></i>
-                        Recent form and match timing
-                    </li>
-                    <li class="mb-3">
-                        <i class="bi bi-geo-alt text-danger me-2"></i>
-                        Home/Away advantage factors
-                    </li>
-                </ul>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="feature-icon bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-graph-up text-primary"></i>
+                            </div>
+                            <div>
+                                <strong>Historical Data</strong>
+                                <p class="mb-0 small text-muted">Match data and team performance</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="feature-icon bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-people text-success"></i>
+                            </div>
+                            <div>
+                                <strong>Player Analysis</strong>
+                                <p class="mb-0 small text-muted">Player statistics and team composition</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="feature-icon bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-calendar-check text-warning"></i>
+                            </div>
+                            <div>
+                                <strong>Recent Form</strong>
+                                <p class="mb-0 small text-muted">Current form and match timing</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="feature-icon bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-geo-alt text-danger"></i>
+                            </div>
+                            <div>
+                                <strong>Location Factors</strong>
+                                <p class="mb-0 small text-muted">Home/Away advantage analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <h5 class="mt-4">Our Track Record</h5>
+                <h5 class="mt-4 text-primary">Our Track Record</h5>
                 <p>
                     With a proven track record of success, our system has consistently delivered accurate predictions across various leagues and competitions. We maintain transparency by showing our prediction accuracy and continuously improving our algorithms based on performance data.
                 </p>
 
                 <div class="alert alert-info mt-4">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Please note that all predictions are for informational purposes only. Always gamble responsibly and make your own informed decisions.
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-info-circle-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <strong>Important Notice</strong>
+                            <p class="mb-0">Please note that all predictions are for informational purposes only. Always gamble responsibly and make your own informed decisions.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <a href="/" class="btn btn-secondary">Back to Home</a>
+                
+                <div class="mt-4 text-center">
+                    <a href="/" class="btn btn-primary">
+                        <i class="bi bi-house-door me-2"></i>Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Make the entire page clickable to go back
-    document.body.addEventListener('click', function(e) {
-        // Only redirect if clicking on the backdrop or modal itself (not its content)
-        if (e.target.id === 'aboutBackdrop' || e.target.id === 'aboutModal') {
-            window.location.href = '/';
-        }
-    });
-    
-    // Close modal when clicking the close button
-    document.querySelector('.btn-close').addEventListener('click', function() {
-        window.location.href = '/';
-    });
-});
-</script>
 {% endblock %} 
