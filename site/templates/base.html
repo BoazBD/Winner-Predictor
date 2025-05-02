@@ -275,6 +275,19 @@
             word-wrap: break-word;
         }
         
+        /* Language toggle in navbar */
+        .navbar-language-toggle {
+            margin-right: 15px;
+        }
+        
+        .navbar-language-toggle .btn {
+            border-radius: 6px;
+            padding: 5px 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
         /* Media Queries */
         @media (max-width: 991.98px) {
             .container {
@@ -287,6 +300,17 @@
             
             .navbar {
                 padding: 10px 0;
+            }
+            
+            .navbar-language-toggle {
+                margin: 10px 0;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+            }
+            
+            .navbar-language-toggle .btn-group {
+                width: 100%;
             }
         }
         
@@ -338,6 +362,20 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="navbar-menu" id="navbarNav">
+                <!-- Language toggle in navbar -->
+                <div class="navbar-language-toggle">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Language toggle">
+                        <a href="{{ request.path }}?lang=english{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}" 
+                           class="btn {% if selected_language == 'english' or not selected_language %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                           <i class="bi bi-translate me-1"></i> English
+                        </a>
+                        <a href="{{ request.path }}?lang=original{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}" 
+                           class="btn {% if selected_language == 'original' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                           <i class="bi bi-globe me-1"></i> Hebrew
+                        </a>
+                    </div>
+                </div>
+                
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
@@ -345,7 +383,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/all' %}active{% endif %}" href="/all">
+                        <a class="nav-link {% if request.path == '/all' %}active{% endif %}" href="/all?init=1&model_type=lstm_100_12_v1">
                             <i class="bi bi-list-ul me-1"></i> All Predictions
                         </a>
                     </li>

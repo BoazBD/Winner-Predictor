@@ -9,6 +9,9 @@ import json
 import numpy as np
 from decimal import Decimal
 from boto3.dynamodb.conditions import Attr, Key
+from botocore.config import Config
+import time
+from botocore.exceptions import ClientError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -411,8 +414,16 @@ def get_profitable_games_from_dynamodb():
     """
     logger.info("Retrieving games directly from profitable-games table")
     
+    # Configure retry logic to handle ProvisionedThroughputExceededException
+    config = Config(
+        retries = {
+            'max_attempts': 10,
+            'mode': 'adaptive'
+        }
+    )
+    
     # Add region name explicitly to ensure connection works
-    dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+    dynamodb = boto3.resource('dynamodb', region_name="il-central-1", config=config)
     table = dynamodb.Table(PROFITABLE_GAMES_TABLE)
     
     profitable_games = []
@@ -422,28 +433,40 @@ def get_profitable_games_from_dynamodb():
         logger.info(f"Scanning {PROFITABLE_GAMES_TABLE} table")
         
         try:
-            count_response = table.scan(Select='COUNT')
+            # Try to get the count of items, but this is optional
+            count_response = table.scan(Select='COUNT', Limit=100)
             total_items = count_response.get('Count', 0)
-            logger.info(f"Table {PROFITABLE_GAMES_TABLE} contains {total_items} total items")
+            logger.info(f"Table {PROFITABLE_GAMES_TABLE} contains {total_items} total items (limited scan)")
         except Exception as e:
             logger.warning(f"Error counting items in DynamoDB table: {e}")
         
-        # Scan the table for all items
-        response = table.scan()
+        # Scan the table for all items, with a smaller batch size
+        scan_params = {
+            'Limit': 50  # Limit items per scan
+        }
+        response = table.scan(**scan_params)
         items = response.get('Items', [])
         logger.info(f"Found {len(items)} games in profitable-games table")
         
         # Process items from the scan response
         profitable_games = process_dynamodb_items(items)
         
-        # Handle pagination if needed
-        while 'LastEvaluatedKey' in response:
-            response = table.scan(
-                ExclusiveStartKey=response['LastEvaluatedKey']
-            )
-            more_items = response.get('Items', [])
-            logger.info(f"Found {len(more_items)} more games in profitable-games table")
-            profitable_games.extend(process_dynamodb_items(more_items))
+        # Handle pagination if needed, with limits
+        page_count = 1
+        max_pages = 5  # Limit the number of pages to avoid throughput issues
+        while 'LastEvaluatedKey' in response and page_count < max_pages:
+            try:
+                # Add a small delay to avoid hitting throughput limits
+                time.sleep(0.5)
+                scan_params['ExclusiveStartKey'] = response['LastEvaluatedKey']
+                response = table.scan(**scan_params)
+                more_items = response.get('Items', [])
+                logger.info(f"Found {len(more_items)} more games in profitable-games table (page {page_count+1})")
+                profitable_games.extend(process_dynamodb_items(more_items))
+                page_count += 1
+            except Exception as page_error:
+                logger.error(f"Error during pagination for profitable games: {str(page_error)}")
+                break  # Stop pagination if we hit an error
                 
     except Exception as e:
         logger.error(f"Failed to retrieve profitable games: {e}")
@@ -548,11 +571,15 @@ def get_all_predictions_from_dynamodb():
             # Get model information - make sure to include full model_name
             model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
             
+            # Process timestamp - make sure to set prediction_timestamp
+            prediction_timestamp = item.get('prediction_timestamp', timestamp)
+            
             # Create game object
             game = {
                 'id': game_id,                   # Original game ID
                 'prediction_id': prediction_id,  # Unique prediction ID
                 'timestamp': timestamp,          # When the prediction was made
+                'prediction_timestamp': prediction_timestamp,  # Consistent field for sorting
                 'result_id': item.get('result_id', None),  # Include result_id field
                 'home_team': item.get('home_team', ''),
                 'away_team': item.get('away_team', ''),
@@ -740,11 +767,15 @@ def get_predictions_by_model_from_dynamodb(model_name):
             # Get model information - make sure to include full model_name
             item_model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
             
+            # Process timestamp - make sure to set prediction_timestamp
+            prediction_timestamp = item.get('prediction_timestamp', timestamp)
+            
             # Create game object
             game = {
                 'id': game_id,                   # Original game ID
                 'prediction_id': prediction_id,  # Unique prediction ID
                 'timestamp': timestamp,          # When the prediction was made
+                'prediction_timestamp': prediction_timestamp,  # Consistent field for sorting
                 'result_id': item.get('result_id', None),  # Include result_id field
                 'home_team': item.get('home_team', ''),
                 'away_team': item.get('away_team', ''),
@@ -910,16 +941,24 @@ def process_dynamodb_items(items):
         
         # Get model information - make sure to include full model_name
         model_name = item.get('model_name', f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ}_v1")
+        
+        # Process timestamp - make sure to set prediction_timestamp
+        prediction_timestamp = item.get('prediction_timestamp', timestamp)
             
         # Create game object
         game = {
             'id': game_id,                   # Original game ID
             'prediction_id': prediction_id,  # Unique prediction ID
             'timestamp': timestamp,          # When the prediction was made
+            'prediction_timestamp': prediction_timestamp,  # Consistent field for sorting
             'result_id': item.get('result_id', None),  # Include result_id field
             'home_team': item.get('home_team', ''),
             'away_team': item.get('away_team', ''),
             'league': item.get('league', ''),
+            # Add the English version of team names and league
+            'english_home_team': item.get('english_home_team', ''),
+            'english_away_team': item.get('english_away_team', ''),
+            'english_league': item.get('english_league', ''),
             'match_time': match_time,
             'odds': odds,
             'status': item.get('status', 'pending'),
@@ -983,3 +1022,370 @@ def process_dynamodb_items(items):
         processed_items.append(game)
     
     return processed_items 
+
+# Add these new helper functions for paginated data retrieval
+
+def get_unique_leagues_from_db():
+    """Get a list of unique leagues from the database."""
+    try:
+        conn = sqlite3.connect('site/profitable_games.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT league FROM predictions")
+        leagues = [row[0] for row in cursor.fetchall() if row[0]]
+        conn.close()
+        return sorted(leagues)
+    except Exception as e:
+        logging.error(f"Error getting unique leagues: {str(e)}")
+        return []
+
+def get_unique_models_from_db():
+    """Get a list of unique model names from the database."""
+    try:
+        conn = sqlite3.connect('site/profitable_games.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT model_name FROM predictions")
+        models = [row[0] for row in cursor.fetchall() if row[0]]
+        conn.close()
+        return sorted(models)
+    except Exception as e:
+        logging.error(f"Error getting unique models: {str(e)}")
+        return []
+
+def get_prediction_metadata_from_dynamodb():
+    """Quickly retrieve just the metadata (leagues, models) from DynamoDB."""
+    try:
+        # Initialize empty lists
+        leagues = []
+        models = []
+        
+        # Connect to DynamoDB
+        dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+        table = dynamodb.Table('all-predicted-games')
+        
+        # Use a GSI to quickly get just the model names
+        response = table.scan(
+            ProjectionExpression="model_name, league",
+            FilterExpression=Attr('model_name').exists() & Attr('league').exists(),
+            Limit=100  # We just need a sample to get the metadata
+        )
+        
+        # Extract unique models and leagues
+        for item in response.get('Items', []):
+            if 'model_name' in item and item['model_name'] not in models:
+                models.append(item['model_name'])
+            if 'league' in item and item['league'] not in leagues:
+                leagues.append(item['league'])
+        
+        return sorted(leagues), sorted(models)
+    except Exception as e:
+        logging.error(f"Error fetching prediction metadata: {str(e)}")
+        return [], []
+
+def get_paginated_predictions_from_db(page, per_page, league='', model='', prediction='', status='', result='', ev=''):
+    """Get paginated predictions from SQLite with filters applied."""
+    try:
+        conn = sqlite3.connect('site/profitable_games.db')
+        cursor = conn.cursor()
+        
+        # Start building the query
+        base_query = "SELECT * FROM predictions WHERE 1=1"
+        count_query = "SELECT COUNT(*) FROM predictions WHERE 1=1"
+        params = []
+        
+        # Add filters
+        if league:
+            base_query += " AND league = ?"
+            count_query += " AND league = ?"
+            params.append(league)
+            
+        if model:
+            base_query += " AND model_name LIKE ?"
+            count_query += " AND model_name LIKE ?"
+            params.append(f"%{model}%")
+            
+        if prediction:
+            base_query += " AND prediction = ?"
+            count_query += " AND prediction = ?"
+            params.append(prediction)
+            
+        if status:
+            if status == 'upcoming':
+                base_query += " AND (status = 'upcoming' OR status = 'pending')"
+                count_query += " AND (status = 'upcoming' OR status = 'pending')"
+            elif status == 'completed':
+                base_query += " AND status = 'completed'"
+                count_query += " AND status = 'completed'"
+                
+        if result:
+            if result == 'correct':
+                base_query += " AND prediction_result = 1"
+                count_query += " AND prediction_result = 1"
+            elif result == 'incorrect':
+                base_query += " AND prediction_result = 0"
+                count_query += " AND prediction_result = 0"
+        
+        if ev:
+            if ev == 'high':
+                base_query += " AND expected_value > 0.1"
+                count_query += " AND expected_value > 0.1"
+            elif ev == 'medium':
+                base_query += " AND expected_value BETWEEN 0.05 AND 0.1"
+                count_query += " AND expected_value BETWEEN 0.05 AND 0.1"
+            elif ev == 'low':
+                base_query += " AND expected_value BETWEEN 0 AND 0.05"
+                count_query += " AND expected_value BETWEEN 0 AND 0.05"
+                
+        # Add ORDER BY and LIMIT for pagination
+        offset = (page - 1) * per_page
+        base_query += " ORDER BY prediction_timestamp DESC, match_time DESC LIMIT ? OFFSET ?"
+        params.extend([per_page, offset])
+        
+        # Execute count query to get total
+        cursor.execute(count_query, params[:-2] if params else [])
+        total_count = cursor.fetchone()[0]
+        
+        # Execute main query
+        cursor.execute(base_query, params)
+        rows = cursor.fetchall()
+        
+        # Get column names
+        columns = [desc[0] for desc in cursor.description]
+        
+        # Convert to list of dictionaries
+        games = []
+        for row in rows:
+            game = dict(zip(columns, row))
+            
+            # Parse JSON fields
+            for field in ['odds', 'home_team_stats', 'away_team_stats']:
+                if field in game and game[field]:
+                    try:
+                        game[field] = json.loads(game[field])
+                    except:
+                        game[field] = {}
+            
+            # Convert timestamp strings to datetime objects
+            if 'match_time' in game and game['match_time']:
+                try:
+                    game['match_time'] = datetime.strptime(game['match_time'], '%Y-%m-%d %H:%M:%S')
+                except:
+                    pass
+                    
+            if 'prediction_timestamp' in game and game['prediction_timestamp']:
+                try:
+                    game['prediction_timestamp'] = datetime.strptime(game['prediction_timestamp'], '%Y-%m-%d %H:%M:%S')
+                except:
+                    pass
+            
+            games.append(game)
+            
+        conn.close()
+        return games, total_count
+    
+    except Exception as e:
+        logging.error(f"Error getting paginated predictions from DB: {str(e)}")
+        return [], 0
+
+def get_paginated_predictions_from_dynamodb(page, per_page, league='', model='', prediction='', status='', result='', ev=''):
+    """Get paginated predictions from DynamoDB. Uses Query on GSI if model is specified, otherwise falls back to Scan."""
+    
+    # If a specific model is provided, use the GSI Query for efficient sorting by time within that model.
+    if model:
+        logger.info(f"Using DynamoDB Query on GSI for model: {model}")
+        try:
+            dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+            table = dynamodb.Table('all-predicted-games')
+            
+            # --- GSI Query Logic --- 
+            GSI_NAME = 'ModelTimeIndex' # Correct GSI name
+            
+            query_params = {
+                'IndexName': GSI_NAME,
+                # Use the provided model name as the Partition Key for the GSI query
+                'KeyConditionExpression': Key('model_name').eq(model), 
+                'ScanIndexForward': False,  # Sort descending (newest first via timestamp SK)
+                'Limit': per_page 
+            }
+
+            filter_expressions = []
+            expression_attr_values = {}
+            expression_attr_names = {}
+
+            # Add non-key filters (league, status, etc.)
+            if league:
+                filter_expressions.append('#league = :league'); expression_attr_values[':league'] = league; expression_attr_names['#league'] = 'league'
+            if prediction:
+                 filter_expressions.append('#prediction = :prediction'); expression_attr_values[':prediction'] = prediction; expression_attr_names['#prediction'] = 'prediction'
+            if status:
+                if status == 'upcoming': filter_expressions.append('(#status = :upcoming OR #status = :pending)'); expression_attr_values[':upcoming'] = 'upcoming'; expression_attr_values[':pending'] = 'pending'; expression_attr_names['#status'] = 'status'
+                elif status == 'completed': filter_expressions.append('#status = :completed'); expression_attr_values[':completed'] = 'completed'; expression_attr_names['#status'] = 'status'
+            if result:
+                prediction_result_val = True if result == 'correct' else False
+                filter_expressions.append('#prediction_result = :result_val'); expression_attr_values[':result_val'] = prediction_result_val; expression_attr_names['#prediction_result'] = 'prediction_result'
+            if ev:
+                try:
+                    if ev == 'high': filter_expressions.append('#expected_value > :high_ev'); expression_attr_values[':high_ev'] = Decimal('0.1')
+                    elif ev == 'medium': filter_expressions.append('#expected_value BETWEEN :medium_min AND :medium_max'); expression_attr_values[':medium_min'] = Decimal('0.05'); expression_attr_values[':medium_max'] = Decimal('0.1')
+                    elif ev == 'low': filter_expressions.append('#expected_value BETWEEN :low_min AND :low_max'); expression_attr_values[':low_min'] = Decimal('0.0'); expression_attr_values[':low_max'] = Decimal('0.05')
+                    if ev in ['high', 'medium', 'low']: expression_attr_names['#expected_value'] = 'expected_value'
+                except Exception as e: logger.warning(f"Could not apply EV filter '{ev}': {e}")
+
+            if filter_expressions:
+                query_params['FilterExpression'] = ' AND '.join(filter_expressions)
+                if expression_attr_values:
+                    for key, value in expression_attr_values.items():
+                        if isinstance(value, float): expression_attr_values[key] = Decimal(str(value))
+                    query_params['ExpressionAttributeValues'] = expression_attr_values
+                if expression_attr_names: query_params['ExpressionAttributeNames'] = expression_attr_names
+            
+            # Pagination for Query
+            items = []
+            last_evaluated_key = None
+            pages_fetched = 0
+            while pages_fetched < page:
+                if last_evaluated_key: query_params['ExclusiveStartKey'] = last_evaluated_key
+                try:
+                    response = table.query(**query_params)
+                except ClientError as e:
+                    if e.response['Error']['Code'] == 'ValidationException' and 'IndexNotFound' in e.response['Error']['Message']:
+                         logger.error(f"DynamoDB GSI '{GSI_NAME}' not found for model query. Falling back to Scan.")
+                         return get_paginated_predictions_from_dynamodb_scan_fallback(page, per_page, league, model, prediction, status, result, ev)
+                    else: raise e
+
+                current_page_items = response.get('Items', [])
+                if pages_fetched == page - 1: items = current_page_items
+                last_evaluated_key = response.get('LastEvaluatedKey')
+                pages_fetched += 1
+                if not last_evaluated_key: break
+
+            # Estimate total count for the *filtered model*
+            # A precise count would need a separate query/scan with filters.
+            query_count_params = { 'IndexName': GSI_NAME, 'KeyConditionExpression': Key('model_name').eq(model), 'Select': 'COUNT'}
+            if query_params.get('FilterExpression'): query_count_params['FilterExpression'] = query_params['FilterExpression']
+            if query_params.get('ExpressionAttributeValues'): query_count_params['ExpressionAttributeValues'] = query_params['ExpressionAttributeValues']
+            if query_params.get('ExpressionAttributeNames'): query_count_params['ExpressionAttributeNames'] = query_params['ExpressionAttributeNames']
+            
+            total_count = 0
+            try: 
+                count_response = table.query(**query_count_params)
+                total_count = count_response.get('Count', 0)
+                # Handle potential pagination for count if necessary (though usually less likely)
+                while 'LastEvaluatedKey' in count_response:
+                     query_count_params['ExclusiveStartKey'] = count_response['LastEvaluatedKey']
+                     count_response = table.query(**query_count_params)
+                     total_count += count_response.get('Count', 0)
+            except Exception as count_e:
+                 logger.error(f"Could not get exact count for model {model} query: {count_e}")
+
+            logger.info(f"DynamoDB GSI Query returned {len(items)} items for model {model}, page {page}. Total matching model count: {total_count}")
+            games = process_dynamodb_items(items)
+            return games, total_count 
+        
+        except Exception as e:
+            logger.error(f"Error during DynamoDB GSI Query for model {model}: {str(e)}")
+            import traceback; traceback.print_exc()
+            return [], 0
+    
+    # If no specific model is selected, fall back to the Scan method.
+    else:
+        logger.info("No model specified, falling back to DynamoDB Scan.")
+        return get_paginated_predictions_from_dynamodb_scan_fallback(page, per_page, league, model, prediction, status, result, ev)
+
+# Fallback function using Scan (less reliable sorting for 'latest overall')
+def get_paginated_predictions_from_dynamodb_scan_fallback(page, per_page, league='', model='', prediction='', status='', result='', ev=''):
+    # ...(Existing Scan fallback logic remains largely the same)
+    logger.warning("Executing DynamoDB Scan fallback - results may not be perfectly sorted by latest overall timestamp until processed in app.")
+    try:
+        dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
+        table = dynamodb.Table('all-predicted-games')
+        
+        # Scan parameters
+        scan_params = {}
+        filter_expressions = []
+        expression_attr_values = {}
+        expression_attr_names = {}
+
+        # Add filters (copied from Query version for consistency)
+        if league: filter_expressions.append('#league = :league'); expression_attr_values[':league'] = league; expression_attr_names['#league'] = 'league'
+        # Note: Scan doesn't need model filter here, but keep consistency if called directly
+        if model: filter_expressions.append('contains(#model_name, :model)'); expression_attr_values[':model'] = model; expression_attr_names['#model_name'] = 'model_name'
+        if prediction: filter_expressions.append('#prediction = :prediction'); expression_attr_values[':prediction'] = prediction; expression_attr_names['#prediction'] = 'prediction'
+        if status:
+            if status == 'upcoming': filter_expressions.append('(#status = :upcoming OR #status = :pending)'); expression_attr_values[':upcoming'] = 'upcoming'; expression_attr_values[':pending'] = 'pending'; expression_attr_names['#status'] = 'status'
+            elif status == 'completed': filter_expressions.append('#status = :completed'); expression_attr_values[':completed'] = 'completed'; expression_attr_names['#status'] = 'status'
+        if result:
+            prediction_result_val = True if result == 'correct' else False
+            filter_expressions.append('#prediction_result = :result_val'); expression_attr_values[':result_val'] = prediction_result_val; expression_attr_names['#prediction_result'] = 'prediction_result'
+        if ev:
+            try:
+                if ev == 'high': filter_expressions.append('#expected_value > :high_ev'); expression_attr_values[':high_ev'] = Decimal('0.1')
+                elif ev == 'medium': filter_expressions.append('#expected_value BETWEEN :medium_min AND :medium_max'); expression_attr_values[':medium_min'] = Decimal('0.05'); expression_attr_values[':medium_max'] = Decimal('0.1')
+                elif ev == 'low': filter_expressions.append('#expected_value BETWEEN :low_min AND :low_max'); expression_attr_values[':low_min'] = Decimal('0.0'); expression_attr_values[':low_max'] = Decimal('0.05')
+                if ev in ['high', 'medium', 'low']: expression_attr_names['#expected_value'] = 'expected_value'
+            except Exception as e: logger.warning(f"Could not apply EV filter '{ev}': {e}")
+        
+        # Apply filters to scan parameters
+        if filter_expressions:
+            scan_params['FilterExpression'] = ' AND '.join(filter_expressions)
+            if expression_attr_values:
+                for key, value in expression_attr_values.items():
+                    if isinstance(value, float): expression_attr_values[key] = Decimal(str(value))
+                scan_params['ExpressionAttributeValues'] = expression_attr_values
+            if expression_attr_names: scan_params['ExpressionAttributeNames'] = expression_attr_names
+
+        # Manual pagination for Scan
+        items = []
+        last_evaluated_key = None
+        items_needed = page * per_page 
+        scan_limit = per_page # Adjust scan limit dynamically if needed, but start simple
+        scan_params['Limit'] = scan_limit
+
+        while len(items) < items_needed:
+            if last_evaluated_key: scan_params['ExclusiveStartKey'] = last_evaluated_key
+            
+            try:
+                response = table.scan(**scan_params)
+            except ClientError as e:
+                 logger.error(f"DynamoDB Scan Error: {e}")
+                 return [], 0 # Return empty on scan error
+
+            items.extend(response.get('Items', []))
+            last_evaluated_key = response.get('LastEvaluatedKey')
+            
+            # Stop if no more items or if we fetched excessive amounts (safety break)
+            if not last_evaluated_key or len(items) > items_needed + (per_page * 10): 
+                break 
+            # Simple throttle
+            time.sleep(0.1) 
+        
+        # Get items for the specific page
+        start_index = (page - 1) * per_page
+        page_items = items[start_index : start_index + per_page] if start_index < len(items) else []
+        games = process_dynamodb_items(page_items)
+        
+        # Get approximate total count matching filters (inefficient for large tables)
+        count_params = {} 
+        if scan_params.get('FilterExpression'): count_params['FilterExpression'] = scan_params['FilterExpression']
+        if scan_params.get('ExpressionAttributeValues'): count_params['ExpressionAttributeValues'] = scan_params['ExpressionAttributeValues']
+        if scan_params.get('ExpressionAttributeNames'): count_params['ExpressionAttributeNames'] = scan_params['ExpressionAttributeNames']
+        count_params['Select'] = 'COUNT'
+        
+        total_count = 0
+        try:
+             count_response = table.scan(**count_params)
+             total_count = count_response.get('Count', 0)
+             # Handle count pagination if needed
+             while 'LastEvaluatedKey' in count_response:
+                 count_params['ExclusiveStartKey'] = count_response['LastEvaluatedKey']
+                 count_response = table.scan(**count_params)
+                 total_count += count_response.get('Count', 0)
+        except Exception as count_e:
+            logger.error(f"Could not get exact count from Scan: {count_e}")
+
+        logger.info(f"DynamoDB Scan fallback returned {len(page_items)} items for page {page}. Total matching count: {total_count}")
+        return games, total_count
+        
+    except Exception as e:
+        logger.error(f"Error in DynamoDB Scan fallback: {str(e)}")
+        import traceback; traceback.print_exc()
+        return [], 0

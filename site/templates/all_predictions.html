@@ -52,7 +52,7 @@
                                 <i class="bi bi-chevron-down ms-2"></i>
                             </button>
                             <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
-                                <li><a class="dropdown-item model-item {% if not selected_model %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
+                                <li><a class="dropdown-item model-item {% if selected_model == '' %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 {% for model in model_types %}
                                 <li><a class="dropdown-item model-item {% if selected_model == model %}active{% endif %}" href="javascript:void(0)" data-value="{{ model }}">{{ model }}</a></li>
@@ -67,7 +67,7 @@
                                     <select class="form-select form-select-sm" name="prediction_type">
                                         <option value="">All</option>
                             <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option>
-                            <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>Draw</option>
+                            <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>X</option>
                             <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option>
                         </select>
                     </div>
@@ -99,9 +99,13 @@
                         </select>
                                 </div>
                             </div>
+                            
+                            <!-- Hidden language parameter -->
+                            <input type="hidden" name="lang" value="{{ selected_language|default('english') }}">
+                            
                             <div class="d-grid gap-2 mt-3">
                                 <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
-                                <a href="/all" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
+                                <a href="/all?model_type=lstm_100_12_v1" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
                             </div>
                         </form>
                     </div>
@@ -111,77 +115,69 @@
     </div>
     <div class="col-md-9">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="fs-4 mb-0 text-primary">All Predictions</h2>
-            {% set primary_game_count = games|selectattr("is_primary", "defined")|selectattr("is_primary")|list|length %}
+            <div>
+                <h2 class="fs-4 mb-0 text-primary">All Predictions</h2>
+                <p class="small text-muted mb-0">Sorted by newest predictions first</p>
+            </div>
             <div class="prediction-count badge bg-dark text-white rounded-pill fs-6 py-2 px-3">
                 <i class="bi bi-list-check me-1"></i>
-                {{ primary_game_count }} games 
-                <span class="small text-light">({{ games|length }} predictions total)</span>
+                {% if total_count is defined and total_count > 0 %}
+                    {{ games|length }} of {{ total_count }} games
+                {% elif games|length > 0 %}
+                    {{ games|length }} games
+                {% else %}
+                    No games found
+                {% endif %}
             </div>
         </div>
         
-        {% if games %}
-            {# Group predictions by game ID and model #}
-            {% set game_dict = {} %}
-            {% for game in games %}
-                {% set key = game.id ~ '_' ~ game.model_name %}
-                {% if key not in game_dict %}
-                    {% set _ = game_dict.__setitem__(key, []) %}
-                {% endif %}
-                {# Append the game to the list for this key #}
-                {% set _ = game_dict[key].append(game) %}
-            {% endfor %}
-            
-            {# Process each group #}
-            {% for key, game_group in game_dict.items() %}
-                {% set primary_game = none %}
-                {% set history_games = [] %}
-                
-                {# Find the primary game (marked by backend) and collect history games #}
-                {% for g in game_group %}
-                    {% if g.is_primary %}
-                        {% set primary_game = g %}
-                    {% else %}
-                        {% set _ = history_games.append(g) %}
-                    {% endif %}
-                {% endfor %}
-                
-                {# If no game is explicitly marked as primary, assume the first one is (after sorting) #}
-                {% if primary_game is none and game_group %}
-                    {# Sort group by prediction timestamp (newest first) if available #}
-                    {% set sorted_group = game_group|sort(attribute='prediction_timestamp', reverse=true) if game_group[0].prediction_timestamp is defined else game_group %}
-                    {% set primary_game = sorted_group[0] %}
-                    {% set history_games = sorted_group[1:] %}
-                {% endif %}
-                
-                {# Only display if we found a primary game #}
-                {% if primary_game %}
-                    {# Render the primary game card #}
-                    <div class="card prediction-card {% if primary_game.status == 'completed' %}{% if primary_game.prediction_result == true %}prediction-correct{% elif primary_game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %} mb-3">
+        <!-- Loading spinner -->
+        {% if loading %}
+        <div id="loading-spinner" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Loading predictions...</p>
+        </div>
+        {% endif %}
+        
+        <!-- Error message if needed -->
+        {% if error %}
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Error loading predictions. Please try again later.
+            <small class="d-none">{{ error }}</small>
+        </div>
+        {% endif %}
+        
+        <div id="predictions-container">
+            {% if games %}
+                {% for game in games %}
+                    <div class="card prediction-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %} mb-3">
                         <div class="card-header bg-light py-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <!-- Left side: League and Time -->
                                 <div class="d-flex align-items-center">
                                     <span class="league-badge badge bg-secondary me-2">
                             <i class="bi bi-trophy me-1"></i>
-                                        {{ primary_game.league|default('Unknown League') }}
+                                        {{ game.display_league|default(game.league|default('Unknown League')) }}
                         </span>
                                     <span class="match-time badge bg-light text-dark border">
                             <i class="bi bi-calendar-event me-1"></i>
-                                        {{ primary_game.match_time.strftime('%Y-%m-%d') }} 
-                                        <strong>{{ primary_game.match_time.strftime('%H:%M') }}</strong>
+                                        {{ game.match_time.strftime('%Y-%m-%d') }} 
+                                        <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
                         </span>
                                 </div>
                                 <!-- Right side: Model and Result Badge -->
                                 <div class="d-flex align-items-center">
                                     <div class="model-badge me-2">
                             <i class="bi bi-robot me-1"></i>
-                                        <span class="fw-medium small">{{ primary_game.model_name|default('Unknown Model') }}</span>
+                                        <span class="fw-medium small">{{ game.model_name|default('Unknown Model') }}</span>
                                     </div>
-                                    {% if primary_game.status == 'completed' %}
-                                        {% if primary_game.prediction_result == true %}
+                                    {% if game.status == 'completed' %}
+                                        {% if game.prediction_result == true %}
                                             <span class="result-badge bg-success"><i class="bi bi-check-circle me-1"></i> Correct</span>
-                                        {% elif primary_game.prediction_result == false %}
+                                        {% elif game.prediction_result == false %}
                                             <span class="result-badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incorrect</span>
                                         {% endif %}
                                     {% endif %}
@@ -197,10 +193,10 @@
                                         <div class="d-flex justify-content-between align-items-center teams-display">
                                             <!-- Home Team -->
                                             <div class="team-column text-center">
-                                                <div class="team-badge {% if primary_game.home_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if primary_game.home_team|default('Home Team')|length <= 15 else 'false' }}">{{ primary_game.home_team|default('Home Team') }}</div>
-                                                    <div class="odds-badge {% if primary_game.home_win_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if primary_game.odds.home is not none %}{{ primary_game.odds.home }}{% else %}-{% endif %}
+                                                <div class="team-badge {% if game.home_win_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if game.display_home_team|default(game.home_team|default('Home Team'))|length <= 15 else 'false' }}">{{ game.display_home_team|default(game.home_team|default('Home Team')) }}</div>
+                                                    <div class="odds-badge {% if game.home_win_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}
                                                     </div>
                                                 </div>
                                                 <div class="outcome-label">Home</div>
@@ -208,21 +204,21 @@
                                             
                                             <!-- Draw Column -->
                                             <div class="team-column text-center mx-2">
-                                                <div class="team-badge {% if primary_game.draw_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" data-short="true">Draw</div>
-                                                    <div class="odds-badge {% if primary_game.draw_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if primary_game.odds.draw is not none %}{{ primary_game.odds.draw }}{% else %}-{% endif %}
+                                                <div class="team-badge {% if game.draw_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2" data-short="true">X</div>
+                                                    <div class="odds-badge {% if game.draw_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="outcome-label">Draw</div>
+                                                <div class="outcome-label">X</div>
                                             </div>
                                             
                                             <!-- Away Team -->
                                             <div class="team-column text-center">
-                                                <div class="team-badge {% if primary_game.away_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if primary_game.away_team|default('Away Team')|length <= 15 else 'false' }}">{{ primary_game.away_team|default('Away Team') }}</div>
-                                                    <div class="odds-badge {% if primary_game.away_win_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if primary_game.odds.away is not none %}{{ primary_game.odds.away }}{% else %}-{% endif %}
+                                                <div class="team-badge {% if game.away_win_is_profitable %}active-prediction{% endif %}">
+                                                    <div class="team-name fw-bold mb-2" data-short="{{ 'true' if game.display_away_team|default(game.away_team|default('Away Team'))|length <= 15 else 'false' }}">{{ game.display_away_team|default(game.away_team|default('Away Team')) }}</div>
+                                                    <div class="odds-badge {% if game.away_win_is_profitable %}highlighted-odds{% endif %}">
+                                                        {% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}
                                                     </div>
                                                 </div>
                                                 <div class="outcome-label">Away</div>
@@ -232,15 +228,27 @@
                                     
                                     <div class="prediction-timestamp small text-muted">
                             <i class="bi bi-clock-history me-1"></i>
-                                        {% if primary_game.prediction_timestamp %}
-                                            Predicted: 
-                                            {% if primary_game.prediction_timestamp is not string %}
-                                                {{ primary_game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                            {% else %}
-                                                {% if 'T' in primary_game.prediction_timestamp %}
-                                                    {{ primary_game.prediction_timestamp.split('T')[0] }} {{ primary_game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                        {% if game.prediction_timestamp or game.timestamp %}
+                                            <span class="fw-medium">Predicted:</span> 
+                                            {% if game.prediction_timestamp %}
+                                                {% if game.prediction_timestamp is not string %}
+                                                    {{ game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
                                                 {% else %}
-                                                    {{ primary_game.prediction_timestamp }}
+                                                    {% if 'T' in game.prediction_timestamp %}
+                                                        {{ game.prediction_timestamp.split('T')[0] }} {{ game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                    {% else %}
+                                                        {{ game.prediction_timestamp }}
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% elif game.timestamp %}
+                                                {% if game.timestamp is not string %}
+                                                    {{ game.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    {% if 'T' in game.timestamp %}
+                                                        {{ game.timestamp.split('T')[0] }} {{ game.timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                    {% else %}
+                                                        {{ game.timestamp }}
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endif %}
                             {% else %}
@@ -253,10 +261,9 @@
                                 <div class="col-md-7">
                                     <!-- All Predictions with Probabilities and EVs -->
                                     <div class="prediction-stats-container">
-                                        <h6 class="text-primary fw-bold mb-2"><i class="bi bi-graph-up me-1"></i>Prediction Analysis</h6>
                                         <div class="table-responsive">
-                                            <table class="table table-sm table-bordered mb-2">
-                                                <thead class="table-primary">
+                                            <table class="table table-sm table-bordered mb-0">
+                                                <thead class="table-primary text-dark">
                                                     <tr>
                                                         <th>Outcome</th>
                                                         <th>Probability</th>
@@ -268,65 +275,76 @@
                                                 <tbody>
                                                     <tr>
                                                         <td class="fw-medium">Home Win</td>
-                                                        <td>{{ (primary_game.home_win_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if primary_game.odds.home is not none %}{{ primary_game.odds.home }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (primary_game.home_win_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if primary_game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        <td>{{ (game.home_win_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (game.home_win_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
                                                     </tr>
                                                     <tr>
-                                                        <td class="fw-medium">Draw</td>
-                                                        <td>{{ (primary_game.draw_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if primary_game.odds.draw is not none %}{{ primary_game.odds.draw }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (primary_game.draw_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if primary_game.draw_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        <td class="fw-medium">X</td>
+                                                        <td>{{ (game.draw_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (game.draw_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if game.draw_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
                                                     </tr>
                                                     <tr>
                                                         <td class="fw-medium">Away Win</td>
-                                                        <td>{{ (primary_game.away_win_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if primary_game.odds.away is not none %}{{ primary_game.odds.away }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (primary_game.away_win_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if primary_game.away_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
+                                                        <td>{{ (game.away_win_prob * 100)|round(1) }}%</td>
+                                                        <td>{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</td>
+                                                        <td>{{ (game.away_win_ev * 100)|round(1) }}%</td>
+                                                        <td class="text-center">{% if game.away_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
                                                     </tr>
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                                    <!-- History toggle button -->
-                                    <button class="btn btn-sm btn-outline-primary toggle-history mt-2" 
-                                            data-game-model="{{ key }}" 
-                                            data-history-count="{{ history_games|length }}">
-                                        <i class="bi bi-clock-history me-1"></i>
-                                        <span class="show-text">Show past predictions</span>
-                                        <span class="hide-text d-none">Hide past predictions</span>
-                                    </button>
-                                </div>
-                        </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Historical predictions container -->
-                    <div id="history-container-{{ key }}" class="history-container" style="display:none;">
-                        {% if history_games|length > 0 %}
-                            {% for historical_game in history_games|sort(attribute='prediction_timestamp', reverse=true) %}
-                                <div class="card prediction-card history-prediction mb-3" data-game-model="{{ key }}" data-index="{{ loop.index }}">
+                        <!-- History toggle button -->
+                        {% if game.history_games and game.history_games|length > 0 %}
+                        <button class="btn btn-sm btn-outline-primary toggle-history mt-2" 
+                                data-game-id="{{ game.id }}_{{ game.model_name }}" 
+                                data-history-count="{{ game.history_games|length }}">
+                            <i class="bi bi-clock-history me-1"></i>
+                            <span class="show-text">Show past predictions ({{ game.history_games|length }})</span>
+                            <span class="hide-text d-none">Hide past predictions</span>
+                        </button>
+                        
+                        <!-- Historical predictions container -->
+                        <div id="history-container-{{ game.id }}_{{ game.model_name }}" class="history-container" style="display:none;">
+                            {% for historical_game in game.history_games %}
+                                <div class="card prediction-card history-prediction mb-3" data-index="{{ loop.index }}">
                                     <div class="card-header bg-info text-white py-2">
-                                        <i class="bi bi-clock-history me-1"></i> Previous Prediction #{{ loop.index }}
-                                        <small class="ms-2">
-                                            {% if historical_game.prediction_timestamp %}
-                                                {% if historical_game.prediction_timestamp is not string %}
-                                                    {{ historical_game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                                {% else %}
-                                                    {% if 'T' in historical_game.prediction_timestamp %}
-                                                        {{ historical_game.prediction_timestamp.split('T')[0] }} {{ historical_game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                        <i class="bi bi-clock-history me-1"></i> Prediction from
+                                        <strong class="ms-1">
+                                            {% if historical_game.prediction_timestamp or historical_game.timestamp %}
+                                                {% if historical_game.prediction_timestamp %}
+                                                    {% if historical_game.prediction_timestamp is not string %}
+                                                        {{ historical_game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
                                                     {% else %}
-                                                        {{ historical_game.prediction_timestamp }}
+                                                        {% if 'T' in historical_game.prediction_timestamp %}
+                                                            {{ historical_game.prediction_timestamp.split('T')[0] }} {{ historical_game.prediction_timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                        {% else %}
+                                                            {{ historical_game.prediction_timestamp }}
+                                                        {% endif %}
+                                                    {% endif %}
+                                                {% elif historical_game.timestamp %}
+                                                    {% if historical_game.timestamp is not string %}
+                                                        {{ historical_game.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                                    {% else %}
+                                                        {% if 'T' in historical_game.timestamp %}
+                                                            {{ historical_game.timestamp.split('T')[0] }} {{ historical_game.timestamp.split('T')[1].split('.')[0].split('+')[0] }}
+                                                        {% else %}
+                                                            {{ historical_game.timestamp }}
+                                                        {% endif %}
                                                     {% endif %}
                                                 {% endif %}
                                             {% else %}
                                                 Unknown date
                                             {% endif %}
-                                        </small>
+                                        </strong>
                                     </div>
                                     
                                     <div class="card-body py-2">
@@ -335,19 +353,19 @@
                                             <h6 class="text-info fw-bold mb-2 small"><i class="bi bi-graph-up me-1"></i>Odds at Time of Prediction</h6>
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="text-center px-2">
-                                                    <div class="small fw-bold">{{ primary_game.home_team }}</div>
+                                                    <div class="small fw-bold">{{ historical_game.display_home_team|default(historical_game.home_team) }}</div>
                                                     <span class="badge bg-light text-dark {% if historical_game.home_win_is_profitable %}badge-profitable{% endif %}">
                                                         {% if historical_game.odds.home is not none %}{{ historical_game.odds.home }}{% else %}-{% endif %}
                                                     </span>
                                                 </div>
                                                 <div class="text-center px-2">
-                                                    <div class="small fw-bold">Draw</div>
+                                                    <div class="small fw-bold">X</div>
                                                     <span class="badge bg-light text-dark {% if historical_game.draw_is_profitable %}badge-profitable{% endif %}">
                                                         {% if historical_game.odds.draw is not none %}{{ historical_game.odds.draw }}{% else %}-{% endif %}
                                                     </span>
                                                 </div>
                                                 <div class="text-center px-2">
-                                                    <div class="small fw-bold">{{ primary_game.away_team }}</div>
+                                                    <div class="small fw-bold">{{ historical_game.display_away_team|default(historical_game.away_team) }}</div>
                                                     <span class="badge bg-light text-dark {% if historical_game.away_win_is_profitable %}badge-profitable{% endif %}">
                                                         {% if historical_game.odds.away is not none %}{{ historical_game.odds.away }}{% else %}-{% endif %}
                                                     </span>
@@ -377,7 +395,7 @@
                                                             <td class="text-center">{% if historical_game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
                                                         </tr>
                                                         <tr>
-                                                            <td class="fw-medium">Draw</td>
+                                                            <td class="fw-medium">X</td>
                                                             <td>{{ (historical_game.draw_prob * 100)|round(1) }}%</td>
                                                             <td>{% if historical_game.odds.draw is not none %}{{ historical_game.odds.draw }}{% else %}-{% endif %}</td>
                                                             <td>{{ (historical_game.draw_ev * 100)|round(1) }}%</td>
@@ -392,25 +410,91 @@
                                                         </tr>
                                                     </tbody>
                                                 </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             {% endfor %}
-                        {% else %}
-                            <div class="alert alert-info mt-3">
-                                <i class="bi bi-info-circle me-2"></i>
-                                No past predictions available for this game.
-                            </div>
+                        </div>
                         {% endif %}
                     </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                <div class="d-flex justify-content-center mt-4">
+                    {% if total_pages is defined and total_pages > 1 %}
+                    <nav aria-label="Prediction pagination" class="mt-4">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <li class="page-item {% if not has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('all_predictions', page=page-1, per_page=per_page, league=selected_league, model_type=selected_model, prediction_type=selected_prediction, status=selected_status, result=selected_result, ev=selected_ev, lang=selected_language) }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            
+                            {% set start_page = [1, page - 2]|max %}
+                            {% set end_page = [start_page + 4, total_pages|default(1)]|min %}
+                            {% set start_page = [end_page - 4, 1]|max %}
+                            
+                            {% if start_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('all_predictions', page=1, per_page=per_page, league=selected_league, model_type=selected_model, prediction_type=selected_prediction, status=selected_status, result=selected_result, ev=selected_ev, lang=selected_language) }}">1</a>
+                                </li>
+                                {% if start_page > 2 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% for p in range(start_page, end_page + 1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('all_predictions', page=p, per_page=per_page, league=selected_league, model_type=selected_model, prediction_type=selected_prediction, status=selected_status, result=selected_result, ev=selected_ev, lang=selected_language) }}">{{ p }}</a>
+                                </li>
+                            {% endfor %}
+                            
+                            {% if end_page < total_pages|default(1) %}
+                                {% if end_page < total_pages|default(1) - 1 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('all_predictions', page=total_pages|default(1), per_page=per_page, league=selected_league, model_type=selected_model, prediction_type=selected_prediction, status=selected_status, result=selected_result, ev=selected_ev, lang=selected_language) }}">{{ total_pages|default(1) }}</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item {% if not has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('all_predictions', page=page+1, per_page=per_page, league=selected_league, model_type=selected_model, prediction_type=selected_prediction, status=selected_status, result=selected_result, ev=selected_ev, lang=selected_language) }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+                
+            {% else %}
+                {% if not loading %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    No predictions found matching your filters. Try adjusting your filter criteria.
+                </div>
                 {% endif %}
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                No predictions found matching your filters. Try adjusting your filter criteria.
-            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Debug information (only shown in development) -->
+        {% if request.host.startswith('localhost') or request.host.startswith('127.0.0.1') %}
+        <div class="alert alert-secondary mt-4 small">
+            <h6 class="mb-2">Debug Information:</h6>
+            <ul class="mb-0">
+                <li>Games on page: {{ games|length }}</li>
+                <li>Total games: {% if total_count is defined %}{{ total_count }}{% else %}Not set{% endif %}</li>
+                <li>Current page: {{ page }}</li>
+                <li>Total pages: {% if total_pages is defined %}{{ total_pages }}{% else %}Not set{% endif %}</li>
+                <li>Selected model: {{ selected_model }}</li>
+                <li>Selected league: {{ selected_league }}</li>
+                <li>Selected status: {{ selected_status }}</li>
+                <li>Selected result: {{ selected_result }}</li>
+                <li>Selected EV: {{ selected_ev }}</li>
+            </ul>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -421,20 +505,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Debug info
     console.log("Document loaded, initializing JS...");
-    
-    // Count displayed games
-    const primaryGameCards = document.querySelectorAll('.prediction-card:not(.history-prediction)');
-    console.log(`Displaying ${primaryGameCards.length} primary game cards`);
-    
-    // Update data-short attribute for all team names
-    document.querySelectorAll('.team-name').forEach(function(el) {
-        // Change threshold to 15 characters
-        if (el.textContent.trim().length <= 15) {
-            el.setAttribute('data-short', 'true');
-        } else {
-            el.setAttribute('data-short', 'false');
-        }
-    });
     
     // Model dropdown selection handler
     const modelItems = document.querySelectorAll('.model-item');
@@ -464,51 +534,181 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle history toggle buttons
-    const allHistoryButtons = document.querySelectorAll('.toggle-history');
-    console.log("Total history buttons found: " + allHistoryButtons.length);
+    // Update data-short attribute for all team names
+    document.querySelectorAll('.team-name').forEach(function(el) {
+        // Change threshold to 15 characters
+        if (el.textContent.trim().length <= 15) {
+            el.setAttribute('data-short', 'true');
+        } else {
+            el.setAttribute('data-short', 'false');
+        }
+    });
     
-    allHistoryButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            const gameModelKey = this.getAttribute('data-game-model');
-            const historyContainer = document.getElementById('history-container-' + gameModelKey);
-            const showText = this.querySelector('.show-text');
-            const hideText = this.querySelector('.hide-text');
-            const historyCount = parseInt(this.getAttribute('data-history-count'), 10);
-            
-            console.log("History button clicked for " + gameModelKey + " with " + historyCount + " history items.");
-            
-            // Toggle visibility of history container
-            if (historyContainer) {
-                console.log("History container found: " + historyContainer.id);
-                if (historyContainer.style.display === 'none') {
-                    // Only show if there's actual content or the 'no past predictions' message
-                    if (historyCount > 0 || historyContainer.querySelector('.alert-info')) {
-                        historyContainer.style.display = 'block';
-                        showText.classList.add('d-none');
-                        hideText.classList.remove('d-none');
-                        this.classList.remove('btn-outline-primary');
-                        this.classList.add('btn-primary');
-                    } else {
-                         console.log("No history items or message to show for " + gameModelKey);
-                    }
-                } else {
-                    historyContainer.style.display = 'none';
-                    showText.classList.remove('d-none');
-                    hideText.classList.add('d-none');
-                    this.classList.remove('btn-primary');
-                    this.classList.add('btn-outline-primary');
+    // If we're in loading state, load the actual predictions
+    if (document.getElementById('loading-spinner')) {
+        loadPredictions();
+    }
+    
+    // Function to load predictions via AJAX
+    function loadPredictions() {
+        // Get current URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Set the init parameter to 0 to get actual predictions
+        urlParams.delete('init');
+        
+        // Create the fetch URL
+        const fetchUrl = window.location.pathname + '?' + urlParams.toString();
+        
+        // Show loading spinner
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) {
+            spinner.style.display = 'block';
+        }
+        
+        // Perform the fetch
+        fetch(fetchUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
+                return response.text();
+            })
+            .then(html => {
+                // Extract the predictions container content from the response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const predictionsContainer = doc.getElementById('predictions-container');
+                
+                // Replace our container with the new one
+                if (predictionsContainer) {
+                    document.getElementById('predictions-container').innerHTML = predictionsContainer.innerHTML;
+                    
+                    // Hide the loading spinner
+                    if (spinner) {
+                        spinner.style.display = 'none';
+                    }
+                    
+                    // Reinitialize any necessary event handlers
+                    initPredictionCards();
+                    setupHistoryButtons();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading predictions:', error);
+                if (spinner) {
+                    spinner.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error loading predictions. Please try refreshing the page.
+                        </div>
+                    `;
+                }
+            });
+    }
+    
+    // Function to initialize event handlers for prediction cards
+    function initPredictionCards() {
+        // Update data-short attribute for all team names
+        document.querySelectorAll('.team-name').forEach(function(el) {
+            if (el.textContent.trim().length <= 15) {
+                el.setAttribute('data-short', 'true');
             } else {
-                console.warn("No history container found for " + gameModelKey);
+                el.setAttribute('data-short', 'false');
+            }
+        });
+    }
+    
+    // Function to set up history toggle buttons
+    function setupHistoryButtons() {
+        document.querySelectorAll('.toggle-history').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const gameId = this.getAttribute('data-game-id');
+                const historyContainer = document.getElementById('history-container-' + gameId);
+                
+                if (historyContainer) {
+                    if (historyContainer.style.display === 'none' || !historyContainer.style.display) {
+                        historyContainer.style.display = 'block';
+                        this.querySelector('.show-text').classList.add('d-none');
+                        this.querySelector('.hide-text').classList.remove('d-none');
+                    } else {
+                        historyContainer.style.display = 'none';
+                        this.querySelector('.show-text').classList.remove('d-none');
+                        this.querySelector('.hide-text').classList.add('d-none');
+                    }
+                }
+            });
+        });
+    }
+    
+    // Add smooth loading transition
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            // Show loading indicator
+            const predictionsContainer = document.getElementById('predictions-container');
+            if (predictionsContainer) {
+                predictionsContainer.innerHTML = `
+                    <div class="text-center my-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading predictions...</p>
+                    </div>
+                `;
+            }
+            
+            // Add init=1 parameter to the form for fast initial load
+            const initInput = document.createElement('input');
+            initInput.type = 'hidden';
+            initInput.name = 'init';
+            initInput.value = '1';
+            this.appendChild(initInput);
+        });
+    }
+    
+    // Add click handlers to pagination links for smooth transition
+    document.querySelectorAll('.pagination .page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Only process if the link is not disabled
+            if (!this.parentElement.classList.contains('disabled')) {
+                e.preventDefault();
+                
+                // Show loading indicator
+                const predictionsContainer = document.getElementById('predictions-container');
+                if (predictionsContainer) {
+                    predictionsContainer.innerHTML = `
+                        <div class="text-center my-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-3">Loading predictions...</p>
+                        </div>
+                    `;
+                }
+                
+                // Navigate to the page with init=1 parameter
+                const url = new URL(this.href);
+                url.searchParams.set('init', '1');
+                window.location.href = url.toString();
             }
         });
     });
+
+    // Initial setup of history buttons
+    setupHistoryButtons();
 });
 </script>
 
 <style>
+.language-toggle {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.language-toggle .btn {
+    padding: 0.375rem 1rem;
+    min-width: 100px;
+}
 /* Layout & General Styling */
 .prediction-card {
     position: relative;
@@ -946,6 +1146,14 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 0.7rem;
     padding-left: 0;
     padding-right: 0;
+}
+
+.prediction-timestamp {
+    margin-top: 5px;
+    padding: 3px 0;
+    font-size: 0.85rem !important;
+    display: block;
+    color: #666 !important;
 }
 </style>
 {% endblock %} 
