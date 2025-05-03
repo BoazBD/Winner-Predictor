@@ -2,11 +2,12 @@
 
 {% block content %}
 <!-- Debug info -->
-<div class="alert alert-info d-none">
+{# The following debug div block will be removed #}
+{# <div class="alert alert-info d-none">
     Total games: {{ games|length }}
     Primary games: {{ games|selectattr("is_primary", "defined")|selectattr("is_primary")|list|length }}
     Non-primary games: {{ games|selectattr("is_primary", "defined")|rejectattr("is_primary")|list|length }}
-</div>
+</div> #}
 
 <div class="row mb-4">
     <div class="col">
@@ -121,10 +122,12 @@
             </div>
             <div class="prediction-count badge bg-dark text-white rounded-pill fs-6 py-2 px-3">
                 <i class="bi bi-list-check me-1"></i>
-                {% if total_count is defined and total_count > 0 %}
-                    {{ games|length }} of {{ total_count }} games
-                {% elif games|length > 0 %}
-                    {{ games|length }} games
+                {% if games is defined and games %}
+                    {% if total_count is defined and total_count > 0 %}
+                        {{ games|length }} of {{ total_count }} games
+                    {% else %}
+                        {{ games|length }} games
+                    {% endif %}
                 {% else %}
                     No games found
                 {% endif %}
@@ -478,24 +481,6 @@
                 {% endif %}
             {% endif %}
         </div>
-        
-        <!-- Debug information (only shown in development) -->
-        {% if request.host.startswith('localhost') or request.host.startswith('127.0.0.1') %}
-        <div class="alert alert-secondary mt-4 small">
-            <h6 class="mb-2">Debug Information:</h6>
-            <ul class="mb-0">
-                <li>Games on page: {{ games|length }}</li>
-                <li>Total games: {% if total_count is defined %}{{ total_count }}{% else %}Not set{% endif %}</li>
-                <li>Current page: {{ page }}</li>
-                <li>Total pages: {% if total_pages is defined %}{{ total_pages }}{% else %}Not set{% endif %}</li>
-                <li>Selected model: {{ selected_model }}</li>
-                <li>Selected league: {{ selected_league }}</li>
-                <li>Selected status: {{ selected_status }}</li>
-                <li>Selected result: {{ selected_result }}</li>
-                <li>Selected EV: {{ selected_ev }}</li>
-            </ul>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -579,20 +564,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const predictionsContainer = doc.getElementById('predictions-container');
-                
+                const predictionCountDiv = doc.querySelector('.prediction-count'); // Get the count div from fetched HTML
+
                 // Replace our container with the new one
                 if (predictionsContainer) {
                     document.getElementById('predictions-container').innerHTML = predictionsContainer.innerHTML;
-                    
-                    // Hide the loading spinner
-                    if (spinner) {
-                        spinner.style.display = 'none';
-                    }
-                    
-                    // Reinitialize any necessary event handlers
-                    initPredictionCards();
-                    setupHistoryButtons();
                 }
+                
+                // Replace our count display with the new one
+                const currentCountDiv = document.querySelector('.prediction-count');
+                if (predictionCountDiv && currentCountDiv) {
+                    currentCountDiv.innerHTML = predictionCountDiv.innerHTML; // Update the count display
+                }
+                    
+                // Hide the loading spinner
+                if (spinner) {
+                    spinner.style.display = 'none';
+                }
+                
+                // Reinitialize any necessary event handlers
+                initPredictionCards();
+                setupHistoryButtons();
             })
             .catch(error => {
                 console.error('Error loading predictions:', error);

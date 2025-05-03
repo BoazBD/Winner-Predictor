@@ -388,7 +388,6 @@ def all_predictions():
         logger.info(f"Fetching predictions with filters: league={selected_league}, model={selected_model}")
         
         if USE_DYNAMODB:
-            # First get the filtered predictions
             filtered_games, total_count = get_paginated_predictions_from_dynamodb(
                 page=page,
                 per_page=per_page * 5,  # Get enough to account for grouping
@@ -399,6 +398,12 @@ def all_predictions():
                 result=selected_result,
                 ev=selected_ev
             )
+            
+            # --- Add detailed logging for fetched games ---
+            logger.info(f"[DEBUG] Fetched {len(filtered_games)} games from DB function. Total count reported: {total_count}")
+            if filtered_games:
+                 logger.info(f"[DEBUG] First fetched game raw: {filtered_games[0]}")
+            # --- End added logging ---
             
             # If we're using model filtering, also fetch the latest predictions regardless of model
             # to ensure we have a mix of filtered + latest predictions
@@ -435,6 +440,12 @@ def all_predictions():
                 ev=selected_ev
             )
             
+            # --- Add similar detailed logging here if using SQLite ---
+            logger.info(f"[DEBUG-SQLite] Fetched {len(filtered_games)} games from DB function. Total count reported: {total_count}")
+            if filtered_games:
+                logger.info(f"[DEBUG-SQLite] First fetched game raw: {filtered_games[0]}")
+            # --- End added logging ---
+            
             # If we're using model filtering, also fetch the latest predictions regardless of model
             if selected_model and (len(filtered_games) < per_page):
                 logger.info(f"Also fetching latest predictions regardless of model to ensure freshness")
@@ -461,7 +472,15 @@ def all_predictions():
             filtered_games = SAMPLE_GAMES[:per_page]
             total_count = len(SAMPLE_GAMES)
         else:
-            logger.info(f"Retrieved {len(filtered_games)} predictions for page {page} (total in database: {total_count})")
+            logger.info(f"Retrieved {len(filtered_games)} predictions for page {page} (potential total in DB: {total_count})")
+            
+            # --- Add detailed logging before sorting ---
+            logger.info(f"[DEBUG] Attempting to sort {len(filtered_games)} fetched games.")
+            # Log sorting keys for first few games
+            for i, game in enumerate(filtered_games[:3]):
+                sort_key = get_sort_key_timestamp(game)
+                logger.info(f"[DEBUG] Game {i+1} (ID: {game.get('id')}) - Raw Timestamp Fields: prediction_timestamp={game.get('prediction_timestamp')}, timestamp={game.get('timestamp')} -> Parsed Sort Key: {sort_key} (type: {type(sort_key)})")
+            # --- End added logging ---
             
             # Sort filtered games by prediction timestamp to get the latest predictions first
             filtered_games.sort(
@@ -469,24 +488,11 @@ def all_predictions():
                 reverse=True  # newest first
             )
             
-            # Log the first few game timestamps to help debug
-            if filtered_games:
-                first_game = filtered_games[0]
-                logger.info(f"First game: ID={first_game.get('id')}, Home={first_game.get('home_team')}, Away={first_game.get('away_team')}")
-                logger.info(f"First game timestamp data: prediction_timestamp={first_game.get('prediction_timestamp')}, timestamp={first_game.get('timestamp')}")
-                logger.info(f"First game parsed timestamp: {get_sort_key_timestamp(first_game)}")
-                
-                if len(filtered_games) > 1:
-                    second_game = filtered_games[1]
-                    logger.info(f"Second game: ID={second_game.get('id')}, Home={second_game.get('home_team')}, Away={second_game.get('away_team')}")
-                    logger.info(f"Second game timestamp data: prediction_timestamp={second_game.get('prediction_timestamp')}, timestamp={second_game.get('timestamp')}")
-                    logger.info(f"Second game parsed timestamp: {get_sort_key_timestamp(second_game)}")
-                
-                if len(filtered_games) > 2:
-                    third_game = filtered_games[2]
-                    logger.info(f"Third game: ID={third_game.get('id')}, Home={third_game.get('home_team')}, Away={third_game.get('away_team')}")
-                    logger.info(f"Third game timestamp data: prediction_timestamp={third_game.get('prediction_timestamp')}, timestamp={third_game.get('timestamp')}")
-                    logger.info(f"Third game parsed timestamp: {get_sort_key_timestamp(third_game)}")
+            # --- Add detailed logging after sorting ---
+            logger.info(f"[DEBUG] Sorting complete. First 3 games after sorting:")
+            for i, game in enumerate(filtered_games[:3]):
+                 logger.info(f"[DEBUG] Sorted Game {i+1} (ID: {game.get('id')}) Timestamp: {get_sort_key_timestamp(game)}")
+            # --- End added logging ---
         
         # Process the retrieved games
         processed_games = []
@@ -531,6 +537,10 @@ def all_predictions():
             # Append this prediction to the appropriate list
             game_model_predictions[key].append(game)
         
+        # --- Add detailed logging after grouping ---
+        logger.info(f"[DEBUG] Grouped {len(processed_games)} processed games into {len(game_model_predictions)} unique game-model groups.")
+        # --- End added logging ---
+        
         # Process each group to find primary and history games
         primary_games = []
         total_primary_games = 0
@@ -574,6 +584,10 @@ def all_predictions():
                 if len(primary_games) >= per_page:
                     break
         
+        # --- Add detailed logging after selecting primary games ---
+        logger.info(f"[DEBUG] Selected {len(primary_games)} primary games for display on page {page} (per_page={per_page}).")
+        # --- End added logging ---
+        
         # Calculate stats if we have data
         if primary_games:
             stats = calculate_prediction_stats(primary_games)
@@ -600,6 +614,7 @@ def all_predictions():
         has_prev = page > 1
         has_next = page < total_pages
         
+        logger.info(f"Rendering page with {len(primary_games)} games.")
         return render_template('all_predictions.html',
                             games=primary_games,
                             stats=stats,
@@ -827,55 +842,79 @@ def api_models():
         return jsonify({'error': str(e)}), 500
 
 def safely_parse_timestamp(timestamp_value):
-    """Safely parse a timestamp value which might be a string or datetime object."""
+    """Safely parse a timestamp value which might be a string or datetime object.
+    Ensures the returned datetime is timezone-naive.
+    """
     logger.info(f"Parsing timestamp: {timestamp_value} (type: {type(timestamp_value).__name__})")
+    
+    parsed_dt = None # Initialize variable to store the parsed datetime
     
     if isinstance(timestamp_value, datetime):
         logger.info(f"  -> Already a datetime object: {timestamp_value}")
-        return timestamp_value
+        parsed_dt = timestamp_value
         
-    if isinstance(timestamp_value, str):
+    elif isinstance(timestamp_value, str):
         try:
-            # Handle ISO format timestamps like '2025-05-01T09:00:38.636543'
+            # Handle ISO format timestamps like '2025-05-01T09:00:38.636543' or with timezone
             if 'T' in timestamp_value:
                 # Replace Z with +00:00 for timezone handling if needed
                 clean_timestamp = timestamp_value.replace('Z', '+00:00')
-                result = datetime.fromisoformat(clean_timestamp)
-                logger.info(f"  -> Parsed ISO format: {result}")
-                return result
-            
+                parsed_dt = datetime.fromisoformat(clean_timestamp)
+                logger.info(f"  -> Parsed ISO format: {parsed_dt}")
+                
             # Handle simple date string formats
-            if ' ' in timestamp_value:  # Has date and time
-                result = datetime.strptime(timestamp_value, '%Y-%m-%d %H:%M:%S')
-                logger.info(f"  -> Parsed datetime format: {result}")
-                return result
+            elif ' ' in timestamp_value:  # Has date and time
+                parsed_dt = datetime.strptime(timestamp_value, '%Y-%m-%d %H:%M:%S')
+                logger.info(f"  -> Parsed datetime format: {parsed_dt}")
+                
             else:  # Only date
-                result = datetime.strptime(timestamp_value, '%Y-%m-%d')
-                logger.info(f"  -> Parsed date format: {result}")
-                return result
+                parsed_dt = datetime.strptime(timestamp_value, '%Y-%m-%d')
+                logger.info(f"  -> Parsed date format: {parsed_dt}")
+                
         except Exception as e:
             logger.warning(f"Error parsing timestamp '{timestamp_value}': {e}")
+            parsed_dt = None # Ensure it's None on error
     
-    # Default fallback
-    logger.warning(f"  -> Failed to parse timestamp, using fallback: {datetime.min}")
-    return datetime.min
+    # If parsing failed or input was not datetime/string, return fallback
+    if parsed_dt is None:
+        logger.warning(f"  -> Failed to parse timestamp or invalid type, using fallback: {datetime.min}")
+        return datetime.min
+        
+    # --- Make the datetime timezone-naive --- 
+    if parsed_dt.tzinfo is not None:
+        logger.info(f"  -> Converting timezone-aware datetime {parsed_dt} to naive.")
+        parsed_dt = parsed_dt.replace(tzinfo=None)
+        logger.info(f"  -> Resulting naive datetime: {parsed_dt}")
+    # --- End timezone conversion ---
+    
+    return parsed_dt
 
 def get_sort_key_timestamp(game):
     """Extract the timestamp to use for sorting a game."""
-    # Try prediction_timestamp first
-    if 'prediction_timestamp' in game:
-        return safely_parse_timestamp(game['prediction_timestamp'])
+    # --- Add logging inside this function --- 
+    logger.debug(f"get_sort_key_timestamp called for game ID: {game.get('id')}, prediction_id: {game.get('prediction_id')}")
+    val_to_parse = None
+    source = "none"
     
-    # Then try timestamp
-    if 'timestamp' in game:
-        return safely_parse_timestamp(game['timestamp'])
-    
-    # Finally fall back to match_time
-    if 'match_time' in game:
-        return safely_parse_timestamp(game['match_time'])
-    
-    # Last resort
-    return datetime.min
+    if 'prediction_timestamp' in game and game['prediction_timestamp']:
+        val_to_parse = game['prediction_timestamp']
+        source = "prediction_timestamp"
+    elif 'timestamp' in game and game['timestamp']:
+        val_to_parse = game['timestamp']
+        source = "timestamp"
+    elif 'match_time' in game and game['match_time']:
+        val_to_parse = game['match_time']
+        source = "match_time"
+        
+    if val_to_parse:
+        logger.debug(f"  Attempting to parse '{source}': {val_to_parse} (type: {type(val_to_parse).__name__})")
+        parsed_time = safely_parse_timestamp(val_to_parse) # Use the existing safe parser
+        logger.debug(f"  Parsed result: {parsed_time} (type: {type(parsed_time).__name__})")
+        return parsed_time
+    else:
+        logger.warning(f"  No suitable timestamp found (prediction_timestamp, timestamp, match_time), returning datetime.min")
+        return datetime.min
+    # --- End added logging ---
 
 def get_all_predictions_from_dynamodb():
     """Fetch all predictions from DynamoDB."""

@@ -887,8 +887,13 @@ def get_predictions_by_model_from_dynamodb(model_name):
 def process_dynamodb_items(items):
     """Process DynamoDB items into a format usable by the application"""
     processed_items = []
+    logger.info(f"--- Starting process_dynamodb_items for {len(items)} items ---") # Log start
     
-    for item in items:
+    for i, item in enumerate(items):
+        # --- Add detailed logging for each item ---
+        logger.info(f"Processing item {i+1}/{len(items)}: Raw Item -> {item}")
+        # --- End added logging ---
+        
         # Parse match time 
         match_time = None
         
@@ -897,7 +902,7 @@ def process_dynamodb_items(items):
             try:
                 match_time = datetime.strptime(item['match_time_str'], '%Y-%m-%d %H:%M')
             except Exception as e:
-                logger.warning(f"Failed to parse match_time_str: {e}")
+                logger.warning(f"Item {i+1}: Failed to parse match_time_str '{item.get('match_time_str')}': {e}") # Log parsing errors
                 match_time = None
         
         # If match_time is still None, try to combine event_date and game_time
@@ -906,7 +911,7 @@ def process_dynamodb_items(items):
                 match_time_str = f"{item['event_date']} {item['game_time']}"
                 match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
             except Exception as e:
-                logger.warning(f"Failed to parse event_date and game_time: {e}")
+                logger.warning(f"Item {i+1}: Failed to parse event_date '{item.get('event_date')}' and game_time '{item.get('game_time')}': {e}") # Log parsing errors
                 match_time = None
         
         # If match_time is still None, fall back to game_date (old format)
@@ -919,13 +924,13 @@ def process_dynamodb_items(items):
                 else:
                     match_time = datetime.strptime(date_str, '%Y-%m-%d')
             except Exception as e:
-                logger.warning(f"Failed to parse game_date: {e}")
+                logger.warning(f"Item {i+1}: Failed to parse game_date '{item.get('game_date')}': {e}") # Log parsing errors
                 match_time = datetime.now()
         
         # Final fallback if match_time is still None
         if match_time is None:
             match_time = datetime.now()
-            logger.warning("Using current time as fallback for match_time")
+            logger.warning(f"Item {i+1}: Using current time as fallback for match_time")
         
         # Format odds for display
         odds = {
@@ -1019,8 +1024,13 @@ def process_dynamodb_items(items):
             'result_updated_at': item.get('result_updated_at', None)
         }
         
+        # --- Add detailed logging for processed game ---
+        logger.info(f"Processed item {i+1}: Game Dict -> {game}")
+        # --- End added logging ---
+        
         processed_items.append(game)
     
+    logger.info(f"--- Finished process_dynamodb_items ---") # Log end
     return processed_items 
 
 # Add these new helper functions for paginated data retrieval
