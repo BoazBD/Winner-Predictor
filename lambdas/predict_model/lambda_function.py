@@ -13,6 +13,7 @@ from decimal import Decimal
 from tensorflow.keras.initializers import Orthogonal
 from googletrans import Translator
 from team_translations import TEAM_TRANSLATIONS, get_translation
+from zoneinfo import ZoneInfo
 
 # Set up logging
 logger = logging.getLogger()
@@ -20,6 +21,9 @@ logger.setLevel(logging.INFO)
 
 # Create a translator instance for use throughout the function
 translator = Translator()
+
+# Define Israel Timezone using zoneinfo
+israel_tz = ZoneInfo("Asia/Jerusalem")
 
 # Initialize translation cache to avoid repeated API calls for the same text
 _translation_cache = {}
@@ -480,8 +484,8 @@ def make_predictions(model, valid_game_data, model_name):
             # Find best outcome by expected value
             best_outcome = max(outcomes, key=lambda x: x['expected_value'])
             
-            # Create game prediction record with timestamp
-            prediction_timestamp = datetime.now().isoformat()
+            # Create game prediction record with timestamp in Israel Time
+            prediction_timestamp = datetime.now(israel_tz).isoformat()
             
             # Convert date objects to strings
             if isinstance(event_date, date):

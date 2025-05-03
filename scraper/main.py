@@ -12,8 +12,8 @@ import requests
 from dotenv import load_dotenv
 
 from Bet import Bet
-from scraper.hash import HashGenerator
-from scraper.winner_config import (
+from hash import HashGenerator
+from winner_config import (
     API_URL,
     HASH_CHECKSUM_URL,
     RECORDING_BETS,

@@ -1,6 +1,6 @@
-# Sports Betting Predictor
+# Sports Betting Predictor (Football/Soccer)
 
-## [👉 LIVE PREDICTION SITE 👈](http://winner-site.eba-y8huhsgi.il-central-1.elasticbeanstalk.com)
+## [👉 LIVE PREDICTION SITE 👈](https://aisportbetter.com)
 
 ---
 
@@ -20,11 +20,11 @@ Our predictive models have been rigorously developed and refined over time:
 The final deployed model outperformed all benchmarks in backtesting and continues to show strong performance in live prediction scenarios.
 
 ## How It Works
-1. **Real-Time Scraping:** Sports data, including the continuously updated odds, is scraped every 15 minutes from a betting website.
-2. **Automated ETL Processing:** The scraped data is immediately processed through our pipeline, where it undergoes cleaning, transformation, and loading into a data warehouse.
-3. **Model Inference:** Our optimized LSTM model, trained on historical data, is queried in real-time with the latest odds data.
+1.  **Data Scraping:** Sports betting data, including odds, is scraped automatically every 15 minutes.
+2.  **Model Training:** A machine learning model (LSTM) has been trained on years of historical scraped data to learn prediction patterns.
+3.  **Live Predictions:** The trained model runs continuously in production, analyzing the latest data to identify potentially profitable betting opportunities, which are then displayed on the website ([aisportbetter.com](https://aisportbetter.com)).
 
-All of these processes run continuously in production to ensure you always have access to the most current betting opportunities.
+All backend processes (scraping, ETL, inference, database) run continuously on AWS to ensure you always have access to the most current betting opportunities displayed on the GCP-hosted site.
 
 ---
 

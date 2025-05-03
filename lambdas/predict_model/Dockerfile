@@ -4,10 +4,11 @@ FROM public.ecr.aws/lambda/python:3.10-x86_64
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
 # Install dependencies
-RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+RUN pip install --no-cache-dir -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
 
-# Copy function code
+# Copy function code and related files
 COPY lambda_function.py ${LAMBDA_TASK_ROOT}
+COPY team_translations.py ${LAMBDA_TASK_ROOT}
 
 # Set the CMD to your handler
 CMD [ "lambda_function.lambda_handler" ] 

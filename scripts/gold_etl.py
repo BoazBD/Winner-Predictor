@@ -5,7 +5,7 @@ import awswrangler as wr
 import boto3
 import pandas as pd
 
-from scripts.get_results import main as get_latest_results
+from get_results import main as get_latest_results
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

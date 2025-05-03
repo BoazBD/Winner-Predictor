@@ -1,22 +1,21 @@
-FROM python:3.9-slim
+FROM python:3.10-slim
 
+# Set the working directory
 WORKDIR /app
 
+# Copy local code to the container image
+COPY . /app
+
 # Install dependencies
-COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project files
-COPY . .
-
-# Set environment variables
-ENV FLASK_ENV=production
-ENV FLASK_DEBUG=0
-ENV PORT=8080
-ENV HOST=0.0.0.0
-
-# Expose the port
+# Expose the port the app runs on (Cloud Run default is 8080)
 EXPOSE 8080
 
-# Run the application with gunicorn for production
+# Set environment variables (can be overridden by Cloud Run)
+ENV FLASK_ENV=production
+ENV USE_DYNAMODB=1 
+# Add other necessary ENV vars here if they aren't set in Cloud Run
+
+# Set the default command (Python app) to be executed by the entrypoint
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"] 
