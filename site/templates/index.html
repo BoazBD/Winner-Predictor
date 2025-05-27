@@ -1,10 +1,44 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+/* Hero logo responsive styles */
+@media (max-width: 767.98px) {
+    .hero-section .d-flex.align-items-center {
+        flex-direction: column;
+        align-items: center !important;
+        text-align: center;
+    }
+    
+    .hero-section img {
+        height: 50px !important;
+        margin-bottom: 15px !important;
+        margin-right: 0 !important;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.75rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-section img {
+        height: 40px !important;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.5rem !important;
+    }
+}
+</style>
+
 <div class="hero-section mb-4 py-3">
     <div class="row align-items-center">
         <div class="col-lg-5">
-            <h1 class="display-5 fw-bold mb-2">AI-Powered Sports Predictions</h1>
+            <div class="d-flex align-items-center mb-3">
+                <img src="{{ url_for('static', filename='images/logo-hero.png') }}" alt="AI Sport Better Logo" class="me-3" style="height: 60px; width: auto; border-radius: 8px;">
+                <h1 class="display-5 fw-bold mb-0">AI-Powered Sports Predictions</h1>
+            </div>
             <p class="lead mb-3">Leverage advanced machine learning algorithms to identify profitable betting opportunities.</p>
             <div class="d-flex gap-2">
                 <a href="/all?init=1&model_type=lstm_100_12_v1" class="btn btn-primary">
@@ -50,27 +84,58 @@
     </div>
 </div>
 
-<!-- Filter section for model -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="model-filter-container d-flex align-items-center">
-            <h5 class="filter-title mb-0 me-3">Model:</h5>
-            <div class="dropdown model-dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" 
-                        type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span>
+<!-- Filter section for model and EV threshold -->
+<div class="mb-4">
+    <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-md-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <h6 class="filter-title mb-0 text-nowrap fw-semibold">Model:</h6>
+            <div class="dropdown model-dropdown" style="min-width: 220px;">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex justify-content-between align-items-center" 
+                        type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="width: 220px; height: 32px; font-size: 0.875rem;">
+                    <span class="text-truncate">
                         {% if selected_model %}
                             {{ selected_model }}
                         {% else %}
                             All Models
                         {% endif %}
                     </span>
-                    <i class="bi bi-chevron-down ms-2"></i>
+                    <i class="bi bi-chevron-down ms-1"></i>
                 </button>
-                <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
+                <ul class="dropdown-menu" aria-labelledby="modelFilterDropdown" style="min-width: 220px;">
                     {% for model in model_types %}
                     <li><a class="dropdown-item {% if selected_model == model %}active{% endif %}" 
-                          href="/?model_type={{ model }}{% if selected_language %}&lang={{ selected_language }}{% endif %}">{{ model }}</a></li>
+                          href="/?model_type={{ model }}{% if selected_language %}&lang={{ selected_language }}{% endif %}{% if selected_ev_threshold is defined %}&ev_threshold={{ selected_ev_threshold }}{% endif %}">{{ model }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <h6 class="filter-title mb-0 text-nowrap fw-semibold">Min EV:</h6>
+            <div class="dropdown ev-dropdown" style="min-width: 140px;">
+                <button class="btn btn-sm btn-outline-success dropdown-toggle d-flex justify-content-between align-items-center" 
+                        type="button" id="evFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="width: 140px; height: 32px; font-size: 0.875rem;">
+                    <span class="text-truncate">
+                        {% if selected_ev_threshold is defined and selected_ev_threshold > 0 %}
+                            {{ (selected_ev_threshold * 100)|round(1) }}%
+                        {% else %}
+                            0% (All)
+                        {% endif %}
+                    </span>
+                    <i class="bi bi-chevron-down ms-1"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="evFilterDropdown" style="min-width: 140px;">
+                    {% for threshold in ev_threshold_options %}
+                    <li><a class="dropdown-item {% if selected_ev_threshold == threshold %}active{% endif %}" 
+                          href="/?ev_threshold={{ threshold }}{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_language %}&lang={{ selected_language }}{% endif %}">
+                          {% if threshold > 0 %}
+                            {{ (threshold * 100)|round(1) }}%
+                          {% else %}
+                            0% (All)
+                          {% endif %}
+                          </a>
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
@@ -96,7 +161,7 @@
                     {% endif %}
                 {% endif %}
                 {% if game.expected_value is defined and game.expected_value is not none and game.expected_value > 0 %}
-                <span class="ev-badge {% if game.expected_value > 0.1 %}bg-success{% else %}bg-warning{% endif %}">
+                <span class="ev-badge {% if game.expected_value > 0.05 %}bg-success{% else %}bg-warning{% endif %}">
                     EV: {{ (game.expected_value * 100)|round(1) }}%
                 </span>
                 {% endif %}
@@ -119,13 +184,9 @@
                         </div>
                         <small class="text-muted d-block mt-1 predicted-timestamp">
                             <i class="bi bi-clock-history me-1"></i>
+                            Predicted:
                             {% if game.timestamp %}
-                                {% if 'T' in game.timestamp %}
-                                    {% set dt = game.timestamp.split('T') %}
-                                    Predicted: {{ dt[0] }} {{ dt[1][:5] }}
-                                {% else %}
-                                    Predicted: {{ game.timestamp[:16] }}
-                                {% endif %}
+                                {{ game.timestamp.strftime('%Y-%m-%d %H:%M') }}
                             {% else %}
                                 No timestamp
                             {% endif %}
@@ -139,7 +200,7 @@
                             <div class="odds-score-vertical mb-1">
                                 <span class="team-odds {% if game.prediction == 'Home Win' %}predicted-odds{% endif %}">{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</span>
                                 <span class="final-score-badge" style="{% if not (game.status == 'completed' and game.final_home_score is not none) %}visibility: hidden;{% endif %}">
-                                    {% if game.status == 'completed' and game.final_home_score is not none %}{{ game.final_home_score }}{% else %}-{% endif %}
+                                    {% if game.status == 'completed' and game.final_home_score is not none %}{{ game.final_home_score|int }}{% else %}-{% endif %}
                                 </span>
                             </div>
                             <div class="fw-bold text-dark small">Home</div>
@@ -158,7 +219,7 @@
                             <div class="odds-score-vertical mb-1">
                                 <span class="team-odds {% if game.prediction == 'Away Win' %}predicted-odds{% endif %}">{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</span>
                                 <span class="final-score-badge" style="{% if not (game.status == 'completed' and game.final_away_score is not none) %}visibility: hidden;{% endif %}">
-                                    {% if game.status == 'completed' and game.final_away_score is not none %}{{ game.final_away_score }}{% else %}-{% endif %}
+                                    {% if game.status == 'completed' and game.final_away_score is not none %}{{ game.final_away_score|int }}{% else %}-{% endif %}
                                 </span>
                             </div>
                             <div class="fw-bold text-dark small">Away</div>
@@ -167,46 +228,48 @@
                     
                     <!-- Prediction -->
                     <div class="prediction-container ms-n4 p-2 bg-primary bg-opacity-10 rounded-3 border-start border-4 border-primary">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted small fw-bold">Our Prediction</span>
-                            <span class="prediction-value fw-bold fs-5 text-primary">{{ game.prediction|default('No prediction available') }}</span>
+                        <div class="mb-1">
+                            <div class="text-uppercase text-muted small fw-bold mb-1">Our Prediction</div>
+                            <div class="prediction-value fw-bold text-primary" style="font-size: 1.1rem; line-height: 1.2;">{{ game.prediction|default('No prediction available') }}</div>
                         </div>
                         
                         {% if game.confidence is not none %}
-                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-1">
+                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
                             <div class="confidence-meter-fill bg-primary rounded-pill" 
                                  style="width: {{ (game.confidence * 100)|round(1) }}%"></div>
                         </div>
-                        <div class="position-relative">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-medium text-primary">{{ (game.confidence * 100)|round(1) }}% confidence</span>
-                                <button class="btn btn-sm btn-link p-0 text-primary" 
-                                       type="button" 
-                                       data-bs-toggle="collapse" 
-                                       data-bs-target="#detailsCollapse{{ loop.index }}" 
-                                       aria-expanded="false" 
-                                       aria-controls="detailsCollapse{{ loop.index }}">
-                                    <i class="bi bi-info-circle"></i> Details
-                                </button>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div class="confidence-display">
+                                <div class="fw-bold text-primary mb-0" style="font-size: 1.1rem; line-height: 1;">{{ (game.confidence * 100)|round(1) }}%</div>
+                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">confidence</div>
                             </div>
+                            <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
+                                   type="button" 
+                                   data-bs-toggle="collapse" 
+                                   data-bs-target="#detailsCollapse{{ loop.index }}" 
+                                   aria-expanded="false" 
+                                   aria-controls="detailsCollapse{{ loop.index }}">
+                                <i class="bi bi-info-circle me-1"></i><span class="small">Details</span>
+                            </button>
                         </div>
                         {% else %}
-                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-1">
+                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
                             <div class="confidence-meter-fill bg-primary rounded-pill" 
                                  style="width: 0%"></div>
                         </div>
-                        <div class="position-relative">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <span class="fw-medium text-muted">Confidence unavailable</span>
-                                <button class="btn btn-sm btn-link p-0 text-primary" 
-                                       type="button" 
-                                       data-bs-toggle="collapse" 
-                                       data-bs-target="#detailsCollapse{{ loop.index }}" 
-                                       aria-expanded="false" 
-                                       aria-controls="detailsCollapse{{ loop.index }}">
-                                    <i class="bi bi-info-circle"></i> Details
-                                </button>
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div class="confidence-display">
+                                <div class="fw-medium text-muted mb-0" style="font-size: 1.1rem; line-height: 1;">N/A</div>
+                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">confidence</div>
                             </div>
+                            <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
+                                   type="button" 
+                                   data-bs-toggle="collapse" 
+                                   data-bs-target="#detailsCollapse{{ loop.index }}" 
+                                   aria-expanded="false" 
+                                   aria-controls="detailsCollapse{{ loop.index }}">
+                                <i class="bi bi-info-circle me-1"></i><span class="small">Details</span>
+                            </button>
                         </div>
                         {% endif %}
                     </div>
@@ -214,137 +277,139 @@
                 
                 <!-- Details Container (id should match data-bs-target) -->
                 <div class="collapse details-container" id="detailsCollapse{{ loop.index }}">
-                    <div class="details-content py-1 px-2">
-                        {# Mimic the teams-container flex structure #}
-                        <div class="d-flex align-items-start">
-                            {# Home Win Details (like .team) #}
-                            <div style="flex: 1; text-align: center;">
-                                <h6 class="mb-1 fs-6"><small>Home Win</small></h6>
-                                {# Content remains centered #}
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Prob:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.home_win_prob is not none %}
-                                            {{ (game.home_win_prob * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Odds:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.odds.home is not none %}
-                                            {{ game.odds.home }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center">
-                                    <span class="small">EV:</span>
-                                    <span class="small fw-bold 
-                                        {% if game.home_win_ev is not none %}
-                                            {% if game.home_win_ev > 0 %}text-success{% else %}text-danger{% endif %}
-                                        {% endif %}">
-                                        {% if game.home_win_ev is not none %}
-                                            {{ (game.home_win_ev * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                            {# Draw Details (like .vs-container) #}
-                            <div style="margin: 0 0.5rem; text-align: center;">
-                                <h6 class="mb-1 fs-6"><small>X</small></h6>
-                                {# Content remains centered #}
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Prob:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.draw_prob is not none %}
-                                            {{ (game.draw_prob * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Odds:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.odds.draw is not none %}
-                                            {{ game.odds.draw }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center">
-                                    <span class="small">EV:</span>
-                                    <span class="small fw-bold 
-                                        {% if game.draw_ev is not none %}
-                                            {% if game.draw_ev > 0 %}text-success{% else %}text-danger{% endif %}
-                                        {% endif %}">
-                                        {% if game.draw_ev is not none %}
-                                            {{ (game.draw_ev * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                            {# Away Win Details (like .team) #}
-                            <div style="flex: 1; text-align: center;">
-                                <h6 class="mb-1 fs-6"><small>Away Win</small></h6>
-                                {# Content remains centered #}
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Prob:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.away_win_prob is not none %}
-                                            {{ (game.away_win_prob * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center mb-0">
-                                    <span class="small">Odds:</span>
-                                    <span class="small fw-bold">
-                                        {% if game.odds.away is not none %}
-                                            {{ game.odds.away }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="d-flex justify-content-center">
-                                    <span class="small">EV:</span>
-                                    <span class="small fw-bold 
-                                        {% if game.away_win_ev is not none %}
-                                            {% if game.away_win_ev > 0 %}text-success{% else %}text-danger{% endif %}
-                                        {% endif %}">
-                                        {% if game.away_win_ev is not none %}
-                                            {{ (game.away_win_ev * 100)|round(1) }}%
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
+                    <div class="details-content py-2 px-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless mb-2">
+                                <thead>
+                                    <tr class="text-center">
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Outcome</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Probability</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Odds</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Expected Value</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Profitable</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="text-center {% if game.prediction == 'Home Win' %}table-primary{% endif %}">
+                                        <td class="fw-medium" style="font-size: 0.8rem;">{{ game.display_home_team|default(game.home_team)|truncate(12, True) }}</td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.home_win_prob is not none %}
+                                                {{ (game.home_win_prob * 100)|round(1) }}%
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.odds.home is not none %}
+                                                {{ game.odds.home }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.home_win_ev is not none %}
+                                                <span class="{% if game.home_win_ev > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                    {{ (game.home_win_ev * 100)|round(1) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 0.8rem;">
+                                            {% if game.home_win_is_profitable %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr class="text-center {% if game.prediction == 'Draw' %}table-primary{% endif %}">
+                                        <td class="fw-medium" style="font-size: 0.8rem;">Draw</td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.draw_prob is not none %}
+                                                {{ (game.draw_prob * 100)|round(1) }}%
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.odds.draw is not none %}
+                                                {{ game.odds.draw }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.draw_ev is not none %}
+                                                <span class="{% if game.draw_ev > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                    {{ (game.draw_ev * 100)|round(1) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 0.8rem;">
+                                            {% if game.draw_is_profitable %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr class="text-center {% if game.prediction == 'Away Win' %}table-primary{% endif %}">
+                                        <td class="fw-medium" style="font-size: 0.8rem;">{{ game.display_away_team|default(game.away_team)|truncate(12, True) }}</td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.away_win_prob is not none %}
+                                                {{ (game.away_win_prob * 100)|round(1) }}%
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.odds.away is not none %}
+                                                {{ game.odds.away }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="fw-bold" style="font-size: 0.8rem;">
+                                            {% if game.away_win_ev is not none %}
+                                                <span class="{% if game.away_win_ev > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                    {{ (game.away_win_ev * 100)|round(1) }}%
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="font-size: 0.8rem;">
+                                            {% if game.away_win_is_profitable %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            {% else %}
+                                                <i class="bi bi-x-circle-fill text-danger"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                         
                         {% if game.status == 'completed' %}
-                        <div class="mt-3 small">
-                            <div class="alert {% if game.prediction_result == true %}alert-success{% else %}alert-danger{% endif %} p-2">
-                                <strong>Final Score:</strong> {{ game.display_home_team|default(game.home_team) }} {{ game.home_score|default(0) }} - {{ game.away_score|default(0) }} {{ game.display_away_team|default(game.away_team) }}
-                                <br>
-                                <strong>Actual Result:</strong> {{ game.actual_result|default('Unknown') }}
+                        <div class="mt-2 small">
+                            <div class="alert {% if game.prediction_result == true %}alert-success{% else %}alert-danger{% endif %} p-2 mb-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Final Score:</strong> {{ game.display_home_team|default(game.home_team) }} {{ game.home_score|default(0)|int }} - {{ game.away_score|default(0)|int }} {{ game.display_away_team|default(game.away_team) }}
+                                    </div>
+                                    <div class="text-end">
+                                        <strong>Result:</strong> {{ game.actual_result|default('Unknown') }}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
                         
                         {% if game.result_id is not none %}
-                        <div class="mt-3 small text-muted">
+                        <div class="mt-2 small text-muted text-center">
                             <strong>Result ID:</strong> {{ game.result_id }}
                         </div>
                         {% endif %}

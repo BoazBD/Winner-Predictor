@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sports Betting Predictions</title>
+    <title>AI Sport Better - Sports Betting Predictions</title>
+    
+    <!-- Favicon and Apple Touch Icon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='images/favicon-16x16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon-32x32.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +22,18 @@
     
     <!-- Local CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Prevent flash of light mode content -->
+    <script>
+        // Apply dark mode immediately if it's saved in localStorage
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.body.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
     
     <!-- Fallback for Bootstrap CSS -->
     <script>
@@ -41,31 +59,229 @@
             --body-bg: #f9fafb;
             --card-bg: #ffffff;
             --navbar-bg: #0a1e4f;
+            --text-color: #4a5568;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+        
+        /* Dark mode variables */
+        [data-theme="dark"] {
+            --body-bg: #1a202c;
+            --card-bg: #2d3748;
+            --navbar-bg: #1a202c;
+            --text-color: #e2e8f0;
+            --dark-color: #f7fafc;
+            --light-color: #2d3748;
+            --border-color: #4a5568;
+            --shadow-color: rgba(0,0,0,0.3);
+            --secondary-color: #a0aec0;
+            --primary-light: #2d3748;
+        }
+        
+        /* Dark mode text overrides */
+        [data-theme="dark"] .text-dark {
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .text-black {
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .fw-bold.text-dark {
+            color: #f7fafc !important;
+        }
+        
+        [data-theme="dark"] .small {
+            color: #cbd5e0 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-light {
+            background-color: #4a5568 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .table-primary {
+            background-color: #2d3748 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .table-primary.text-dark {
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .match-time.badge.bg-light.text-dark {
+            background-color: #4a5568 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        /* Additional dark mode improvements */
+        [data-theme="dark"] .alert-info {
+            background-color: #2d3748;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        
+        [data-theme="dark"] .alert-success {
+            background-color: #22543d;
+            border-color: #38a169;
+            color: #f0fff4;
+        }
+        
+        [data-theme="dark"] .alert-danger {
+            background-color: #742a2a;
+            border-color: #e53e3e;
+            color: #fed7d7;
+        }
+        
+        [data-theme="dark"] .bg-primary.bg-opacity-10 {
+            background-color: rgba(66, 153, 225, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .bg-success.bg-opacity-10 {
+            background-color: rgba(72, 187, 120, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .bg-warning.bg-opacity-10 {
+            background-color: rgba(237, 137, 54, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .bg-info.bg-opacity-10 {
+            background-color: rgba(66, 153, 225, 0.2) !important;
+        }
+        
+        [data-theme="dark"] .text-primary {
+            color: #63b3ed !important;
+        }
+        
+        [data-theme="dark"] .text-success {
+            color: #68d391 !important;
+        }
+        
+        [data-theme="dark"] .text-warning {
+            color: #fbb040 !important;
+        }
+        
+        [data-theme="dark"] .text-info {
+            color: #63b3ed !important;
+        }
+        
+        [data-theme="dark"] .text-danger {
+            color: #fc8181 !important;
+        }
+        
+        /* Ensure all headings are visible in dark mode */
+        [data-theme="dark"] h1, 
+        [data-theme="dark"] h2, 
+        [data-theme="dark"] h3, 
+        [data-theme="dark"] h4, 
+        [data-theme="dark"] h5, 
+        [data-theme="dark"] h6 {
+            color: #f7fafc !important;
+        }
+        
+        /* Fix dropdown items in dark mode */
+        [data-theme="dark"] .dropdown-item {
+            color: #e2e8f0 !important;
+        }
+        
+        [data-theme="dark"] .dropdown-item:hover {
+            background-color: #4a5568 !important;
+            color: #f7fafc !important;
+        }
+        
+        [data-theme="dark"] .dropdown-item.active {
+            background-color: #63b3ed !important;
+            color: #1a202c !important;
+        }
+        
+        /* Fix button text in dark mode */
+        [data-theme="dark"] .btn-outline-primary {
+            color: #63b3ed !important;
+            border-color: #63b3ed !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background-color: #63b3ed !important;
+            color: #1a202c !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-success {
+            color: #68d391 !important;
+            border-color: #68d391 !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-success:hover {
+            background-color: #68d391 !important;
+            color: #1a202c !important;
         }
         
         body {
             background-color: var(--body-bg);
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            color: #4a5568;
+            color: var(--text-color);
             line-height: 1.6;
             padding-top: 70px;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         /* Modern Navbar */
         .navbar {
             background-color: var(--navbar-bg);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px var(--shadow-color);
             padding: 15px 0;
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 1000;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
         }
         
+        /* Dark mode toggle button */
+        .dark-mode-toggle {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: 2px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+        }
+        
+        .dark-mode-toggle:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.4);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .dark-mode-toggle:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+        }
+        
+        /* Adjust navbar brand position to accommodate toggle */
         .navbar-brand {
             font-weight: 700;
             letter-spacing: 0.5px;
             font-size: 1.35rem;
+            display: flex;
+            align-items: center;
+            margin-left: 60px; /* Make room for dark mode toggle */
+        }
+        
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
+            margin-right: 10px;
+            border-radius: 6px;
         }
         
         .navbar-brand .bi {
@@ -88,20 +304,23 @@
         .card {
             border: none;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 15px var(--shadow-color);
             transition: all 0.3s ease;
             overflow: hidden;
             background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
         }
         
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px var(--shadow-color);
         }
         
         .card-header {
             font-weight: 600;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
         
         /* Badges and Status Indicators */
@@ -110,7 +329,7 @@
             border-radius: 6px;
             font-weight: 500;
             letter-spacing: 0.3px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px var(--shadow-color);
         }
         
         .status-badge {
@@ -127,12 +346,12 @@
             padding: 10px 20px;
             letter-spacing: 0.3px;
             transition: all 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px var(--shadow-color);
         }
         
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px var(--shadow-color);
         }
         
         .btn-primary {
@@ -149,10 +368,11 @@
         .table {
             border-collapse: separate;
             border-spacing: 0;
+            color: var(--text-color);
         }
         
         .table thead th {
-            background-color: #f8f9fa;
+            background-color: var(--light-color);
             border-top: none;
             font-weight: 600;
             text-transform: uppercase;
@@ -162,31 +382,40 @@
         }
         
         .table-bordered th, .table-bordered td {
-            border: 1px solid #edf2f7;
+            border: 1px solid var(--border-color);
+        }
+        
+        .table tbody tr {
+            background-color: var(--card-bg);
         }
         
         /* Modern Footer */
         .footer {
-            background-color: #ffffff;
-            border-top: 1px solid #edf2f7;
+            background-color: var(--card-bg);
+            border-top: 1px solid var(--border-color);
             padding: 25px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.03);
+            box-shadow: 0 -2px 10px var(--shadow-color);
             margin-top: 60px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         
         /* Form Controls */
         .form-control, .form-select {
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border-color);
             padding: 10px 15px;
             height: auto;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px var(--shadow-color);
             transition: all 0.3s;
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
         
         .form-control:focus, .form-select:focus {
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(22, 75, 197, 0.2);
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
         
         /* Enhanced dropdown styling */
@@ -195,8 +424,10 @@
             overflow-y: auto;
             border: none;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px var(--shadow-color);
             padding: 10px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
         }
 
         .dropdown-item {
@@ -204,10 +435,12 @@
             border-radius: 6px;
             margin-bottom: 3px;
             transition: all 0.2s;
+            color: var(--text-color);
         }
         
         .dropdown-item:hover {
             background-color: var(--primary-light);
+            color: var(--text-color);
         }
 
         .dropdown-item.active, 
@@ -219,6 +452,7 @@
         .dropdown-divider {
             margin: 8px 0;
             opacity: 0.1;
+            border-color: var(--border-color);
         }
 
         .model-dropdown {
@@ -263,6 +497,10 @@
             color: var(--primary-color) !important;
         }
         
+        .text-muted {
+            color: var(--secondary-color) !important;
+        }
+        
         /* Make small text legible */
         .small, small {
             font-size: 85%;
@@ -285,7 +523,7 @@
             padding: 5px 15px;
             font-size: 0.9rem;
             font-weight: 500;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px var(--shadow-color);
         }
         
         /* Media Queries */
@@ -300,6 +538,22 @@
             
             .navbar {
                 padding: 10px 0;
+            }
+            
+            .navbar-brand {
+                margin-left: 50px; /* Adjust for smaller screens */
+                font-size: 1.2rem;
+            }
+            
+            .navbar-brand img {
+                height: 35px;
+            }
+            
+            .dark-mode-toggle {
+                left: 10px;
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
             }
             
             .navbar-language-toggle {
@@ -341,7 +595,7 @@
                 width: 100%;
                 max-width: 300px;
                 flex-direction: column;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 10px var(--shadow-color);
                 display: none !important;
             }
             
@@ -354,11 +608,15 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
+            <!-- Dark mode toggle button -->
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+                <i class="bi bi-moon-fill" id="darkModeIcon"></i>
+            </button>
+            
             <a class="navbar-brand" href="/">
-                <i class="bi bi-graph-up-arrow me-2"></i>
-                Winner Predictions
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AI Sport Better Logo" class="me-2"> AI Sport Better
             </a>
-            <button class="navbar-toggler" type="button" id="navbarToggler">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="navbar-menu" id="navbarNav">
@@ -403,39 +661,65 @@
         </div>
     </div>
 
-    <footer class="footer py-4">
+    <footer class="footer mt-auto py-3 text-center">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-center text-md-start">
-                    <span class="copyright text-muted">&copy; 2025 Winner Predictions. All rights reserved.</span>
-                </div>
-                <div class="col-md-6">
-                    <ul class="list-inline text-center text-md-end mb-0">
-                        <li class="list-inline-item">
-                            <a href="#" class="text-decoration-none text-muted">
-                                <i class="bi bi-twitter"></i>
-                            </a>
-                        </li>
-                        <li class="list-inline-item ms-3">
-                            <a href="#" class="text-decoration-none text-muted">
-                                <i class="bi bi-facebook"></i>
-                            </a>
-                        </li>
-                        <li class="list-inline-item ms-3">
-                            <a href="#" class="text-decoration-none text-muted">
-                                <i class="bi bi-instagram"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+            <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
+                <span class="text-muted">&copy; 2025 AI Sport Better. All rights reserved. | Version 0.2.1</span>
+                <span class="text-muted d-none d-md-inline">|</span>
+                <a href="https://www.linkedin.com/in/boaz-bar-david/" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                    <i class="bi bi-linkedin me-1"></i>Contact Us
+                </a>
             </div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Dark mode functionality
+        function initDarkMode() {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const darkModeIcon = document.getElementById('darkModeIcon');
+            const body = document.body;
+            
+            // Check for saved theme preference or default to light mode
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            
+            // Apply the saved theme (body should already have it from inline script)
+            if (savedTheme === 'dark') {
+                body.setAttribute('data-theme', 'dark');
+                document.documentElement.setAttribute('data-theme', 'dark');
+                darkModeIcon.className = 'bi bi-sun-fill';
+            } else {
+                body.removeAttribute('data-theme');
+                document.documentElement.removeAttribute('data-theme');
+                darkModeIcon.className = 'bi bi-moon-fill';
+            }
+            
+            // Toggle dark mode
+            darkModeToggle.addEventListener('click', function() {
+                const currentTheme = body.getAttribute('data-theme');
+                
+                if (currentTheme === 'dark') {
+                    // Switch to light mode
+                    body.removeAttribute('data-theme');
+                    document.documentElement.removeAttribute('data-theme');
+                    darkModeIcon.className = 'bi bi-moon-fill';
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    // Switch to dark mode
+                    body.setAttribute('data-theme', 'dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    darkModeIcon.className = 'bi bi-sun-fill';
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        }
+        
         // Add active class to current page in navbar
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dark mode
+            initDarkMode();
+            
             const currentLocation = window.location.pathname;
             const navLinks = document.querySelectorAll('.nav-link');
             

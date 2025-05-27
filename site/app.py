@@ -1,21 +1,32 @@
 from flask import Flask, render_template, send_from_directory, render_template_string, jsonify, request
 from db import (
+    # SQLite functions (will be conditionally used or replaced)
     get_profitable_games_from_db, 
     get_all_predictions_from_db, 
-    get_profitable_games_from_dynamodb, 
-    get_all_predictions_from_dynamodb,
-    get_prediction_metadata_from_dynamodb,
     get_unique_leagues_from_db,
     get_unique_models_from_db,
     get_paginated_predictions_from_db,
-    get_paginated_predictions_from_dynamodb
+    # DynamoDB functions (will be conditionally used or replaced)
+    get_profitable_games_from_dynamodb, 
+    get_all_predictions_from_dynamodb,
+    get_prediction_metadata_from_dynamodb,
+    get_paginated_predictions_from_dynamodb,
+    # Firestore functions (new)
+    get_profitable_games_from_firestore,
+    get_all_predictions_from_firestore,
+    get_prediction_metadata_from_firestore,
+    get_paginated_predictions_from_firestore,
+    # Common or old
+    DATA_SOURCE, # Import the DATA_SOURCE variable
+    _firestore_doc_to_game_dict
 )
 import logging
 from datetime import datetime, timedelta
 import os
-import boto3
-from boto3.dynamodb.conditions import Attr
-from botocore.config import Config
+# Remove boto3 imports from app.py if all DynamoDB direct access is through db.py
+# import boto3 
+# from boto3.dynamodb.conditions import Attr
+# from botocore.config import Config
 import time
 
 # Configure logging
@@ -27,17 +38,29 @@ FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
 PORT = int(os.environ.get('PORT', 8081))
 HOST = os.environ.get('HOST', '0.0.0.0')
 DEBUG = os.environ.get('FLASK_DEBUG', '1') == '1'
-USE_DYNAMODB = os.environ.get('USE_DYNAMODB', '1') == '1'
-# DynamoDB tables
-ALL_PREDICTIONS_TABLE = "all-predicted-games"
-PROFITABLE_GAMES_TABLE = os.environ.get('PROFITABLE_GAMES_TABLE', 'profitable-games')
+
+# USE_DYNAMODB is now replaced by DATA_SOURCE from db.py
+# USE_DYNAMODB = os.environ.get('USE_DYNAMODB', '1') == '1' 
+logger.info(f"Application is using data source: {DATA_SOURCE}")
+
+# DynamoDB tables - these might only be relevant if DATA_SOURCE can still be 'dynamodb' for some paths
+ALL_PREDICTIONS_TABLE = "all-predicted-games" # Kept for reference if direct Dynamo calls were ever needed here
+PROFITABLE_GAMES_TABLE = os.environ.get('PROFITABLE_GAMES_TABLE', 'profitable-games') # Kept for reference
 
 app = Flask(__name__, static_folder='static')
 
 @app.route('/health')
 def health_check():
     """Health check endpoint for Elastic Beanstalk"""
-    return jsonify({'status': 'healthy', 'environment': FLASK_ENV}), 200
+    # Optionally, add a check to see if db_firestore client is available if DATA_SOURCE is firestore
+    db_status = "ok"
+    if DATA_SOURCE == 'firestore':
+        from db import db_firestore
+        if db_firestore is None:
+            db_status = "firestore_client_error"
+            return jsonify({'status': 'unhealthy', 'reason': db_status, 'environment': FLASK_ENV}), 500
+
+    return jsonify({'status': 'healthy', 'data_source': DATA_SOURCE, 'environment': FLASK_ENV}), 200
 
 # Sample games as fallback
 SAMPLE_GAMES = [
@@ -114,24 +137,17 @@ def ensure_game_has_required_fields(game):
         if field not in game:
             game[field] = default
     
-    # Ensure match_time is a valid datetime object
+    # Ensure match_time is a valid datetime object.
+    # _firestore_doc_to_game_dict should have already parsed it from string or filtered the game.
+    # SAMPLE_GAMES also provides match_time as datetime.
     if not isinstance(game['match_time'], datetime):
-        try:
-            # If it's a string, try to parse it
-            if isinstance(game['match_time'], str):
-                if ' ' in game['match_time']:  # Has both date and time
-                    game['match_time'] = datetime.strptime(game['match_time'], '%Y-%m-%d %H:%M')
-                else:  # Only has date
-                    game['match_time'] = datetime.strptime(game['match_time'], '%Y-%m-%d')
-            else:
-                # If parsing fails or it's not a string, use current time
-                game['match_time'] = datetime.now()
-                logger.warning(f"Invalid match_time for game {game.get('id', 'unknown')}, using current time")
-        except Exception as e:
-            # If parsing fails, use current time
-            game['match_time'] = datetime.now()
-            logger.warning(f"Failed to parse match_time for game {game.get('id', 'unknown')}: {e}")
+        logger.warning(f"Game ID {game.get('id', 'unknown')} 'match_time' is not a datetime object (type: {type(game['match_time'])}). Value: {game['match_time']}. Defaulting to current time.")
+        game['match_time'] = datetime.now()
     
+    # Ensure datetime is naive
+    if game['match_time'].tzinfo is not None:
+        game['match_time'] = game['match_time'].replace(tzinfo=None)
+
     # Add one minute to the match time to give users a buffer
     game['match_time'] = game['match_time'] + timedelta(minutes=1)
     
@@ -217,43 +233,52 @@ def index():
         # Get language preference, default to 'english'
         selected_language = request.args.get('lang', 'english')
         logger.info(f"Selected language: '{selected_language}'")
+
+        # Get EV threshold filter, default to 0
+        ev_threshold_options = [0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05] # Representing 0%, 0.1%, ..., 1%, 2%, 3%, 4%, 5%
+        selected_ev_threshold = request.args.get('ev_threshold', 0, type=float)
+        if selected_ev_threshold not in ev_threshold_options: # Ensure valid threshold or default
+            selected_ev_threshold = 0
+        logger.info(f"Selected EV threshold: {selected_ev_threshold}")
         
         # Get profitable predictions
-        if USE_DYNAMODB:
-            # Revert to fetching directly from the profitable games table
+        games = []
+        if DATA_SOURCE == 'dynamodb':
             logger.info(f"Fetching profitable games directly from DynamoDB table: {PROFITABLE_GAMES_TABLE}")
-            
             # Optional: Keep some debug info if needed, but target the correct table
             debug_info = {}
             try:
-                dynamodb = boto3.resource('dynamodb', region_name="il-central-1")
-                table = dynamodb.Table(PROFITABLE_GAMES_TABLE) 
-                count_response = table.scan(Select='COUNT')
-                debug_info['profitable_table_total_items'] = count_response.get('Count', 0)
-                logger.info(f"DynamoDB debug info for profitable table: {debug_info}")
+                # dynamodb = boto3.resource('dynamodb', region_name="il-central-1") # Not needed here, done in db.py
+                # table = dynamodb.Table(PROFITABLE_GAMES_TABLE) 
+                # count_response = table.scan(Select='COUNT')
+                # debug_info['profitable_table_total_items'] = count_response.get('Count', 0)
+                # logger.info(f"DynamoDB debug info for profitable table: {debug_info}")
+                pass # Boto3 calls are in db.py now
             except Exception as debug_e:
                 logger.warning(f"Error collecting debug info for profitable table: {debug_e}")
             
-            # Use the function that reads from the profitable-games table
             games = get_profitable_games_from_dynamodb() 
             logger.info(f"Raw profitable games data count from DynamoDB: {len(games)}")
-            
-            # Debug info for first few profitable games
-            if games and len(games) > 0:
-                for i, game in enumerate(games[:3]):
-                    # Log status to verify
-                    logger.info(f"Sample profitable game {i+1}: id={game.get('id')}, model={game.get('model_name')}, status={game.get('status')}, match_time={game.get('match_time')}") 
-            else:
-                logger.warning("No profitable games found in profitable-games table")
-        else:
+        elif DATA_SOURCE == 'firestore':
+            logger.info(f"Fetching profitable games from Firestore collection: {os.environ.get('FIRESTORE_PROFITABLE_PREDICTIONS_COLLECTION', 'profitable_predictions')}")
+            games = get_profitable_games_from_firestore()
+            logger.info(f"Raw profitable games data count from Firestore: {len(games)}")
+        elif DATA_SOURCE == 'sqlite':
             logger.info("Fetching profitable games from SQLite")
             games = get_profitable_games_from_db()
-        
-        if not games:
-            logger.warning("No profitable games found, using sample data")
-            games = SAMPLE_GAMES.copy()
+            logger.info(f"Raw profitable games data count from SQLite: {len(games)}")
         else:
-            logger.info(f"Successfully retrieved {len(games)} profitable games for display")
+            logger.error(f"Unknown DATA_SOURCE: {DATA_SOURCE}. Falling back to sample data for index.")
+            games = SAMPLE_GAMES.copy()
+        
+        logger.info(f"Retrieved {len(games)} games before SAMPLE_GAMES fallback logic in index route.")
+
+        if not games:
+            logger.warning("No profitable games found (either from DB or initial list was empty), using sample data")
+            games = SAMPLE_GAMES.copy()
+            logger.info(f"Now using {len(games)} SAMPLE_GAMES for display in index route.")
+        else:
+            logger.info(f"Successfully retrieved {len(games)} profitable games for display (did not use SAMPLE_GAMES fallback).")
         
         # Ensure all games have required fields
         processed_games = [ensure_game_has_required_fields(game) for game in games]
@@ -296,6 +321,16 @@ def index():
             if len(processed_games) == 0:
                 logger.warning(f"Filter '{selected_model}' resulted in zero games. Available models were: {model_types}")
         
+        # Apply EV threshold filter
+        if selected_ev_threshold > 0:
+            before_ev_filter = len(processed_games)
+            # Ensure 'expected_value' is present and is a float for comparison
+            processed_games = [
+                game for game in processed_games 
+                if game.get('expected_value') is not None and float(game['expected_value']) >= selected_ev_threshold
+            ]
+            logger.info(f"Filtered to {len(processed_games)} games from {before_ev_filter} for EV threshold: {selected_ev_threshold}")
+        
         # Count upcoming games for info
         current_time = datetime.now()
         upcoming_games = [g for g in processed_games if g.get('match_time', current_time) > current_time]
@@ -309,360 +344,150 @@ def index():
                               stats=stats,
                               model_types=model_types,
                               selected_model=selected_model,
-                              selected_language=selected_language)
+                              selected_language=selected_language,
+                              ev_threshold_options=ev_threshold_options,
+                              selected_ev_threshold=selected_ev_threshold)
     
     except Exception as e:
         logger.error(f"Error fetching games for index: {str(e)}", exc_info=True)
         sample_games = [ensure_game_has_required_fields(game) for game in SAMPLE_GAMES]
         stats = calculate_prediction_stats(sample_games)
+        # Also pass threshold options in case of error
+        ev_threshold_options = [0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05]
         return render_template('index.html', 
                               games=sample_games, 
                               stats=stats,
                               model_types=['lstm_100_12_v1', 'lstm_100_12_v2'],
                               selected_model='',
-                              selected_language='english')
+                              selected_language='english',
+                              ev_threshold_options=ev_threshold_options,
+                              selected_ev_threshold=0)
 
 @app.route('/all')
 def all_predictions():
     try:
-        # Get filter parameters from request
-        selected_league = request.args.get('league', '')
-        selected_model = request.args.get('model_type', 'lstm_100_12_v1')
-        selected_prediction = request.args.get('prediction_type', '')
-        selected_status = request.args.get('status', '')
-        selected_result = request.args.get('result', '')
-        selected_ev = request.args.get('ev', '')
+        # Get query parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        league = request.args.get('league', '')
+        model = request.args.get('model_type', '')
+        game_id = request.args.get('game_id', '')
         
-        # Get pagination parameters - increase default to show more predictions
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 50))  # Increased from 40 to 50
+        # Get language preference
+        language = request.args.get('lang', 'english')
         
-        # Get language preference, default to 'english'
-        selected_language = request.args.get('lang', 'english')
-        logger.info(f"Selected language: '{selected_language}'")
-        
-        # Get leagues and models for dropdowns - these should load quickly
-        if USE_DYNAMODB:
-            # Get just the metadata instead of all predictions
-            leagues, model_types = get_prediction_metadata_from_dynamodb()
-        else:
-            # If using SQLite, fetch minimal data for dropdowns
-            leagues = get_unique_leagues_from_db()
-            model_types = get_unique_models_from_db()
-        
-        # Begin with an empty stats object
-        stats = {
-            'total_predictions': 0,
-            'win_rate': 0,
-            'successful_bets': 0,
-            'unsuccessful_bets': 0,
-            'avg_roi': 0
-        }
-        
-        # Create a loading state template with filters but no predictions
-        if request.args.get('init') == '1':
-            # First load - return just the structure without predictions
-            return render_template('all_predictions.html',
-                                games=[],
-                                stats=stats,
-                                leagues=leagues,
-                                model_types=model_types,
-                                selected_league=selected_league,
-                                selected_model=selected_model,
-                                selected_prediction=selected_prediction,
-                                selected_status=selected_status,
-                                selected_result=selected_result,
-                                selected_ev=selected_ev,
-                                selected_language=selected_language,
-                                page=page,
-                                per_page=per_page,
-                                total_pages=1,
-                                total_count=0,
-                                has_prev=False,
-                                has_next=False,
-                                loading=True)
-        
-        # Use a more efficient query if possible
-        filtered_games = []
-        total_count = 0
-        logger.info(f"Fetching predictions with filters: league={selected_league}, model={selected_model}")
-        
-        if USE_DYNAMODB:
-            filtered_games, total_count = get_paginated_predictions_from_dynamodb(
+        # Get predictions from Firestore
+        try:
+            games, total_count = get_paginated_predictions_from_firestore(
                 page=page,
-                per_page=per_page * 5,  # Get enough to account for grouping
-                league=selected_league,
-                model=selected_model,
-                prediction=selected_prediction,
-                status=selected_status,
-                result=selected_result,
-                ev=selected_ev
+                per_page=per_page,
+                league=league,
+                model=model,
+                game_id=game_id
             )
-            
-            # --- Add detailed logging for fetched games ---
-            logger.info(f"[DEBUG] Fetched {len(filtered_games)} games from DB function. Total count reported: {total_count}")
-            if filtered_games:
-                 logger.info(f"[DEBUG] First fetched game raw: {filtered_games[0]}")
-            # --- End added logging ---
-            
-            # If we're using model filtering, also fetch the latest predictions regardless of model
-            # to ensure we have a mix of filtered + latest predictions
-            if selected_model and (len(filtered_games) < per_page):
-                logger.info(f"Also fetching latest predictions regardless of model to ensure freshness")
-                latest_games, _ = get_paginated_predictions_from_dynamodb(
-                    page=1,
-                    per_page=per_page * 2,
-                    league=selected_league,
-                    model='',  # No model filter
-                    prediction=selected_prediction,
-                    status=selected_status,
-                    result=selected_result,
-                    ev=selected_ev
+        except Exception as e:
+            if "requires a composite index" in str(e):
+                # Get metadata for filters even in error case
+                try:
+                    leagues, models = get_prediction_metadata_from_firestore()
+                except:
+                    leagues, models = [], []
+                
+                # If it's an index error, show a user-friendly message
+                return render_template(
+                    'all_predictions.html',
+                    games=[],
+                    total_count=0,
+                    page=page,
+                    per_page=per_page,
+                    total_pages=1,
+                    leagues=leagues,
+                    models=models,
+                    model_types=models,  # Add this alias for template compatibility
+                    selected_league=league,
+                    selected_model=model,
+                    selected_game_id=game_id,
+                    game_id=game_id,
+                    error_message=str(e),
+                    language=language
                 )
-                
-                # Add them to our filtered games
-                for game in latest_games:
-                    if not any(g.get('id') == game.get('id') for g in filtered_games):
-                        filtered_games.append(game)
-                
-                logger.info(f"After adding latest games, now have {len(filtered_games)} total games")
-                
-        else:
-            # For SQLite, fetch with pagination
-            filtered_games, total_count = get_paginated_predictions_from_db(
-                page=page, 
-                per_page=per_page * 5,  # Get enough to account for grouping
-                league=selected_league,
-                model=selected_model,
-                prediction=selected_prediction,
-                status=selected_status,
-                result=selected_result,
-                ev=selected_ev
-            )
-            
-            # --- Add similar detailed logging here if using SQLite ---
-            logger.info(f"[DEBUG-SQLite] Fetched {len(filtered_games)} games from DB function. Total count reported: {total_count}")
-            if filtered_games:
-                logger.info(f"[DEBUG-SQLite] First fetched game raw: {filtered_games[0]}")
-            # --- End added logging ---
-            
-            # If we're using model filtering, also fetch the latest predictions regardless of model
-            if selected_model and (len(filtered_games) < per_page):
-                logger.info(f"Also fetching latest predictions regardless of model to ensure freshness")
-                latest_games, _ = get_paginated_predictions_from_db(
-                    page=1,
-                    per_page=per_page * 2,
-                    league=selected_league,
-                    model='',  # No model filter
-                    prediction=selected_prediction,
-                    status=selected_status,
-                    result=selected_result,
-                    ev=selected_ev
-                )
-                
-                # Add them to our filtered games
-                for game in latest_games:
-                    if not any(g.get('id') == game.get('id') for g in filtered_games):
-                        filtered_games.append(game)
-                
-                logger.info(f"After adding latest games, now have {len(filtered_games)} total games")
+            else:
+                # For other errors, re-raise
+                raise e
+
+        # Get unique leagues and models for filters
+        leagues, models = get_prediction_metadata_from_firestore()
         
-        if not filtered_games:
-            logger.warning("No predictions found after filtering, using sample data")
-            filtered_games = SAMPLE_GAMES[:per_page]
-            total_count = len(SAMPLE_GAMES)
-        else:
-            logger.info(f"Retrieved {len(filtered_games)} predictions for page {page} (potential total in DB: {total_count})")
-            
-            # --- Add detailed logging before sorting ---
-            logger.info(f"[DEBUG] Attempting to sort {len(filtered_games)} fetched games.")
-            # Log sorting keys for first few games
-            for i, game in enumerate(filtered_games[:3]):
-                sort_key = get_sort_key_timestamp(game)
-                logger.info(f"[DEBUG] Game {i+1} (ID: {game.get('id')}) - Raw Timestamp Fields: prediction_timestamp={game.get('prediction_timestamp')}, timestamp={game.get('timestamp')} -> Parsed Sort Key: {sort_key} (type: {type(sort_key)})")
-            # --- End added logging ---
-            
-            # Sort filtered games by prediction timestamp to get the latest predictions first
-            filtered_games.sort(
-                key=lambda x: get_sort_key_timestamp(x),
-                reverse=True  # newest first
-            )
-            
-            # --- Add detailed logging after sorting ---
-            logger.info(f"[DEBUG] Sorting complete. First 3 games after sorting:")
-            for i, game in enumerate(filtered_games[:3]):
-                 logger.info(f"[DEBUG] Sorted Game {i+1} (ID: {game.get('id')}) Timestamp: {get_sort_key_timestamp(game)}")
-            # --- End added logging ---
-        
-        # Process the retrieved games
-        processed_games = []
-        for game in filtered_games:
-            # Ensure game has all required fields
-            game = ensure_game_has_required_fields(game)
-            
-            # Apply language preference
-            if selected_language == 'english':
+        # Apply language preference to games (similar to index route)
+        if language == 'english':
+            for game in games:
                 if 'english_home_team' in game and game['english_home_team']:
                     game['display_home_team'] = game['english_home_team']
                 else:
                     game['display_home_team'] = game['home_team']
-                
+                    
                 if 'english_away_team' in game and game['english_away_team']:
                     game['display_away_team'] = game['english_away_team']
                 else:
                     game['display_away_team'] = game['away_team']
-                
+                    
                 if 'english_league' in game and game['english_league']:
                     game['display_league'] = game['english_league']
                 else:
                     game['display_league'] = game['league']
-            else:
+        else:
+            # Use original team and league names
+            for game in games:
                 game['display_home_team'] = game['home_team']
                 game['display_away_team'] = game['away_team']
                 game['display_league'] = game['league']
-            
-            processed_games.append(game)
         
-        # Group predictions by game ID and model
-        game_model_predictions = {}
-        for game in processed_games:
-            game_id = game.get('id', '')
-            model_name = game.get('model_name', 'Unknown Model')
-            key = f"{game_id}_{model_name}"
-            
-            # Initialize list for this game-model combination if not yet in dictionary
-            if key not in game_model_predictions:
-                game_model_predictions[key] = []
-                
-            # Append this prediction to the appropriate list
-            game_model_predictions[key].append(game)
+        # Calculate pagination info
+        total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
         
-        # --- Add detailed logging after grouping ---
-        logger.info(f"[DEBUG] Grouped {len(processed_games)} processed games into {len(game_model_predictions)} unique game-model groups.")
-        # --- End added logging ---
-        
-        # Process each group to find primary and history games
-        primary_games = []
-        total_primary_games = 0
-        
-        # Sort the keys by the newest prediction timestamp first
-        sorted_keys = sorted(
-            game_model_predictions.keys(),
-            key=lambda k: max([get_sort_key_timestamp(x) for x in game_model_predictions[k]]),
-            reverse=True  # newest first
+        return render_template(
+            'all_predictions.html',
+            games=games,
+            total_count=total_count,
+            page=page,
+            per_page=per_page,
+            total_pages=total_pages,
+            leagues=leagues,
+            models=models,
+            model_types=models,  # Add this alias for template compatibility
+            selected_league=league,
+            selected_model=model,
+            selected_game_id=game_id,
+            game_id=game_id,
+            selected_language=language,
+            language=language
         )
-        
-        for key in sorted_keys:
-            predictions = game_model_predictions[key]
-            # Sort by prediction timestamp (newest first)
-            predictions.sort(
-                key=lambda x: get_sort_key_timestamp(x),
-                reverse=True
-            )
-            
-            if predictions:
-                # Mark the newest prediction as primary
-                primary_game = predictions[0]
-                primary_game['is_primary'] = True
-                
-                # Get historical games and ensure they're sorted newest first
-                if len(predictions) > 1:
-                    history_games = predictions[1:]
-                    # Make sure historical games are also sorted with most recent first
-                    history_games.sort(
-                        key=lambda x: get_sort_key_timestamp(x),
-                        reverse=True
-                    )
-                    primary_game['history_games'] = history_games
-                else:
-                    primary_game['history_games'] = []
-                    
-                primary_games.append(primary_game)
-                total_primary_games += 1
-                
-                # Only include enough primary games to fill the page
-                if len(primary_games) >= per_page:
-                    break
-        
-        # --- Add detailed logging after selecting primary games ---
-        logger.info(f"[DEBUG] Selected {len(primary_games)} primary games for display on page {page} (per_page={per_page}).")
-        # --- End added logging ---
-        
-        # Calculate stats if we have data
-        if primary_games:
-            stats = calculate_prediction_stats(primary_games)
-        
-        # Get the total count returned by the database function
-        # Renaming the variable for clarity
-        db_total_count = total_count 
-        final_total_count = db_total_count
-
-        # Calculate count based on fetched/grouped games for logging/debugging
-        unique_game_group_count = len(game_model_predictions)
-        total_primary_games_on_page = len(primary_games)
-        logger.info(f"DB returned count: {db_total_count}, Unique groups fetched: {unique_game_group_count}, Primary games on page: {total_primary_games_on_page}")
-
-        # Sanity check log: If DB count is 0 but we processed games for the page.
-        if final_total_count == 0 and total_primary_games_on_page > 0:
-            logger.warning(f"Database function returned total_count=0, but {total_primary_games_on_page} primary games were processed for display.")
-            # The template will handle showing "X games" instead of "X of 0 games"
-
-        logger.info(f"Using final display count for pagination/display: {final_total_count}")
-        
-        # Calculate pagination metadata using the final_total_count
-        total_pages = (final_total_count + per_page - 1) // per_page if final_total_count > 0 else 1
-        has_prev = page > 1
-        has_next = page < total_pages
-        
-        logger.info(f"Rendering page with {len(primary_games)} games.")
-        return render_template('all_predictions.html',
-                            games=primary_games,
-                            stats=stats,
-                            leagues=leagues,
-                            model_types=model_types,
-                            selected_league=selected_league,
-                            selected_model=selected_model,
-                            selected_prediction=selected_prediction,
-                            selected_status=selected_status,
-                            selected_result=selected_result,
-                            selected_ev=selected_ev,
-                            selected_language=selected_language,
-                            page=page,
-                            per_page=per_page,
-                            total_pages=total_pages,
-                            total_count=final_total_count,
-                            has_prev=has_prev,
-                            has_next=has_next,
-                            loading=False)
-    
     except Exception as e:
-        logger.error(f"Error fetching all predictions: {str(e)}", exc_info=True)
-        # Return a simple error response
-        return render_template('all_predictions.html',
-                            games=[],
-                            stats={
-                                'total_predictions': 0,
-                                'win_rate': 0,
-                                'successful_bets': 0,
-                                'unsuccessful_bets': 0,
-                                'avg_roi': 0
-                            },
-                            leagues=['Premier League'],
-                            model_types=['lstm_100_12_v1', 'lstm_100_12_v2'],
-                            selected_league='',
-                            selected_model='lstm_100_12_v1',
-                            selected_prediction='',
-                            selected_status='',
-                            selected_result='',
-                            selected_ev='',
-                            selected_language='english',
-                            page=1,
-                            per_page=50,
-                            total_pages=1,
-                            total_count=0,
-                            has_prev=False,
-                            has_next=False,
-                            error=str(e))
+        logger.error(f"Error in all_predictions route: {str(e)}", exc_info=True)
+        
+        # Get metadata for filters even in error case
+        try:
+            leagues, models = get_prediction_metadata_from_firestore()
+        except:
+            leagues, models = [], []
+            
+        return render_template(
+            'all_predictions.html',
+            games=[],
+            total_count=0,
+            page=1,
+            per_page=50,
+            total_pages=1,
+            leagues=leagues,
+            models=models,
+            model_types=models,  # Add this alias for template compatibility
+            selected_league='',
+            selected_model='',
+            selected_game_id='',
+            game_id='',
+            error_message=f"An error occurred: {str(e)}",
+            language=request.args.get('lang', 'english')
+        )
 
 @app.route('/about')
 def about():
@@ -679,15 +504,21 @@ def api_profitable_predictions():
         # Get language preference, default to 'english'
         selected_language = request.args.get('lang', 'english')
         logger.info(f"API: Selected language: '{selected_language}'")
-        
-        if USE_DYNAMODB:
+        games = []
+        if DATA_SOURCE == 'dynamodb':
             logger.info("Fetching profitable games from DynamoDB for API")
             games = get_profitable_games_from_dynamodb()
-        else:
+        elif DATA_SOURCE == 'firestore':
+            logger.info("Fetching profitable games from Firestore for API")
+            games = get_profitable_games_from_firestore()
+        elif DATA_SOURCE == 'sqlite':
             logger.info("Fetching profitable games from SQLite for API")
             games = get_profitable_games_from_db()
+        else:
+            logger.warning(f"Unknown DATA_SOURCE {DATA_SOURCE} for API profitable-predictions, using sample.")
+            games = SAMPLE_GAMES.copy()
         
-        if not games:
+        if not games and DATA_SOURCE not in ['dynamodb', 'firestore', 'sqlite']: # Ensure sample only if no valid source produced data
             logger.warning("No profitable games found for API, using sample data")
             games = SAMPLE_GAMES.copy()
         else:
@@ -748,78 +579,86 @@ def api_all_predictions():
         selected_language = request.args.get('lang', 'english')
         logger.info(f"API: Selected language: '{selected_language}'")
         
-        if USE_DYNAMODB:
-            logger.info("Fetching all predictions from DynamoDB for API")
-            games = get_all_predictions_from_dynamodb()
+        # Get query parameters
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        league = request.args.get('league', '')
+        model = request.args.get('model', '')
+        game_id = request.args.get('game_id', '')
+        
+        # Get predictions from appropriate data source
+        if DATA_SOURCE == 'firestore':
+            logger.info("Fetching predictions from Firestore for API")
+            docs = get_paginated_predictions_from_firestore(page, per_page, league, model, game_id)
+            
+            # Convert Firestore documents to game dictionaries
+            games = []
+            for doc in docs:
+                game_dict = _firestore_doc_to_game_dict(doc)
+                if game_dict:
+                    games.append(game_dict)
+            
+            # If filtering by game_id, we want all predictions for that game
+            if game_id:
+                logger.info(f"Found {len(games)} predictions for game {game_id}")
+                return jsonify({
+                    'games': games,
+                    'total': len(games),
+                    'page': page,
+                    'per_page': per_page
+                })
+        
+            # For other queries, we need to get the total count
+            total_count = len(games)  # This is just the count for the current page
+            if not game_id:  # Only get total count if not filtering by game_id
+                # Get total count from metadata
+                leagues, models = get_prediction_metadata_from_firestore()
+                total_count = len(leagues) * len(models)  # This is an approximation
+            
+            return jsonify({
+                'games': games,
+                'total': total_count,
+                'page': page,
+                'per_page': per_page
+            })
         else:
-            logger.info("Fetching all predictions from SQLite for API")
-            games = get_all_predictions_from_db()
-        
-        if not games:
-            logger.warning("No predictions found for API, using sample data")
-            games = SAMPLE_GAMES.copy()
-        else:
-            logger.info(f"Successfully retrieved {len(games)} predictions for API")
-            # Sort by match time (newest first)
-            games.sort(key=lambda x: x.get('match_time', datetime.min), reverse=True)
-        
-        # Ensure all games have required fields
-        processed_games = [ensure_game_has_required_fields(game) for game in games]
-        
-        # Apply language preference if set to English
-        if selected_language == 'english':
-            for game in processed_games:
-                if 'english_home_team' in game and game['english_home_team']:
-                    game['display_home_team'] = game['english_home_team']
-                else:
-                    game['display_home_team'] = game['home_team']
-                    
-                if 'english_away_team' in game and game['english_away_team']:
-                    game['display_away_team'] = game['english_away_team']
-                else:
-                    game['display_away_team'] = game['away_team']
-                    
-                if 'english_league' in game and game['english_league']:
-                    game['display_league'] = game['english_league']
-                else:
-                    game['display_league'] = game['league']
-        else:
-            # Use original team and league names
-            for game in processed_games:
-                game['display_home_team'] = game['home_team']
-                game['display_away_team'] = game['away_team']
-                game['display_league'] = game['league']
-        
-        # Convert datetime objects to ISO format strings for JSON serialization
-        for game in processed_games:
-            if isinstance(game['match_time'], datetime):
-                game['match_time'] = game['match_time'].isoformat()
-        
-        return jsonify({'predictions': processed_games, 'language': selected_language})
+            # Handle other data sources (DynamoDB, SQLite, etc.)
+            logger.warning(f"Unsupported data source {DATA_SOURCE} for API all-predictions")
+            return jsonify({
+                'games': [],
+                'total': 0,
+                'page': page,
+                'per_page': per_page
+            })
     
     except Exception as e:
-        logger.error(f"Error fetching all predictions for API: {str(e)}", exc_info=True)
-        # Make sure sample games have all required fields
-        sample_games = [ensure_game_has_required_fields(game) for game in SAMPLE_GAMES]
-        
-        # Convert datetime objects to ISO format strings
-        for game in sample_games:
-            if isinstance(game['match_time'], datetime):
-                game['match_time'] = game['match_time'].isoformat()
-        
-        return jsonify({'predictions': sample_games, 'language': 'english'})
+        logger.error(f"Error in API all-predictions: {str(e)}", exc_info=True)
+        return jsonify({
+            'error': str(e),
+            'games': [],
+            'total': 0,
+            'page': page,
+            'per_page': per_page
+        }), 500
 
 @app.route('/api/models')
 def api_models():
     """API endpoint to list all available models"""
     try:
-        if USE_DYNAMODB:
-            logger.info("Fetching all predictions from DynamoDB")
+        games = []
+        if DATA_SOURCE == 'dynamodb':
+            logger.info("Fetching all predictions from DynamoDB for API models")
             games = get_all_predictions_from_dynamodb()
-        else:
-            logger.info("Fetching all predictions from SQLite")
+        elif DATA_SOURCE == 'firestore':
+            logger.info("Fetching all predictions from Firestore for API models")
+            games = get_all_predictions_from_firestore() # Uses the same full fetch
+        elif DATA_SOURCE == 'sqlite':
+            logger.info("Fetching all predictions from SQLite for API models")
             games = get_all_predictions_from_db()
-        
+        else:
+            logger.warning(f"Unknown DATA_SOURCE {DATA_SOURCE} for API models, using empty list.")
+            # games = SAMPLE_GAMES.copy() # Or return empty if models depend on actual data
+
         # Get unique model names
         model_names = sorted(list(set(game.get('model_name', 'Unknown Model') for game in games)))
         
@@ -899,9 +738,6 @@ def get_sort_key_timestamp(game):
     if 'prediction_timestamp' in game and game['prediction_timestamp']:
         val_to_parse = game['prediction_timestamp']
         source = "prediction_timestamp"
-    elif 'timestamp' in game and game['timestamp']:
-        val_to_parse = game['timestamp']
-        source = "timestamp"
     elif 'match_time' in game and game['match_time']:
         val_to_parse = game['match_time']
         source = "match_time"
@@ -912,7 +748,7 @@ def get_sort_key_timestamp(game):
         logger.debug(f"  Parsed result: {parsed_time} (type: {type(parsed_time).__name__})")
         return parsed_time
     else:
-        logger.warning(f"  No suitable timestamp found (prediction_timestamp, timestamp, match_time), returning datetime.min")
+        logger.warning(f"  No suitable timestamp found (prediction_timestamp, match_time), returning datetime.min")
         return datetime.min
     # --- End added logging ---
 
