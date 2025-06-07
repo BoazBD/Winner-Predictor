@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 
-from scripts.train_model import BIG_GAMES, RATIOS, prepare_features, process_ratios
+from train_model import BIG_GAMES, RATIOS, prepare_features, process_ratios
 
 MAX_SEQ_LENGTH = int(os.environ.get("MAX_SEQ"))
 
@@ -14,7 +14,8 @@ boto3.setup_default_session(region_name="il-central-1")
 MODEL_TYPE = os.environ.get("MODEL_TYPE")
 EPOCHS = int(os.environ.get("EPOCHS"))
 THRESHOLD = float(os.environ.get("THRESHOLD"))
-MODEL = f"{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ_LENGTH}_v1.h5"
+MODEL_VERSION = int(os.environ.get("MODEL_VERSION"))
+MODEL = f"past_{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ_LENGTH}_v{MODEL_VERSION}.h5"
 
 loaded_model = load_model(f"trained_models/{MODEL}")
 
@@ -63,9 +64,9 @@ def predict_model(bet, processed):
 
     prediction = loaded_model.predict(x.reshape(1, MAX_SEQ_LENGTH, 3), verbose=0)
     latest_odd = game_odds[game_odds["run_time"] == game_odds["run_time"].max()]
-    print(
-        f"prediction for {bet['unique_id']} , ratios {latest_odd[RATIOS].values}, prediction {prediction[0]}"
-    )
+    # print(
+    #     f"prediction for {bet['unique_id']} , ratios {latest_odd[RATIOS].values}, prediction {prediction[0]}"
+    # )
     for outcome in [1, 2, 3]:
         threshold = 1 / float(latest_odd["ratio" + str(outcome)].values[0]) + THRESHOLD
         if prediction[0][outcome - 1] > threshold:
@@ -85,6 +86,7 @@ def main():
     # processed = wr.athena.read_sql_query(
     #     "SELECT * FROM processed_data", database=database
     # )
+    print(f"Evaluating model {MODEL}")
     processed = pd.read_parquet("processed_winner.parquet")
     processed = processed[processed["type"] == "Soccer"]
 
@@ -92,7 +94,7 @@ def main():
 
     total_bets = 0
     for date in pd.date_range(
-        end=pd.Timestamp.now().date() - pd.Timedelta(days=1), periods=4
+        end=pd.Timestamp.now().date() - pd.Timedelta(days=1), periods=60
     ):
         predictions_df = pd.DataFrame()
         relevant_odds = processed[(pd.to_datetime(processed["date_parsed"]) <= date)]

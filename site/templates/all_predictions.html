@@ -219,7 +219,7 @@
                                                         {% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="outcome-label">Home</div>
+                                                <div class="outcome-label">{{ t.home if t else 'Home' }}</div>
                                             </div>
                                             
                                             <!-- Draw Column -->
@@ -245,14 +245,14 @@
                                                         {% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="outcome-label">Away</div>
+                                                <div class="outcome-label">{{ t.away if t else 'Away' }}</div>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div class="prediction-timestamp small text-muted">
                             <i class="bi bi-clock-history me-1"></i>
-                                        Predicted:
+                                        {{ t.predicted if t else 'Predicted' }}:
                                         {% if game.prediction_timestamp %}
                                             {{ game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
                                         {% elif game.timestamp %}

@@ -454,9 +454,11 @@ def save_predictions(predictions):
         # Save each prediction
         for pred in predictions:
             try:
-                # Create a unique document ID using game_id, model_name, and prediction
+                # Create a unique document ID using game_id, model_name, prediction, and timestamp
                 prediction_outcome_for_id = pred['prediction'].replace(' ', '_')
-                doc_id = f"{pred['game_id']}_{pred['model_name']}_{prediction_outcome_for_id}"
+                # Include timestamp to make each prediction run unique
+                timestamp_for_id = datetime.fromisoformat(pred['prediction_timestamp']).strftime('%Y%m%d_%H%M%S')
+                doc_id = f"{pred['game_id']}_{pred['model_name']}_{prediction_outcome_for_id}_{timestamp_for_id}"
 
                 # Construct model_timestamp in the desired human-readable format
                 dt_object = datetime.fromisoformat(pred['prediction_timestamp'])

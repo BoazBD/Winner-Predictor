@@ -35,8 +35,8 @@
 <div class="hero-section mb-4 py-3">
     <div class="row align-items-center">
         <div class="col-12 text-center">
-            <h1 class="display-5 fw-bold mb-2">About Our Platform</h1>
-            <p class="lead mb-0">Learn how our AI-powered prediction system works</p>
+            <h1 class="display-5 fw-bold mb-2">{{ t.about_title if t else 'About AI Sport Better' }}</h1>
+            <p class="lead mb-0">{{ t.about_description if t else 'Advanced AI-powered sports betting predictions using machine learning.' }}</p>
         </div>
     </div>
 </div>
@@ -126,7 +126,7 @@
                 
                 <div class="mt-4 text-center">
                     <a href="/" class="btn btn-primary">
-                        <i class="bi bi-house-door me-2"></i>Back to Home
+                        <i class="bi bi-house-door me-2"></i>{{ t.home if t else 'Back to Home' }}
                     </a>
                 </div>
             </div>

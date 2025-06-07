@@ -1,10 +1,11 @@
-version: '3'
+version: '3.8'
 
 services:
-  flask-backend:
+  ai-sports-backend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: ai-sports-backend
     ports:
       - "8080:8080"
     environment:
@@ -12,19 +13,52 @@ services:
       - FLASK_DEBUG=0
       - PORT=8080
       - HOST=0.0.0.0
+      - DATA_SOURCE=${DATA_SOURCE:-firestore}
+      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID}
+      - FIRESTORE_PROFITABLE_PREDICTIONS_COLLECTION=${FIRESTORE_PROFITABLE_PREDICTIONS_COLLECTION:-profitable_predictions}
+      - FIRESTORE_ALL_PREDICTIONS_COLLECTION=${FIRESTORE_ALL_PREDICTIONS_COLLECTION:-all_predictions}
     volumes:
-      - ./data:/app/data
-      - ./models:/app/models
+      - ./data:/app/data:ro
+      - ./models:/app/models:ro
+      - ./static/images:/app/static/images:ro
+      - logs:/app/logs
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ai-sports-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  nextjs-frontend:
-    build:
-      context: ./ai-sports-predictions
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_FLASK_API_URL=http://flask-backend:8080
+  # Optional: Add a reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: ai-sports-nginx
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
-      - flask-backend
-    restart: unless-stopped 
+      - ai-sports-backend
+    restart: unless-stopped
+    networks:
+      - ai-sports-network
+    profiles:
+      - production
+
+volumes:
+  logs:
+    driver: local
+
+networks:
+  ai-sports-network:
+    driver: bridge 

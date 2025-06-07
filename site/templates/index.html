@@ -36,16 +36,16 @@
     <div class="row align-items-center">
         <div class="col-lg-5">
             <div class="d-flex align-items-center mb-3">
-                <img src="{{ url_for('static', filename='images/logo-hero.png') }}" alt="AI Sport Better Logo" class="me-3" style="height: 60px; width: auto; border-radius: 8px;">
-                <h1 class="display-5 fw-bold mb-0">AI-Powered Sports Predictions</h1>
+                <img src="{{ url_for('static', filename='images/logo-hero.png') }}" alt="AI Sport Better Logo" class="me-3" style="height: 80px; width: auto; border-radius: 8px;">
+                <h1 class="display-5 fw-bold mb-0">{{ t.ai_powered_sports_predictions if t else 'AI-Powered Sports Predictions' }}</h1>
             </div>
-            <p class="lead mb-3">Leverage advanced machine learning algorithms to identify profitable betting opportunities.</p>
+            <p class="lead mb-3">{{ t.leverage_ml_algorithms if t else 'Leverage advanced machine learning algorithms to identify profitable betting opportunities.' }}</p>
             <div class="d-flex gap-2">
                 <a href="/all?init=1&model_type=lstm_100_12_v1" class="btn btn-primary">
-                    <i class="bi bi-graph-up me-2"></i>View All Predictions
+                    <i class="bi bi-graph-up me-2"></i>{{ t.view_all_predictions if t else 'View All Predictions' }}
                 </a>
                 <a href="/about" class="btn btn-outline-primary">
-                    <i class="bi bi-info-circle me-2"></i>Learn More
+                    <i class="bi bi-info-circle me-2"></i>{{ t.learn_more if t else 'Learn More' }}
                 </a>
             </div>
         </div>
@@ -55,28 +55,28 @@
                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                         <i class="bi bi-graph-up-arrow text-primary fs-4 mb-2"></i>
                         <h4 class="text-primary mb-1">{{ stats.win_rate }}%</h4>
-                        <p class="text-muted small mb-0">Win Rate</p>
+                        <p class="text-muted small mb-0">{{ t.win_rate if t else 'Win Rate' }}</p>
                     </div>
                 </div>
                 <div class="stat-card bg-success bg-opacity-10 p-3 rounded-3">
                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                         <i class="bi bi-currency-dollar text-success fs-4 mb-2"></i>
                         <h4 class="text-success mb-1">{{ stats.avg_roi }}%</h4>
-                        <p class="text-muted small mb-0">Average ROI</p>
+                        <p class="text-muted small mb-0">{{ t.average_roi if t else 'Average ROI' }}</p>
                     </div>
                 </div>
                 <div class="stat-card bg-warning bg-opacity-10 p-3 rounded-3">
                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                         <i class="bi bi-trophy text-warning fs-4 mb-2"></i>
                         <h4 class="text-warning mb-1">{{ stats.successful_bets }}/{{ stats.successful_bets + stats.unsuccessful_bets }}</h4>
-                        <p class="text-muted small mb-0">Successful Bets</p>
+                        <p class="text-muted small mb-0">{{ t.successful_bets if t else 'Successful Bets' }}</p>
                     </div>
                 </div>
                 <div class="stat-card bg-info bg-opacity-10 p-3 rounded-3">
                     <div class="d-flex flex-column align-items-center justify-content-center text-center">
                         <i class="bi bi-calendar-check text-info fs-4 mb-2"></i>
                         <h4 class="text-info mb-1">{{ stats.total_predictions }}</h4>
-                        <p class="text-muted small mb-0">Total Predictions</p>
+                        <p class="text-muted small mb-0">{{ t.total_predictions if t else 'Total Predictions' }}</p>
                     </div>
                 </div>
             </div>
@@ -88,7 +88,7 @@
 <div class="mb-4">
     <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-md-items-center">
         <div class="d-flex align-items-center gap-2">
-            <h6 class="filter-title mb-0 text-nowrap fw-semibold">Model:</h6>
+            <h6 class="filter-title mb-0 text-nowrap fw-semibold">{{ t.model if t else 'Model' }}:</h6>
             <div class="dropdown model-dropdown" style="min-width: 220px;">
                 <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex justify-content-between align-items-center" 
                         type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
@@ -97,7 +97,7 @@
                         {% if selected_model %}
                             {{ selected_model }}
                         {% else %}
-                            All Models
+                            {{ t.all_models if t else 'All Models' }}
                         {% endif %}
                     </span>
                     <i class="bi bi-chevron-down ms-1"></i>
@@ -111,7 +111,7 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <h6 class="filter-title mb-0 text-nowrap fw-semibold">Min EV:</h6>
+            <h6 class="filter-title mb-0 text-nowrap fw-semibold">{{ t.min_ev if t else 'Min EV' }}:</h6>
             <div class="dropdown ev-dropdown" style="min-width: 140px;">
                 <button class="btn btn-sm btn-outline-success dropdown-toggle d-flex justify-content-between align-items-center" 
                         type="button" id="evFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
@@ -120,7 +120,7 @@
                         {% if selected_ev_threshold is defined and selected_ev_threshold > 0 %}
                             {{ (selected_ev_threshold * 100)|round(1) }}%
                         {% else %}
-                            0% (All)
+                            0% ({{ t.all_models if t else 'All' }})
                         {% endif %}
                     </span>
                     <i class="bi bi-chevron-down ms-1"></i>
@@ -145,18 +145,18 @@
 
 <div class="row">
     <div class="col-12">
-        <h2 class="mb-4">Profitable Predictions</h2>
+        <h2 class="mb-4">{{ t.profitable_predictions if t else 'Profitable Predictions' }}</h2>
         {% if games %}
             {% for game in games %}
             <div class="card game-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %}">
                 {% if game.status == 'completed' %}
                     {% if game.prediction_result == true %}
                     <span class="result-badge bg-success">
-                        <i class="bi bi-check-circle me-1"></i> Correct
+                        <i class="bi bi-check-circle me-1"></i> {{ t.correct if t else 'Correct' }}
                     </span>
                     {% elif game.prediction_result == false %}
                     <span class="result-badge bg-danger">
-                        <i class="bi bi-x-circle me-1"></i> Incorrect
+                        <i class="bi bi-x-circle me-1"></i> {{ t.incorrect if t else 'Incorrect' }}
                     </span>
                     {% endif %}
                 {% endif %}
@@ -184,7 +184,7 @@
                         </div>
                         <small class="text-muted d-block mt-1 predicted-timestamp">
                             <i class="bi bi-clock-history me-1"></i>
-                            Predicted:
+                            {{ t.predicted if t else 'Predicted' }}:
                             {% if game.timestamp %}
                                 {{ game.timestamp.strftime('%Y-%m-%d %H:%M') }}
                             {% else %}
@@ -203,7 +203,7 @@
                                     {% if game.status == 'completed' and game.final_home_score is not none %}{{ game.final_home_score|int }}{% else %}-{% endif %}
                                 </span>
                             </div>
-                            <div class="fw-bold text-dark small">Home</div>
+                            <div class="fw-bold text-dark small">{{ t.home if t else 'Home' }}</div>
                         </div>
                         <div class="team d-flex flex-column align-items-center text-center position-relative">
                             <div class="team-name mb-1" style="visibility: hidden;">placeholder</div>
@@ -222,14 +222,14 @@
                                     {% if game.status == 'completed' and game.final_away_score is not none %}{{ game.final_away_score|int }}{% else %}-{% endif %}
                                 </span>
                             </div>
-                            <div class="fw-bold text-dark small">Away</div>
+                            <div class="fw-bold text-dark small">{{ t.away if t else 'Away' }}</div>
                         </div>
                     </div>
                     
                     <!-- Prediction -->
                     <div class="prediction-container ms-n4 p-2 bg-primary bg-opacity-10 rounded-3 border-start border-4 border-primary">
                         <div class="mb-1">
-                            <div class="text-uppercase text-muted small fw-bold mb-1">Our Prediction</div>
+                            <div class="text-uppercase text-muted small fw-bold mb-1">{{ t.our_prediction if t else 'Our Prediction' }}</div>
                             <div class="prediction-value fw-bold text-primary" style="font-size: 1.1rem; line-height: 1.2;">{{ game.prediction|default('No prediction available') }}</div>
                         </div>
                         
@@ -241,7 +241,7 @@
                         <div class="d-flex justify-content-between align-items-end">
                             <div class="confidence-display">
                                 <div class="fw-bold text-primary mb-0" style="font-size: 1.1rem; line-height: 1;">{{ (game.confidence * 100)|round(1) }}%</div>
-                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">confidence</div>
+                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">{{ t.confidence if t else 'confidence' }}</div>
                             </div>
                             <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
                                    type="button" 
@@ -249,7 +249,7 @@
                                    data-bs-target="#detailsCollapse{{ loop.index }}" 
                                    aria-expanded="false" 
                                    aria-controls="detailsCollapse{{ loop.index }}">
-                                <i class="bi bi-info-circle me-1"></i><span class="small">Details</span>
+                                <i class="bi bi-info-circle me-1"></i><span class="small">{{ t.details if t else 'Details' }}</span>
                             </button>
                         </div>
                         {% else %}
@@ -260,7 +260,7 @@
                         <div class="d-flex justify-content-between align-items-end">
                             <div class="confidence-display">
                                 <div class="fw-medium text-muted mb-0" style="font-size: 1.1rem; line-height: 1;">N/A</div>
-                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">confidence</div>
+                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">{{ t.confidence if t else 'confidence' }}</div>
                             </div>
                             <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
                                    type="button" 
@@ -268,7 +268,7 @@
                                    data-bs-target="#detailsCollapse{{ loop.index }}" 
                                    aria-expanded="false" 
                                    aria-controls="detailsCollapse{{ loop.index }}">
-                                <i class="bi bi-info-circle me-1"></i><span class="small">Details</span>
+                                <i class="bi bi-info-circle me-1"></i><span class="small">{{ t.details if t else 'Details' }}</span>
                             </button>
                         </div>
                         {% endif %}
@@ -282,11 +282,11 @@
                             <table class="table table-sm table-borderless mb-2">
                                 <thead>
                                     <tr class="text-center">
-                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Outcome</th>
-                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Probability</th>
-                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Odds</th>
-                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Expected Value</th>
-                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">Profitable</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">{{ t.outcome if t else 'Outcome' }}</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">{{ t.probability if t else 'Probability' }}</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">{{ t.odds if t else 'Odds' }}</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">{{ t.expected_value if t else 'Expected Value' }}</th>
+                                        <th class="fw-semibold text-muted" style="font-size: 0.75rem;">{{ t.profitable if t else 'Profitable' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -324,7 +324,7 @@
                                         </td>
                                     </tr>
                                     <tr class="text-center {% if game.prediction == 'Draw' %}table-primary{% endif %}">
-                                        <td class="fw-medium" style="font-size: 0.8rem;">Draw</td>
+                                        <td class="fw-medium" style="font-size: 0.8rem;">{{ t.draw if t else 'Draw' }}</td>
                                         <td class="fw-bold" style="font-size: 0.8rem;">
                                             {% if game.draw_prob is not none %}
                                                 {{ (game.draw_prob * 100)|round(1) }}%
@@ -398,19 +398,19 @@
                             <div class="alert {% if game.prediction_result == true %}alert-success{% else %}alert-danger{% endif %} p-2 mb-0">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>Final Score:</strong> {{ game.display_home_team|default(game.home_team) }} {{ game.home_score|default(0)|int }} - {{ game.away_score|default(0)|int }} {{ game.display_away_team|default(game.away_team) }}
+                                        <strong>{{ t.final_score if t else 'Final Score' }}:</strong> {{ game.display_home_team|default(game.home_team) }} {{ game.home_score|default(0)|int }} - {{ game.away_score|default(0)|int }} {{ game.display_away_team|default(game.away_team) }}
                                     </div>
                                     <div class="text-end">
-                                        <strong>Result:</strong> {{ game.actual_result|default('Unknown') }}
+                                        <strong>{{ t.result if t else 'Result' }}:</strong> {{ game.actual_result|default('Unknown') }}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         {% endif %}
                         
-                        {% if game.result_id is not none %}
+                        {% if game.id is not none %}
                         <div class="mt-2 small text-muted text-center">
-                            <strong>Result ID:</strong> {{ game.result_id }}
+                            <strong>Game ID:</strong> {{ game.id }}
                         </div>
                         {% endif %}
                     </div>
@@ -420,7 +420,7 @@
         {% else %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
-                No profitable predictions found for the selected model. Try another model or check back later.
+                {{ t.no_profitable_predictions if t else 'No profitable predictions found for the selected model. Try another model or check back later.' }}
             </div>
         {% endif %}
     </div>

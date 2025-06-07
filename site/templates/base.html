@@ -614,7 +614,7 @@
             </button>
             
             <a class="navbar-brand" href="/">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AI Sport Better Logo" class="me-2"> AI Sport Better
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="AI Sport Better Logo" class="me-2" style="height: 40px; width: auto;"> AI Sport Better
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -623,31 +623,31 @@
                 <!-- Language toggle in navbar -->
                 <div class="navbar-language-toggle">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Language toggle">
-                        <a href="{{ request.path }}?lang=english{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}" 
+                        <a href="{{ request.path }}?lang=english{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}{% if request.args.get('page') %}&page={{ request.args.get('page') }}{% endif %}{% if request.args.get('per_page') %}&per_page={{ request.args.get('per_page') }}{% endif %}{% if request.args.get('game_id') %}&game_id={{ request.args.get('game_id') }}{% endif %}{% if request.args.get('ev_threshold') %}&ev_threshold={{ request.args.get('ev_threshold') }}{% endif %}" 
                            class="btn {% if selected_language == 'english' or not selected_language %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                           <i class="bi bi-translate me-1"></i> English
+                           <i class="bi bi-translate me-1"></i> {{ t.english if t else 'English' }}
                         </a>
-                        <a href="{{ request.path }}?lang=original{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}" 
-                           class="btn {% if selected_language == 'original' %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                           <i class="bi bi-globe me-1"></i> Hebrew
+                        <a href="{{ request.path }}?lang=hebrew{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_league %}&league={{ selected_league }}{% endif %}{% if selected_prediction %}&prediction_type={{ selected_prediction }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_result %}&result={{ selected_result }}{% endif %}{% if selected_ev %}&ev={{ selected_ev }}{% endif %}{% if request.args.get('page') %}&page={{ request.args.get('page') }}{% endif %}{% if request.args.get('per_page') %}&per_page={{ request.args.get('per_page') }}{% endif %}{% if request.args.get('game_id') %}&game_id={{ request.args.get('game_id') }}{% endif %}{% if request.args.get('ev_threshold') %}&ev_threshold={{ request.args.get('ev_threshold') }}{% endif %}" 
+                           class="btn {% if selected_language == 'hebrew' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                           <i class="bi bi-globe me-1"></i> {{ t.hebrew if t else 'Hebrew' }}
                         </a>
                     </div>
                 </div>
                 
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
-                            <i class="bi bi-house-door me-1"></i> Home
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/?{% if selected_language %}lang={{ selected_language }}{% endif %}">
+                            <i class="bi bi-house-door me-1"></i> {{ t.home if t else 'Home' }}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/all' %}active{% endif %}" href="/all?init=1&model_type=lstm_100_12_v1">
-                            <i class="bi bi-list-ul me-1"></i> All Predictions
+                        <a class="nav-link {% if request.path == '/all' %}active{% endif %}" href="/all?init=1&model_type=lstm_100_12_v1{% if selected_language %}&lang={{ selected_language }}{% endif %}">
+                            <i class="bi bi-list-ul me-1"></i> {{ t.all_predictions if t else 'All Predictions' }}
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="/about">
-                            <i class="bi bi-info-circle me-1"></i> About
+                        <a class="nav-link {% if request.path == '/about' %}active{% endif %}" href="/about?{% if selected_language %}lang={{ selected_language }}{% endif %}">
+                            <i class="bi bi-info-circle me-1"></i> {{ t.about if t else 'About' }}
                         </a>
                     </li>
                 </ul>
@@ -664,10 +664,10 @@
     <footer class="footer mt-auto py-3 text-center">
         <div class="container">
             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
-                <span class="text-muted">&copy; 2025 AI Sport Better. All rights reserved. | Version 0.2.1</span>
+                <span class="text-muted">&copy; 2025 AI Sport Better. {{ t.all_rights_reserved if t else 'All rights reserved.' }} | {{ t.version if t else 'Version' }} 0.2.2</span>
                 <span class="text-muted d-none d-md-inline">|</span>
                 <a href="https://www.linkedin.com/in/boaz-bar-david/" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
-                    <i class="bi bi-linkedin me-1"></i>Contact Us
+                    <i class="bi bi-linkedin me-1"></i>{{ t.contact_us if t else 'Contact Us' }}
                 </a>
             </div>
         </div>

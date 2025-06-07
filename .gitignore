@@ -8,3 +8,4 @@ bets.csv
 .env
 trained_models/
 venv/
+lambdas/service-account.json

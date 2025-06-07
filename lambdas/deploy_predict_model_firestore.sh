@@ -31,12 +31,15 @@ cd "$TEMP_DIR"
 zip -r ../deployment.zip .
 cd - > /dev/null
 
+# Get the absolute path to the deployment zip
+DEPLOYMENT_ZIP="$(dirname "$TEMP_DIR")/deployment.zip"
+
 # Check if the Lambda function exists
 if aws lambda get-function --function-name "$LAMBDA_NAME" --region "$REGION" 2>/dev/null; then
     echo "Updating existing Lambda function..."
     aws lambda update-function-code \
         --function-name "$LAMBDA_NAME" \
-        --zip-file fileb://deployment.zip \
+        --zip-file fileb://"$DEPLOYMENT_ZIP" \
         --region "$REGION"
 else
     echo "Creating new Lambda function..."
@@ -47,12 +50,12 @@ else
         --memory-size "$MEMORY_SIZE" \
         --timeout "$TIMEOUT" \
         --role "arn:aws:iam::105144480348:role/lambda-predict-model-role" \
-        --zip-file fileb://deployment.zip \
+        --zip-file fileb://"$DEPLOYMENT_ZIP" \
         --region "$REGION"
 fi
 
 # Clean up
 echo "Cleaning up..."
-rm -rf "$TEMP_DIR" deployment.zip
+rm -rf "$TEMP_DIR" "$DEPLOYMENT_ZIP"
 
 echo "Deployment completed successfully!" 

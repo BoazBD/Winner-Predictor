@@ -23,11 +23,193 @@ from db import (
 import logging
 from datetime import datetime, timedelta
 import os
-# Remove boto3 imports from app.py if all DynamoDB direct access is through db.py
-# import boto3 
-# from boto3.dynamodb.conditions import Attr
-# from botocore.config import Config
 import time
+
+# Translation dictionaries
+TRANSLATIONS = {
+    'english': {
+        # Navigation
+        'home': 'Home',
+        'all_predictions': 'All Predictions',
+        'about': 'About',
+        'contact_us': 'Contact Us',
+        'english': 'English',
+        'hebrew': 'Hebrew',
+        
+        # Hero section
+        'ai_powered_sports_predictions': 'AI-Powered Sports Predictions',
+        'leverage_ml_algorithms': 'Leverage advanced machine learning algorithms to identify profitable betting opportunities.',
+        'view_all_predictions': 'View All Predictions',
+        'learn_more': 'Learn More',
+        
+        # Stats
+        'win_rate': 'Win Rate',
+        'average_roi': 'Average ROI',
+        'successful_bets': 'Successful Bets',
+        'total_predictions': 'Total Predictions',
+        
+        # Filters
+        'model': 'Model',
+        'all_models': 'All Models',
+        'min_ev': 'Min EV',
+        'league': 'League',
+        'all_leagues': 'All Leagues',
+        'status': 'Status',
+        'all_statuses': 'All Statuses',
+        'result': 'Result',
+        'all_results': 'All Results',
+        'prediction_type': 'Prediction Type',
+        'all_predictions_types': 'All Prediction Types',
+        'game_id': 'Game ID',
+        
+        # Game info
+        'profitable_predictions': 'Profitable Predictions',
+        'our_prediction': 'Our Prediction',
+        'confidence': 'confidence',
+        'details': 'Details',
+        'outcome': 'Outcome',
+        'probability': 'Probability',
+        'odds': 'Odds',
+        'expected_value': 'Expected Value',
+        'profitable': 'Profitable',
+        'home': 'Home',
+        'draw': 'Draw',
+        'away': 'Away',
+        'final_score': 'Final Score',
+        'result': 'Result',
+        'result_id': 'Result ID',
+        'predicted': 'Predicted',
+        
+        # Status badges
+        'correct': 'Correct',
+        'incorrect': 'Incorrect',
+        'completed': 'Completed',
+        'upcoming': 'Upcoming',
+        'live': 'Live',
+        
+        # Pagination
+        'previous': 'Previous',
+        'next': 'Next',
+        'page': 'Page',
+        'of': 'of',
+        'showing': 'Showing',
+        'to': 'to',
+        'entries': 'entries',
+        
+        # Errors and messages
+        'no_profitable_predictions': 'No profitable predictions found for the selected model. Try another model or check back later.',
+        'loading': 'Loading...',
+        'search': 'Search',
+        'clear_filters': 'Clear Filters',
+        'apply_filters': 'Apply Filters',
+        
+        # Footer
+        'all_rights_reserved': 'All rights reserved.',
+        'version': 'Version',
+        
+        # About page
+        'about_title': 'About AI Sport Better',
+        'about_description': 'Advanced AI-powered sports betting predictions using machine learning.',
+    },
+    'hebrew': {
+        # Navigation
+        'home': 'בית',
+        'all_predictions': 'כל התחזיות',
+        'about': 'אודות',
+        'contact_us': 'צור קשר',
+        'english': 'אנגלית',
+        'hebrew': 'עברית',
+        
+        # Hero section
+        'ai_powered_sports_predictions': 'תחזיות ספורט מבוססות בינה מלאכותית',
+        'leverage_ml_algorithms': 'נצל אלגוריתמי למידת מכונה מתקדמים כדי לזהות הזדמנויות הימורים רווחיות.',
+        'view_all_predictions': 'צפה בכל התחזיות',
+        'learn_more': 'למד עוד',
+        
+        # Stats
+        'win_rate': 'אחוז זכייה',
+        'average_roi': 'ROI ממוצע',
+        'successful_bets': 'הימורים מוצלחים',
+        'total_predictions': 'סך התחזיות',
+        
+        # Filters
+        'model': 'מודל',
+        'all_models': 'כל המודלים',
+        'min_ev': 'EV מינימלי',
+        'league': 'ליגה',
+        'all_leagues': 'כל הליגות',
+        'status': 'סטטוס',
+        'all_statuses': 'כל הסטטוסים',
+        'result': 'תוצאה',
+        'all_results': 'כל התוצאות',
+        'prediction_type': 'סוג תחזית',
+        'all_predictions_types': 'כל סוגי התחזיות',
+        'game_id': 'מזהה משחק',
+        
+        # Game info
+        'profitable_predictions': 'תחזיות רווחיות',
+        'our_prediction': 'התחזית שלנו',
+        'confidence': 'ביטחון',
+        'details': 'פרטים',
+        'outcome': 'תוצאה',
+        'probability': 'הסתברות',
+        'odds': 'מקדמים',
+        'expected_value': 'ערך צפוי',
+        'profitable': 'רווחי',
+        'home': 'בית',
+        'draw': 'תיקו',
+        'away': 'חוץ',
+        'final_score': 'תוצאה סופית',
+        'result': 'תוצאה',
+        'result_id': 'מזהה תוצאה',
+        'predicted': 'נחזה',
+        
+        # Status badges
+        'correct': 'נכון',
+        'incorrect': 'שגוי',
+        'completed': 'הושלם',
+        'upcoming': 'עתידי',
+        'live': 'חי',
+        
+        # Pagination
+        'previous': 'קודם',
+        'next': 'הבא',
+        'page': 'עמוד',
+        'of': 'מתוך',
+        'showing': 'מציג',
+        'to': 'עד',
+        'entries': 'רשומות',
+        
+        # Errors and messages
+        'no_profitable_predictions': 'לא נמצאו תחזיות רווחיות עבור המודל הנבחר. נסה מודל אחר או חזור מאוחר יותר.',
+        'loading': 'טוען...',
+        'search': 'חיפוש',
+        'clear_filters': 'נקה מסננים',
+        'apply_filters': 'החל מסננים',
+        
+        # Footer
+        'all_rights_reserved': 'כל הזכויות שמורות.',
+        'version': 'גרסה',
+        
+        # About page
+        'about_title': 'אודות AI Sport Better',
+        'about_description': 'תחזיות הימורי ספורט מתקדמות מבוססות בינה מלאכותית באמצעות למידת מכונה.',
+    }
+}
+
+def get_translation(key, language='english'):
+    """Get translated text for a given key and language"""
+    if language not in TRANSLATIONS:
+        language = 'english'
+    
+    return TRANSLATIONS[language].get(key, TRANSLATIONS['english'].get(key, key))
+
+def add_translations_to_context(language='english'):
+    """Add all translations for a language to template context"""
+    if language not in TRANSLATIONS:
+        language = 'english'
+    
+    return TRANSLATIONS[language]
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -301,7 +483,7 @@ def index():
                 else:
                     game['display_league'] = game['league']
         else:
-            # Use original team and league names
+            # Use original team and league names (Hebrew/original)
             for game in processed_games:
                 game['display_home_team'] = game['home_team']
                 game['display_away_team'] = game['away_team']
@@ -339,6 +521,9 @@ def index():
         # Calculate statistics based on the displayed profitable games
         stats = calculate_prediction_stats(processed_games)
         
+        # Get translations for the selected language
+        translations = add_translations_to_context(selected_language)
+        
         return render_template('index.html', 
                               games=processed_games, 
                               stats=stats,
@@ -346,7 +531,8 @@ def index():
                               selected_model=selected_model,
                               selected_language=selected_language,
                               ev_threshold_options=ev_threshold_options,
-                              selected_ev_threshold=selected_ev_threshold)
+                              selected_ev_threshold=selected_ev_threshold,
+                              t=translations)
     
     except Exception as e:
         logger.error(f"Error fetching games for index: {str(e)}", exc_info=True)
@@ -354,6 +540,10 @@ def index():
         stats = calculate_prediction_stats(sample_games)
         # Also pass threshold options in case of error
         ev_threshold_options = [0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05]
+        
+        # Get translations for error case
+        translations = add_translations_to_context('english')
+        
         return render_template('index.html', 
                               games=sample_games, 
                               stats=stats,
@@ -361,7 +551,8 @@ def index():
                               selected_model='',
                               selected_language='english',
                               ev_threshold_options=ev_threshold_options,
-                              selected_ev_threshold=0)
+                              selected_ev_threshold=0,
+                              t=translations)
 
 @app.route('/all')
 def all_predictions():
@@ -393,7 +584,10 @@ def all_predictions():
                 except:
                     leagues, models = [], []
                 
-                # If it's an index error, show a user-friendly message
+                # Get translations for error case
+                error_language = request.args.get('lang', 'english')
+                translations = add_translations_to_context(error_language)
+                
                 return render_template(
                     'all_predictions.html',
                     games=[],
@@ -409,7 +603,8 @@ def all_predictions():
                     selected_game_id=game_id,
                     game_id=game_id,
                     error_message=str(e),
-                    language=language
+                    language=language,
+                    t=translations
                 )
             else:
                 # For other errors, re-raise
@@ -445,6 +640,9 @@ def all_predictions():
         # Calculate pagination info
         total_pages = (total_count + per_page - 1) // per_page if total_count > 0 else 1
         
+        # Get translations for the selected language
+        translations = add_translations_to_context(language)
+        
         return render_template(
             'all_predictions.html',
             games=games,
@@ -460,7 +658,8 @@ def all_predictions():
             selected_game_id=game_id,
             game_id=game_id,
             selected_language=language,
-            language=language
+            language=language,
+            t=translations
         )
     except Exception as e:
         logger.error(f"Error in all_predictions route: {str(e)}", exc_info=True)
@@ -470,6 +669,10 @@ def all_predictions():
             leagues, models = get_prediction_metadata_from_firestore()
         except:
             leagues, models = [], []
+        
+        # Get translations for error case
+        error_language = request.args.get('lang', 'english')
+        translations = add_translations_to_context(error_language)
             
         return render_template(
             'all_predictions.html',
@@ -486,12 +689,19 @@ def all_predictions():
             selected_game_id='',
             game_id='',
             error_message=f"An error occurred: {str(e)}",
-            language=request.args.get('lang', 'english')
+            language=error_language,
+            t=translations
         )
 
 @app.route('/about')
 def about():
-    return render_template('about.html')
+    # Get language preference
+    selected_language = request.args.get('lang', 'english')
+    translations = add_translations_to_context(selected_language)
+    
+    return render_template('about.html', 
+                          selected_language=selected_language,
+                          t=translations)
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):

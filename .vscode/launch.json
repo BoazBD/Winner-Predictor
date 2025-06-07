@@ -36,7 +36,11 @@
             "justMyCode": true,
             "env": {
                 "ENV": "local",
-                "PYTHONPATH": "${workspaceFolder}/scripts"
+                "PYTHONPATH": "${workspaceFolder}/scripts",
+                "AWS_PROFILE": "default",
+                "AWS_ACCESS_KEY_ID": "",
+                "AWS_SECRET_ACCESS_KEY": "",
+                "AWS_SESSION_TOKEN": ""
             }
         },
         {
@@ -61,7 +65,7 @@
             "env": {
                 "ENV": "local",
                 "COMPETITION_LEVEL": "big_games",
-                "PYTHONPATH": "${workspaceFolder}/"
+                "PYTHONPATH": "${workspaceFolder}/scripts",
             }
         },
         {
@@ -73,18 +77,19 @@
             "justMyCode": true,
             "env": {
                 "ENV": "local",
-                "MODEL_TYPE": "all_games",
-                "MODEL" : "model_1_11.h5",
-                "EPOCHS": "1",
-                "PYTHONPATH": "${workspaceFolder}/",
-                "MAX_SEQ": "11",
+                "MODEL_TYPE": "lstm",
+                "EPOCHS": "100",
+                "PYTHONPATH": "${workspaceFolder}/scripts",
+                "MAX_SEQ": "12",
+                "THRESHOLD": "0.00",
+                "MODEL_VERSION": "1"
             }
         },
         {
             "name": "evaluate_multiple_models",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/evaluate_multiple_models.py",
+            "program": "${workspaceFolder}/evaluate_lstms.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
