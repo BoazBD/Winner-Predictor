@@ -84,6 +84,7 @@ BIG_GAMES = [
     "גביע הליגה האנגלי",
     "גביע אסיה",
     "גביע גרמני",
+    "אליפות העולם לקבוצות"
 ]
 
 # Custom InputLayer class to handle batch_shape parameter
@@ -176,6 +177,11 @@ def fetch_games_from_athena():
             date_parsed >= '{seven_days_before.strftime("%Y-%m-%d")}'
             AND type = 'Soccer'
             AND league IN ({', '.join(f"'{league}'" for league in BIG_GAMES)})
+            AND unique_id IN (
+                SELECT unique_id 
+                FROM "{ATHENA_DATABASE}"."api_odds"
+                WHERE run_time = '{latest_run_time}'
+            )
         ORDER BY 
             unique_id, run_time
         """
@@ -435,6 +441,53 @@ def make_predictions(model, valid_game_data, model_name_from_handler):
     logger.info(f"Model {model_name_from_handler} produced {len(all_game_predictions)} predictions.")
     return all_game_predictions
 
+def get_already_predicted_profitable_games(model_name):
+    """Get list of game IDs that have already been predicted as profitable for this model"""
+    if not db:
+        logger.error("Firestore client not initialized")
+        return set()
+    
+    try:
+        # Query profitable predictions for this specific model
+        profitable_ref = db.collection(FIRESTORE_PROFITABLE_PREDICTIONS_COLLECTION)
+        query = profitable_ref.where('model_name', '==', model_name)
+        
+        profitable_game_ids = set()
+        docs = query.stream()
+        
+        for doc in docs:
+            doc_data = doc.to_dict()
+            game_id = doc_data.get('game_id')
+            if game_id:
+                profitable_game_ids.add(game_id)
+        
+        logger.info(f"Found {len(profitable_game_ids)} games already predicted as profitable for model {model_name}")
+        return profitable_game_ids
+        
+    except Exception as e:
+        logger.error(f"Error querying already predicted profitable games for model {model_name}: {e}")
+        return set()
+
+def filter_already_predicted_games(valid_game_data, model_name):
+    """Filter out games that have already been predicted as profitable for this model"""
+    already_predicted = get_already_predicted_profitable_games(model_name)
+    
+    if not already_predicted:
+        logger.info(f"No games found as already predicted profitable for model {model_name}")
+        return valid_game_data
+    
+    # Filter out games that have already been predicted as profitable
+    filtered_games = []
+    for game_data in valid_game_data:
+        game_id = game_data['game_id']
+        if game_id not in already_predicted:
+            filtered_games.append(game_data)
+        else:
+            logger.info(f"Skipping game {game_id} - already predicted as profitable for model {model_name}")
+    
+    logger.info(f"Filtered from {len(valid_game_data)} to {len(filtered_games)} games for model {model_name}")
+    return filtered_games
+
 def save_predictions(predictions):
     """Save predictions to Firestore"""
     if not db:
@@ -537,13 +590,21 @@ def lambda_handler(event, context):
             
             print(f"LAMBDA_HANDLER: Processing model: {derived_model_name} from {model_key}")
             try:
+                # Filter out games that have already been predicted as profitable for this model
+                model_specific_games = filter_already_predicted_games(valid_game_data_all, derived_model_name)
+                
+                if not model_specific_games:
+                    logger.info(f"No new games to predict for model {derived_model_name} - all games already predicted as profitable")
+                    print(f"LAMBDA_HANDLER: No new games for model {derived_model_name}")
+                    continue
+                
                 local_model_path = download_model(model_info)
                 loaded_model = load_model(local_model_path) # Uses global custom objects
                 logger.info(f"Model {derived_model_name} loaded successfully from {local_model_path}")
                 print(f"LAMBDA_HANDLER: Model {derived_model_name} loaded.")
 
-                # Pass the globally preprocessed valid_game_data_all
-                model_specific_predictions = make_predictions(loaded_model, valid_game_data_all, derived_model_name)
+                # Pass the filtered games for this specific model
+                model_specific_predictions = make_predictions(loaded_model, model_specific_games, derived_model_name)
                 logger.info(f"Model {derived_model_name} made {len(model_specific_predictions)} predictions.")
                 print(f"LAMBDA_HANDLER: Model {derived_model_name} made {len(model_specific_predictions)} predictions.")
                 
