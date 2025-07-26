@@ -13,118 +13,21 @@ from tensorflow.keras.layers import LSTM, Bidirectional, Dense, Dropout
 from tensorflow.keras.models import Sequential
 import random
 
+# Import centralized data processing functions
+from data_processing import (
+    FIXED_STRIDE,
+    load_processed_features,
+)
+
 boto3.setup_default_session(region_name="il-central-1")
 
 # Define constants and configurations
-MIN_BET = 1
-MAX_BET = 10
-DAYS_TO_DISCARD = 155
+DAYS_TO_DISCARD = 150
 COMPETITION_LEVEL = os.environ.get("COMPETITION_LEVEL", "big_games")
 if COMPETITION_LEVEL not in ["all_games", "big_games"]:
     raise ValueError("COMPETITION_LEVEL must be either 'all_games' or 'big_games'")
 
-
-BIG_GAMES = [
-    "פרמייר ליג",
-    "גביע ספרדי",
-    "צרפתית ראשונה",
-    "איטלקית ראשונה",
-    "גביע אנגלי",
-    "קונפרנס ליג",
-    "מוקדמות אליפות אירופה",
-    "מוקדמות מונדיאל, אירופה",
-    "גרמנית ראשונה",
-    "ליגת העל",
-    "סופר קאפ",
-    "ספרדית ראשונה",
-    "ליגת האלופות",
-    "הליגה האירופית",
-    "גביע איטלקי",
-    "ליגת האומות",
-    "גביע המדינה Winner",
-    "ליגת Winner",
-    "גביע הליגה האנגלי",
-    "גביע אסיה",
-    "גביע גרמני",
-]
-RATIOS = ["ratio1", "ratio2", "ratio3"]
-
 logger = logging.getLogger(__name__)
-
-
-def scale_features(features: pd.DataFrame) -> pd.DataFrame:
-    return (features - MIN_BET) / (MAX_BET - 1)
-
-
-def prepare_features_sliding_window(features: pd.DataFrame, max_seq_len: int, stride: int) -> list:
-    """Generate sliding windows of features."""
-    features_scaled = scale_features(features)
-    features_scaled = features_scaled.to_numpy()
-    
-    windows = []
-    for start_idx in range(0, len(features_scaled) - max_seq_len + 1, stride):
-        end_idx = start_idx + max_seq_len
-        window = features_scaled[start_idx:end_idx, :]
-        windows.append(window)
-    
-    return windows
-
-
-def prepare_features(features: pd.DataFrame, max_seq_len) -> np.array:
-    features_scaled = scale_features(features)
-    features_scaled = features_scaled.to_numpy()
-    features_scaled = features_scaled[-max_seq_len:, :]
-    return features_scaled
-
-
-def remove_consecutive_duplicates(df: pd.DataFrame) -> pd.DataFrame:
-    shifted = df[RATIOS].shift()
-    mask = ~((df[RATIOS] == shifted).all(axis=1))
-    return df[mask]
-
-
-def process_ratios(group_df: pd.DataFrame) -> pd.DataFrame:
-    group_df[RATIOS] = group_df[RATIOS].astype(float)
-    group_df = remove_consecutive_duplicates(group_df)
-    return group_df
-
-
-def prepare_data_for_model(
-    grouped_data: pd.DataFrame, max_seq_length: int, stride: int = None
-) -> Tuple[np.array, np.array]:
-    if stride is None:
-        stride = max_seq_length // 2
-    
-    x, y = [], []
-    total_games = 0
-    total_windows = 0
-    
-    for _, group_df in grouped_data:
-        group_df = process_ratios(group_df)
-        if group_df.shape[0] < max_seq_length:
-            continue
-        
-        total_games += 1
-        features = group_df[RATIOS]
-        target = group_df[["bet1_won", "tie_won", "bet2_won"]].values[-1].astype(float)
-
-        # Generate sliding windows for this game
-        sliding_windows = prepare_features_sliding_window(features, max_seq_length, stride)
-        total_windows += len(sliding_windows)
-        
-        # Add each window as a separate training sample with the same target
-        for window in sliding_windows:
-            x.append(window)
-            y.append(target)
-    
-    x = np.array(x)
-    y = np.array(y)
-    
-    print(f"Generated {total_windows} sliding windows from {total_games} games")
-    print(f"Average windows per game: {total_windows / total_games if total_games > 0 else 0:.2f}")
-    print(f"Training data shape: X={x.shape}, y={y.shape}")
-    
-    return x, y
 
 
 def build_model(
@@ -151,25 +54,45 @@ def build_model(
     return model
 
 
-def objective(trial: optuna.trial.Trial, epochs: int, max_seq_length: int) -> float:
+def load_or_process_data(max_seq_length: int,
+                        scaling_method: str = "standard") -> Tuple[np.array, np.array]:
+    """
+    Load pre-processed data if available, otherwise process raw data.
+    
+    Args:
+        max_seq_length: Maximum sequence length
+        use_preprocessed: Whether to try loading pre-processed data first
+        scaling_method: "standard" or "roi"
+    
+    Returns:
+        Tuple of (X, y) arrays
+    """
+    # Try to load pre-processed data first
+    processed_file = f"processed_features/processed_features_{scaling_method}_{max_seq_length}_{FIXED_STRIDE}.pkl"
+    
+    print(f"Loading pre-processed features from {processed_file}")
+    x, y, metadata = load_processed_features(processed_file)
+    
+    # Verify metadata matches current requirements
+    if (metadata.get('max_seq_length') == max_seq_length and 
+        metadata.get('stride') == FIXED_STRIDE and
+        metadata.get('scaling_method') == scaling_method and
+        metadata.get('competition_level') == COMPETITION_LEVEL):
+        print("Pre-processed data matches requirements, using cached features")
+        return x, y
+    else:
+        print("Pre-processed data metadata doesn't match, reprocessing...")
+    
+
+def objective(trial: optuna.trial.Trial, epochs: int, max_seq_length: int, 
+             scaling_method: str = "standard") -> float:
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
     dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
     units = trial.suggest_categorical("units", [32, 64, 128, 256])
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
     activation = trial.suggest_categorical("activation", ["sigmoid", "tanh"])
-    stride = max_seq_length // 2  # Default stride
 
-    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=DAYS_TO_DISCARD)
-    
-    processed = pd.read_parquet("processed_winner_070625.parquet")
-    processed = processed[processed["type"] == "Soccer"]
-    processed = processed[pd.to_datetime(processed["date_parsed"]).dt.date < last_week_start]
-    if COMPETITION_LEVEL == "big_games":
-        processed = processed[processed["league"].isin(BIG_GAMES)]
-    grouped_processed = list(
-        processed.sort_values(by="run_time").groupby(["unique_id"])
-    )
-    x, y = prepare_data_for_model(grouped_processed, max_seq_length, stride)
+    x, y = load_or_process_data(max_seq_length, scaling_method=scaling_method)
 
     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
     fold_accuracy = []
@@ -180,7 +103,7 @@ def objective(trial: optuna.trial.Trial, epochs: int, max_seq_length: int) -> fl
         model = build_model(
             learning_rate, dropout_rate, units, activation, max_seq_length
         )
-        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=0)
         loss, val_accuracy = model.evaluate(X_val, y_val, verbose=0)
         fold_accuracy.append(val_accuracy)
 
@@ -188,16 +111,13 @@ def objective(trial: optuna.trial.Trial, epochs: int, max_seq_length: int) -> fl
     return avg_accuracy
 
 
-def train_and_evaluate_model(epochs: int, max_seq_length: int, stride: int = None):
-    if stride is None:
-        stride = max_seq_length // 2
-        
+def train_and_evaluate_model(epochs: int, max_seq_length: int, scaling_method: str = "standard"):
     study = optuna.create_study(direction="maximize")
-    # Create a modified objective function that uses the specified stride
-    def objective_with_stride(trial):
-        return objective_with_custom_stride(trial, epochs, max_seq_length, stride)
+    # Create a modified objective function
+    def objective_with_params(trial):
+        return objective_with_custom_params(trial, epochs, max_seq_length, scaling_method)
     
-    study.optimize(objective_with_stride, n_trials=1)
+    study.optimize(objective_with_params, n_trials=20)
 
     print(f"Best trial: {study.best_trial.value}")
     print(f"Best hyperparameters: {study.best_trial.params}")
@@ -211,40 +131,26 @@ def train_and_evaluate_model(epochs: int, max_seq_length: int, stride: int = Non
         max_seq_length,
     )
 
-    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=DAYS_TO_DISCARD)
-
-    processed = pd.read_parquet("processed_winner_070625.parquet")
-    processed = processed[processed["type"] == "Soccer"]
-    processed = processed[pd.to_datetime(processed["date_parsed"]).dt.date < last_week_start]
-    if COMPETITION_LEVEL == "big_games":
-        processed = processed[processed["league"].isin(BIG_GAMES)]
-    grouped_processed = list(
-        processed.sort_values(by="run_time").groupby(["unique_id"])
-    )
-    x, y = prepare_data_for_model(grouped_processed, max_seq_length, stride)
+    x, y = load_or_process_data(max_seq_length, scaling_method=scaling_method)
 
     best_model.fit(x, y, epochs=epochs, batch_size=best_params["batch_size"], verbose=0)
-    best_model.save(f"trained_models/{COMPETITION_LEVEL}_{epochs}_{max_seq_length}_n1.h5")
+    
+    # Create model filename based on scaling method
+    model_suffix = "roi" if scaling_method == "roi" else "standard"
+    model_filename = f"{COMPETITION_LEVEL}_{model_suffix}_{epochs}_{max_seq_length}_n1.h5"
+    best_model.save(f"trained_models/{model_filename}")
+    print(f"Saved model to trained_models/{model_filename}")
 
 
-def objective_with_custom_stride(trial: optuna.trial.Trial, epochs: int, max_seq_length: int, stride: int) -> float:
+def objective_with_custom_params(trial: optuna.trial.Trial, epochs: int, max_seq_length: int, 
+                                scaling_method: str = "standard") -> float:
     learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2)
     dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
     units = trial.suggest_categorical("units", [32, 64, 128, 256])
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
     activation = trial.suggest_categorical("activation", ["sigmoid", "tanh"])
 
-    last_week_start = pd.Timestamp.now().date() - pd.Timedelta(days=DAYS_TO_DISCARD)
-    
-    processed = pd.read_parquet("processed_winner_070625.parquet")
-    processed = processed[processed["type"] == "Soccer"]
-    processed = processed[pd.to_datetime(processed["date_parsed"]).dt.date < last_week_start]
-    if COMPETITION_LEVEL == "big_games":
-        processed = processed[processed["league"].isin(BIG_GAMES)]
-    grouped_processed = list(
-        processed.sort_values(by="run_time").groupby(["unique_id"])
-    )
-    x, y = prepare_data_for_model(grouped_processed, max_seq_length, stride)
+    x, y = load_or_process_data(max_seq_length, scaling_method=scaling_method)
 
     kfold = KFold(n_splits=5, shuffle=True, random_state=42)
     fold_accuracy = []
@@ -264,18 +170,26 @@ def objective_with_custom_stride(trial: optuna.trial.Trial, epochs: int, max_seq
 
 
 def main():
-    for epochs in [100]:
-        for max_seq_length in range(10, 21):
+    # Get scaling method from environment variable
+    scaling_method = os.environ.get("SCALING_METHOD", "standard")
+    if scaling_method not in ["standard", "roi"]:
+        raise ValueError("SCALING_METHOD must be either 'standard' or 'roi'")
+    
+    print(f"Training with scaling method: {scaling_method}")
+    print(f"Using fixed stride: {FIXED_STRIDE}")
+    
+    for epochs in [50]:
+        for max_seq_length in [12, 18]:
             print(
-                f"Training model with EPOCHS={epochs} and MAX_SEQ_LENGTH={max_seq_length}"
+                f"Training model with EPOCHS={epochs}, MAX_SEQ_LENGTH={max_seq_length}, SCALING={scaling_method}, STRIDE={FIXED_STRIDE}"
             )
             logger.info(
-                f"Training model with EPOCHS={epochs} and MAX_SEQ_LENGTH={max_seq_length}"
+                f"Training model with EPOCHS={epochs}, MAX_SEQ_LENGTH={max_seq_length}, SCALING={scaling_method}, STRIDE={FIXED_STRIDE}"
             )
             tf.random.set_seed(42)
             np.random.seed(42)
             random.seed(42)
-            train_and_evaluate_model(epochs, max_seq_length)
+            train_and_evaluate_model(epochs, max_seq_length, scaling_method=scaling_method)
 
 
 if __name__ == "__main__":

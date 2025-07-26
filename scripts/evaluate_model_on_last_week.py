@@ -6,7 +6,12 @@ import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
 
-from train_model import BIG_GAMES, RATIOS, prepare_features, process_ratios
+# Import centralized data processing functions
+from data_processing import (
+    BIG_GAMES, RATIOS, FIXED_STRIDE,
+    prepare_features_single, 
+    process_ratios
+)
 
 MAX_SEQ_LENGTH = int(os.environ.get("MAX_SEQ"))
 
@@ -15,13 +20,14 @@ MODEL_TYPE = os.environ.get("MODEL_TYPE")
 EPOCHS = int(os.environ.get("EPOCHS"))
 THRESHOLD = float(os.environ.get("THRESHOLD"))
 MODEL_VERSION = int(os.environ.get("MODEL_VERSION"))
-MODEL = f"past_{MODEL_TYPE}_{EPOCHS}_{MAX_SEQ_LENGTH}_v{MODEL_VERSION}.h5"
+MODEL = f"big_games_standard_{EPOCHS}_{MAX_SEQ_LENGTH}_{MODEL_VERSION}.h5"
+MODEL = "lstm_100_12_v1.h5"
 
 loaded_model = load_model(f"trained_models/{MODEL}")
 
 database = "winner-db"
 print(f"evaluating model {MODEL} with threshold {THRESHOLD}")
-predictions_df = pd.DataFrame()
+print(f"Using fixed stride: {FIXED_STRIDE}")
 
 
 def create_prediction(bet, predicted_winner, prediction, latest_odds):
@@ -53,14 +59,13 @@ def determine_prediction_result(row, coloumn="predicted_winner"):
 
 
 def predict_model(bet, processed):
-    global predictions_df
-    predictions_df = pd.DataFrame()
+    bet_predictions_df = pd.DataFrame()
     game_odds = processed[processed["unique_id"] == bet["unique_id"]]
     game_odds = game_odds.sort_values("run_time")
     x = process_ratios(game_odds)[RATIOS]
     if x.shape[0] < MAX_SEQ_LENGTH:
-        return predictions_df
-    x = prepare_features(x, MAX_SEQ_LENGTH)
+        return bet_predictions_df
+    x = prepare_features_single(x, MAX_SEQ_LENGTH, scaling_method="standard")
 
     prediction = loaded_model.predict(x.reshape(1, MAX_SEQ_LENGTH, 3), verbose=0)
     latest_odd = game_odds[game_odds["run_time"] == game_odds["run_time"].max()]
@@ -71,14 +76,14 @@ def predict_model(bet, processed):
         threshold = 1 / float(latest_odd["ratio" + str(outcome)].values[0]) + THRESHOLD
         if prediction[0][outcome - 1] > threshold:
             new_prediction = create_prediction(bet, outcome, prediction, latest_odd)
-            predictions_df = pd.concat(
-                [predictions_df, new_prediction], ignore_index=True
+            bet_predictions_df = pd.concat(
+                [bet_predictions_df, new_prediction], ignore_index=True
             )
             print(
                 f"{outcome} - {bet['option1']} -  {bet['option2']} - {bet['option3']} - : {prediction[0]} and ratios {latest_odd['ratio1'].values[0]} - {latest_odd['ratio2'].values[0]} - {latest_odd['ratio3'].values[0]}"
             )
 
-    return predictions_df
+    return bet_predictions_df
 
 def main():
     all_results = []
@@ -87,30 +92,46 @@ def main():
     #     "SELECT * FROM processed_data", database=database
     # )
     print(f"Evaluating model {MODEL}")
-    processed = pd.read_parquet("processed_winner.parquet")
+    processed = pd.read_parquet("latest_processed_winner.parquet")
     processed = processed[processed["type"] == "Soccer"]
 
     total_earnings = 0
 
     total_bets = 0
     for date in pd.date_range(
-        end=pd.Timestamp.now().date() - pd.Timedelta(days=1), periods=60
+        end=pd.Timestamp.now().date() - pd.Timedelta(days=2), periods=150
     ):
         predictions_df = pd.DataFrame()
         relevant_odds = processed[(pd.to_datetime(processed["date_parsed"]) <= date)]
+        latest_run_time = relevant_odds["run_time"].max()
+        
+        # Get unique_ids that have data for the latest run time
+        valid_games = relevant_odds[relevant_odds["run_time"] == latest_run_time]["unique_id"].unique()
+        
+        # Filter relevant_odds to only include these games
+        relevant_odds = relevant_odds[relevant_odds["unique_id"].isin(valid_games)]
+        
+        # Get latest odds for these games
         latest_odds = relevant_odds[
-            (relevant_odds["run_time"] == relevant_odds["run_time"].max())
+            (relevant_odds["run_time"] == latest_run_time)
         ]
-        if MODEL.startswith("big_games"):
-            latest_odds = latest_odds[latest_odds["league"].isin(BIG_GAMES)]
+        
+        latest_odds = latest_odds[latest_odds["league"].isin(BIG_GAMES)]
+            
         latest_odds = latest_odds[
             ~latest_odds["unique_id"].isin(betted_games)
         ]
         predictions = latest_odds.apply(predict_model, args=(processed,), axis=1)
-        predictions_df = pd.concat(predictions.tolist(), ignore_index=True)
-        if predictions_df.empty:
+        
+        # Filter out empty DataFrames before concatenating
+        non_empty_predictions = [pred for pred in predictions.tolist() if not pred.empty]
+        
+        if not non_empty_predictions:
             print(f"no predictions for date {date}")
             continue
+            
+        predictions_df = pd.concat(non_empty_predictions, ignore_index=True)
+        
         predictions_and_results = predictions_df.merge(
             processed.groupby("unique_id").head(1)[
                 ["unique_id", "bet1_won", "bet2_won", "tie_won"]
@@ -159,7 +180,7 @@ def main():
     all_results.append(
         {
             "THRESHOLD": THRESHOLD,
-            "MODEL": MODEL,
+            "MODEL": 'o_' + MODEL,
             "EPOCHS": EPOCHS,
             "MAX_SEQ_LENGTH": MAX_SEQ_LENGTH,
             "total_bets": total_bets,
@@ -167,10 +188,16 @@ def main():
             "expected_returns": round(total_earnings / total_bets, 2),
         }
     )
-    prev_results = pd.read_csv("evaluation_results.csv")
-    all_results = pd.concat(
-        [prev_results, pd.DataFrame(all_results)], ignore_index=True
-    )
+    # Check if evaluation_results.csv exists, if not create it
+    if os.path.exists("evaluation_results.csv"):
+        prev_results = pd.read_csv("evaluation_results.csv")
+        all_results = pd.concat(
+            [prev_results, pd.DataFrame(all_results)], ignore_index=True
+        )
+    else:
+        # File doesn't exist, create new DataFrame
+        all_results = pd.DataFrame(all_results)
+    
     all_results.to_csv("evaluation_results.csv", index=False)
 
 
