@@ -89,20 +89,17 @@
     <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-md-items-center">
         <div class="d-flex align-items-center gap-2">
             <h6 class="filter-title mb-0 text-nowrap fw-semibold">{{ t.model if t else 'Model' }}:</h6>
-            <div class="dropdown model-dropdown" style="min-width: 220px;">
-                <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex justify-content-between align-items-center" 
+            <div class="dropdown model-dropdown">
+                <button class="btn btn-sm btn-outline-primary dropdown-toggle" 
                         type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
-                        style="width: 220px; height: 32px; font-size: 0.875rem;">
-                    <span class="text-truncate">
-                        {% if selected_model %}
-                            {{ selected_model }}
-                        {% else %}
-                            {{ t.all_models if t else 'All Models' }}
-                        {% endif %}
-                    </span>
-                    <i class="bi bi-chevron-down ms-1"></i>
+                        style="min-width: 180px; padding: 6px 12px; font-size: 0.875rem;">
+                    {% if selected_model %}
+                        {{ selected_model }}
+                    {% else %}
+                        {{ t.all_models if t else 'All Models' }}
+                    {% endif %}
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="modelFilterDropdown" style="min-width: 220px;">
+                <ul class="dropdown-menu" aria-labelledby="modelFilterDropdown" style="min-width: 180px;">
                     {% for model in model_types %}
                     <li><a class="dropdown-item {% if selected_model == model %}active{% endif %}" 
                           href="/?model_type={{ model }}{% if selected_language %}&lang={{ selected_language }}{% endif %}{% if selected_ev_threshold is defined %}&ev_threshold={{ selected_ev_threshold }}{% endif %}">{{ model }}</a></li>
@@ -112,27 +109,24 @@
         </div>
         <div class="d-flex align-items-center gap-2">
             <h6 class="filter-title mb-0 text-nowrap fw-semibold">{{ t.min_ev if t else 'Min EV' }}:</h6>
-            <div class="dropdown ev-dropdown" style="min-width: 140px;">
-                <button class="btn btn-sm btn-outline-success dropdown-toggle d-flex justify-content-between align-items-center" 
+            <div class="dropdown ev-dropdown">
+                <button class="btn btn-sm btn-outline-success dropdown-toggle" 
                         type="button" id="evFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false"
-                        style="width: 140px; height: 32px; font-size: 0.875rem;">
-                    <span class="text-truncate">
-                        {% if selected_ev_threshold is defined and selected_ev_threshold > 0 %}
-                            {{ (selected_ev_threshold * 100)|round(1) }}%
-                        {% else %}
-                            0% ({{ t.all_models if t else 'All' }})
-                        {% endif %}
-                    </span>
-                    <i class="bi bi-chevron-down ms-1"></i>
+                        style="min-width: 80px; padding: 6px 12px; font-size: 0.875rem;">
+                    {% if selected_ev_threshold is defined and selected_ev_threshold > 0 %}
+                        {{ (selected_ev_threshold * 100)|round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="evFilterDropdown" style="min-width: 140px;">
+                <ul class="dropdown-menu" aria-labelledby="evFilterDropdown" style="min-width: 80px;">
                     {% for threshold in ev_threshold_options %}
                     <li><a class="dropdown-item {% if selected_ev_threshold == threshold %}active{% endif %}" 
                           href="/?ev_threshold={{ threshold }}{% if selected_model %}&model_type={{ selected_model }}{% endif %}{% if selected_language %}&lang={{ selected_language }}{% endif %}">
                           {% if threshold > 0 %}
                             {{ (threshold * 100)|round(1) }}%
                           {% else %}
-                            0% (All)
+                            0%
                           {% endif %}
                           </a>
                     </li>
@@ -227,51 +221,49 @@
                     </div>
                     
                     <!-- Prediction -->
-                    <div class="prediction-container ms-n4 p-2 bg-primary bg-opacity-10 rounded-3 border-start border-4 border-primary">
-                        <div class="mb-1">
-                            <div class="text-uppercase text-muted small fw-bold mb-1">{{ t.our_prediction if t else 'Our Prediction' }}</div>
-                            <div class="prediction-value fw-bold text-primary" style="font-size: 1.1rem; line-height: 1.2;">{{ game.prediction|default('No prediction available') }}</div>
+                    <div class="prediction-container ms-n4 p-2 bg-primary bg-opacity-10 rounded-3 border-start border-4 border-primary" style="min-height: 180px;">
+                        <!-- Header Section -->
+                        <div class="prediction-header mb-1 text-center">
+                            <span class="text-uppercase text-muted small fw-bold" style="font-size: 0.7rem;">{{ t.our_prediction if t else 'Our Prediction' }}</span><span class="text-muted small fw-bold" style="font-size: 0.7rem;">:&nbsp;</span><span class="prediction-value fw-bold text-primary" style="font-size: 0.95rem; display: inline;">{{ game.prediction|default('No prediction available') }}</span>
                         </div>
                         
+                        <!-- Confidence Section -->
                         {% if game.confidence is not none %}
-                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
-                            <div class="confidence-meter-fill bg-primary rounded-pill" 
-                                 style="width: {{ (game.confidence * 100)|round(1) }}%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-end">
-                            <div class="confidence-display">
-                                <div class="fw-bold text-primary mb-0" style="font-size: 1.1rem; line-height: 1;">{{ (game.confidence * 100)|round(1) }}%</div>
-                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">{{ t.confidence if t else 'confidence' }}</div>
+                        <div class="confidence-section mb-2">
+                            <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
+                                <div class="confidence-meter-fill bg-primary rounded-pill" 
+                                     style="width: {{ (game.confidence * 100)|round(1) }}%"></div>
                             </div>
-                            <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
-                                   type="button" 
-                                   data-bs-toggle="collapse" 
-                                   data-bs-target="#detailsCollapse{{ loop.index }}" 
-                                   aria-expanded="false" 
-                                   aria-controls="detailsCollapse{{ loop.index }}">
-                                <i class="bi bi-info-circle me-1"></i><span class="small">{{ t.details if t else 'Details' }}</span>
-                            </button>
+                            <div class="confidence-display text-center">
+                                <div class="fw-bold text-primary mb-0" style="font-size: 1.0rem; line-height: 1;">{{ (game.confidence * 100)|round(1) }}%</div>
+                                <div class="small text-muted text-uppercase fw-medium" style="line-height: 1; margin-top: 2px; letter-spacing: 0.5px; font-size: 0.7rem;">{{ t.confidence if t else 'confidence' }}</div>
+                            </div>
                         </div>
                         {% else %}
-                        <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
-                            <div class="confidence-meter-fill bg-primary rounded-pill" 
-                                 style="width: 0%"></div>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-end">
-                            <div class="confidence-display">
-                                <div class="fw-medium text-muted mb-0" style="font-size: 1.1rem; line-height: 1;">N/A</div>
-                                <div class="small text-muted" style="line-height: 1; margin-top: -2px;">{{ t.confidence if t else 'confidence' }}</div>
+                        <div class="confidence-section mb-2">
+                            <div class="confidence-meter bg-secondary bg-opacity-25 rounded-pill mb-2">
+                                <div class="confidence-meter-fill bg-primary rounded-pill" 
+                                     style="width: 0%"></div>
                             </div>
-                            <button class="btn btn-sm btn-link p-0 text-primary align-self-center" 
+                            <div class="confidence-display text-center">
+                                <div class="fw-medium text-muted mb-0" style="font-size: 1.0rem; line-height: 1;">N/A</div>
+                                <div class="small text-muted text-uppercase fw-medium" style="line-height: 1; margin-top: 2px; letter-spacing: 0.5px; font-size: 0.7rem;">{{ t.confidence if t else 'confidence' }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Details Button Section -->
+                        <div class="details-button-section d-grid">
+                            <button class="btn btn-outline-primary btn-sm" 
                                    type="button" 
                                    data-bs-toggle="collapse" 
                                    data-bs-target="#detailsCollapse{{ loop.index }}" 
                                    aria-expanded="false" 
-                                   aria-controls="detailsCollapse{{ loop.index }}">
-                                <i class="bi bi-info-circle me-1"></i><span class="small">{{ t.details if t else 'Details' }}</span>
+                                   aria-controls="detailsCollapse{{ loop.index }}"
+                                   style="font-size: 0.8rem;">
+                                <i class="bi bi-info-circle me-2"></i>{{ t.details if t else 'View Details' }}
                             </button>
                         </div>
-                        {% endif %}
                     </div>
                 </div>
                 

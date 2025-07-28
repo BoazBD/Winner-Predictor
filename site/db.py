@@ -69,7 +69,9 @@ BIG_GAMES = [
     "ליגת Winner"
     "גביע הליגה האנגלי",
     "גביע אסיה",
-    "גביע גרמני"
+    "גביע גרמני",
+    "אליפות העולם לקבוצות",
+    "גביע הטוטו",
 ]
 
 # SQLite database path
@@ -82,27 +84,20 @@ def _firestore_doc_to_game_dict(doc_snapshot):
     game = doc_snapshot.to_dict()
     game['doc_id'] = doc_snapshot.id # Keep Firestore document ID (e.g., game_id_model_name)
     
-    logger.info(f"Converting document {doc_snapshot.id} to game dict")
-    logger.info(f"Raw document data: {game}")
-
     # Ensure the game's unique identifier is in game['id']
     # First try to get game_id from the document data
     if 'game_id' in game and game['game_id']:
         game['id'] = str(game['game_id'])
-        logger.info(f"Using game_id field: {game['id']}")
     elif 'prediction_source_id' in game and game['prediction_source_id']:
         game['id'] = str(game['prediction_source_id'])
-        logger.info(f"Using prediction_source_id as game id: {game['id']}")
     elif 'result_id' in game and game['result_id']:
         game['id'] = str(game['result_id'])
-        logger.info(f"Using result_id as game id: {game['id']}")
     else:
         # If no game_id in data, try to extract from doc_snapshot.id
         # Document ID format is typically game_id_model_name
         parts = doc_snapshot.id.split('_')
         if len(parts) > 1:
             game['id'] = str(parts[0])
-            logger.info(f"Using part of doc_snapshot.id as game id: {game['id']}")
         else:
             game['id'] = str(doc_snapshot.id)
             logger.warning(f"Could not determine specific game_id for doc {doc_snapshot.id}, using full doc_id as game['id']")
@@ -122,7 +117,7 @@ def _firestore_doc_to_game_dict(doc_snapshot):
                     if hasattr(game[key], 'replace') and hasattr(game[key], 'tzinfo'):
                          game[key] = game[key].replace(tzinfo=None) if game[key].tzinfo else game[key]
                 except (TypeError, ValueError) as e:
-                    logger.warning(f"Error converting timestamp field '{key}' for doc {doc_snapshot.id}: {e}. Value: {game[key]}")
+                    logger.error(f"Error converting timestamp field '{key}' for doc {doc_snapshot.id}: {e}. Value: {game[key]}")
                     game[key] = None # Or some default datetime
     
     # Convert match_time (stored as string YYYY-MM-DD HH:MM) to datetime object for app logic
@@ -131,10 +126,10 @@ def _firestore_doc_to_game_dict(doc_snapshot):
         try:
             game['match_time'] = datetime.strptime(game['match_time'], '%Y-%m-%d %H:%M')
         except ValueError as e:
-            logger.warning(f"Error parsing match_time string for doc {doc_snapshot.id}: {e}. Value: {game['match_time']}. Game will be skipped.")
+            logger.error(f"Error parsing match_time string for doc {doc_snapshot.id}: {e}. Value: {game['match_time']}. Game will be skipped.")
             return None # Skip game if match_time is unparsable
     elif 'match_time' not in game or game['match_time'] is None:
-        logger.warning(f"Missing or None match_time for doc {doc_snapshot.id}. Game will be skipped.")
+        logger.error(f"Missing or None match_time for doc {doc_snapshot.id}. Game will be skipped.")
         return None # Skip game if match_time is missing
 
     # Ensure numeric fields are floats (Firestore stores numbers as float64 or int64)
@@ -150,8 +145,6 @@ def _firestore_doc_to_game_dict(doc_snapshot):
             except (ValueError, TypeError):
                 logger.warning(f"Could not convert numeric field {nf} to float for doc {doc_snapshot.id}. Value: {game[nf]}")
                 game[nf] = 0.0 # Fallback
-        # elif nf not in game: # Ensure field exists for app compatibility
-        #     game[nf] = None # Or 0.0
 
     # Ensure boolean fields are bool
     boolean_fields = [
@@ -160,8 +153,6 @@ def _firestore_doc_to_game_dict(doc_snapshot):
     for bf in boolean_fields:
         if bf in game and game[bf] is not None:
             game[bf] = bool(game[bf])
-        # elif bf not in game:
-        #     game[bf] = False # Default to False
     
     # Ensure `odds` is a dict with home, draw, away keys (similar to process_dynamodb_items)
     if 'odds' not in game or not isinstance(game['odds'], dict):
@@ -1111,13 +1102,8 @@ def get_predictions_by_model_from_dynamodb(model_name):
 def process_dynamodb_items(items):
     """Process DynamoDB items into a format usable by the application"""
     processed_items = []
-    logger.info(f"--- Starting process_dynamodb_items for {len(items)} items ---") # Log start
     
-    for i, item in enumerate(items):
-        # --- Add detailed logging for each item ---
-        logger.info(f"Processing item {i+1}/{len(items)}: Raw Item -> {item}")
-        # --- End added logging ---
-        
+    for i, item in enumerate(items):        
         # Parse match time 
         match_time = None
         
@@ -1126,7 +1112,7 @@ def process_dynamodb_items(items):
             try:
                 match_time = datetime.strptime(item['match_time_str'], '%Y-%m-%d %H:%M')
             except Exception as e:
-                logger.warning(f"Item {i+1}: Failed to parse match_time_str '{item.get('match_time_str')}': {e}") # Log parsing errors
+                logger.error(f"Item {i+1}: Failed to parse match_time_str '{item.get('match_time_str')}': {e}")
                 match_time = None
         
         # If match_time is still None, try to combine event_date and game_time
@@ -1135,7 +1121,7 @@ def process_dynamodb_items(items):
                 match_time_str = f"{item['event_date']} {item['game_time']}"
                 match_time = datetime.strptime(match_time_str, '%Y-%m-%d %H:%M')
             except Exception as e:
-                logger.warning(f"Item {i+1}: Failed to parse event_date '{item.get('event_date')}' and game_time '{item.get('game_time')}': {e}") # Log parsing errors
+                logger.error(f"Item {i+1}: Failed to parse event_date '{item.get('event_date')}' and game_time '{item.get('game_time')}': {e}")
                 match_time = None
         
         # If match_time is still None, fall back to game_date (old format)
@@ -1148,7 +1134,7 @@ def process_dynamodb_items(items):
                 else:
                     match_time = datetime.strptime(date_str, '%Y-%m-%d')
             except Exception as e:
-                logger.warning(f"Item {i+1}: Failed to parse game_date '{item.get('game_date')}': {e}") # Log parsing errors
+                logger.error(f"Item {i+1}: Failed to parse game_date '{item.get('game_date')}': {e}")
                 match_time = datetime.now()
         
         # Final fallback if match_time is still None
@@ -1940,3 +1926,125 @@ def get_prediction_metadata_from_dynamodb():
     except Exception as e:
         logging.error(f"Error fetching prediction metadata: {str(e)}")
         return [], []
+
+# Cache-aware functions that use local cache instead of direct database queries
+def get_profitable_games_cached():
+    """Get profitable games from local cache instead of database."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_profitable_games()
+    except Exception as e:
+        logger.error(f"Error getting profitable games from cache, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_profitable_games_from_firestore()
+        elif DATA_SOURCE == 'dynamodb':
+            return get_profitable_games_from_dynamodb()
+        elif DATA_SOURCE == 'sqlite':
+            return get_profitable_games_from_db()
+        else:
+            return []
+
+def get_all_predictions_cached():
+    """Get all predictions from local cache instead of database."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_all_predictions()
+    except Exception as e:
+        logger.error(f"Error getting all predictions from cache, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_all_predictions_from_firestore()
+        elif DATA_SOURCE == 'dynamodb':
+            return get_all_predictions_from_dynamodb()
+        elif DATA_SOURCE == 'sqlite':
+            return get_all_predictions_from_db()
+        else:
+            return []
+
+def get_paginated_predictions_cached(page, per_page, league='', model='', game_id=''):
+    """Get paginated predictions from local cache instead of database."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_paginated_predictions(page, per_page, league, model, game_id)
+    except Exception as e:
+        logger.error(f"Error getting paginated predictions from cache, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_paginated_predictions_from_firestore(page, per_page, league, model, game_id)
+        elif DATA_SOURCE == 'dynamodb':
+            return get_paginated_predictions_from_dynamodb(page, per_page, league, model, '', '', '', '', game_id)
+        elif DATA_SOURCE == 'sqlite':
+            return get_paginated_predictions_from_db(page, per_page, league, model, '', '', '', '', game_id)
+        else:
+            return [], 0
+
+def get_prediction_metadata_cached():
+    """Get prediction metadata (leagues, models) from local cache instead of database."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        metadata = cache.get_metadata()
+        return metadata.get('leagues', []), metadata.get('models', [])
+    except Exception as e:
+        logger.error(f"Error getting metadata from cache, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_prediction_metadata_from_firestore()
+        elif DATA_SOURCE == 'dynamodb':
+            return get_prediction_metadata_from_dynamodb()
+        else:
+            return [], []
+
+def get_cache_status():
+    """Get cache status information for monitoring."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_cache_info()
+    except Exception as e:
+        logger.error(f"Error getting cache status: {e}")
+        return {
+            'error': str(e),
+            'cache_available': False
+        }
+
+# Cache functions that wait for initial data
+def get_profitable_games_cached_with_wait(timeout_seconds: int = 60):
+    """Get profitable games from local cache, waiting for initial data if needed."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_profitable_games_with_wait(timeout_seconds)
+    except Exception as e:
+        logger.error(f"Error getting profitable games from cache with wait, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_profitable_games_from_firestore()
+        elif DATA_SOURCE == 'dynamodb':
+            return get_profitable_games_from_dynamodb()
+        elif DATA_SOURCE == 'sqlite':
+            return get_profitable_games_from_db()
+        else:
+            return []
+
+def get_all_predictions_cached_with_wait(timeout_seconds: int = 60):
+    """Get all predictions from local cache, waiting for initial data if needed."""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        return cache.get_all_predictions_with_wait(timeout_seconds)
+    except Exception as e:
+        logger.error(f"Error getting all predictions from cache with wait, falling back to database: {e}")
+        # Fallback to database if cache fails
+        if DATA_SOURCE == 'firestore':
+            return get_all_predictions_from_firestore()
+        elif DATA_SOURCE == 'dynamodb':
+            return get_all_predictions_from_dynamodb()
+        elif DATA_SOURCE == 'sqlite':
+            return get_all_predictions_from_db()
+        else:
+            return []

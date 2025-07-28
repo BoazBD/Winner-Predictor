@@ -16,6 +16,15 @@ from db import (
     get_all_predictions_from_firestore,
     get_prediction_metadata_from_firestore,
     get_paginated_predictions_from_firestore,
+    # Cache-aware functions (preferred)
+    get_profitable_games_cached,
+    get_all_predictions_cached,
+    get_paginated_predictions_cached,
+    get_prediction_metadata_cached,
+    get_cache_status,
+    # Cache functions that wait for initial data
+    get_profitable_games_cached_with_wait,
+    get_all_predictions_cached_with_wait,
     # Common or old
     DATA_SOURCE, # Import the DATA_SOURCE variable
     _firestore_doc_to_game_dict
@@ -231,6 +240,16 @@ PROFITABLE_GAMES_TABLE = os.environ.get('PROFITABLE_GAMES_TABLE', 'profitable-ga
 
 app = Flask(__name__, static_folder='static')
 
+# Initialize cache at startup
+logger.info("Initializing cache system...")
+try:
+    from cache import initialize_cache
+    cache = initialize_cache()
+    logger.info("Cache system initialized successfully")
+except Exception as e:
+    logger.error(f"Failed to initialize cache system: {e}")
+    logger.warning("Falling back to direct database queries")
+
 @app.route('/health')
 def health_check():
     """Health check endpoint for Elastic Beanstalk"""
@@ -243,6 +262,42 @@ def health_check():
             return jsonify({'status': 'unhealthy', 'reason': db_status, 'environment': FLASK_ENV}), 500
 
     return jsonify({'status': 'healthy', 'data_source': DATA_SOURCE, 'environment': FLASK_ENV}), 200
+
+@app.route('/cache-status')
+def cache_status():
+    """Cache status endpoint for monitoring"""
+    try:
+        cache_info = get_cache_status()
+        return jsonify({
+            'status': 'ok',
+            'cache_info': cache_info,
+            'data_source': DATA_SOURCE
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'data_source': DATA_SOURCE
+        }), 500
+
+@app.route('/refresh-cache', methods=['POST'])
+def refresh_cache():
+    """Manual cache refresh endpoint for debugging"""
+    try:
+        from cache import get_cache
+        cache = get_cache()
+        cache.refresh_cache(force=True)
+        return jsonify({
+            'status': 'success',
+            'message': 'Cache refreshed successfully',
+            'cache_info': cache.get_cache_info()
+        }), 200
+    except Exception as e:
+        logger.error(f"Error refreshing cache manually: {e}")
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
 
 # Sample games as fallback
 SAMPLE_GAMES = [
@@ -410,57 +465,23 @@ def index():
         # Get the selected model filter, default to 'lstm_100_12_v1'
         DEFAULT_MODEL = 'lstm_100_12_v1'
         selected_model = request.args.get('model_type', DEFAULT_MODEL) 
-        logger.info(f"Selected model (default '{DEFAULT_MODEL}'): '{selected_model}'")
         
         # Get language preference, default to 'english'
         selected_language = request.args.get('lang', 'english')
-        logger.info(f"Selected language: '{selected_language}'")
 
         # Get EV threshold filter, default to 0
         ev_threshold_options = [0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05] # Representing 0%, 0.1%, ..., 1%, 2%, 3%, 4%, 5%
         selected_ev_threshold = request.args.get('ev_threshold', 0, type=float)
         if selected_ev_threshold not in ev_threshold_options: # Ensure valid threshold or default
             selected_ev_threshold = 0
-        logger.info(f"Selected EV threshold: {selected_ev_threshold}")
         
-        # Get profitable predictions
-        games = []
-        if DATA_SOURCE == 'dynamodb':
-            logger.info(f"Fetching profitable games directly from DynamoDB table: {PROFITABLE_GAMES_TABLE}")
-            # Optional: Keep some debug info if needed, but target the correct table
-            debug_info = {}
-            try:
-                # dynamodb = boto3.resource('dynamodb', region_name="il-central-1") # Not needed here, done in db.py
-                # table = dynamodb.Table(PROFITABLE_GAMES_TABLE) 
-                # count_response = table.scan(Select='COUNT')
-                # debug_info['profitable_table_total_items'] = count_response.get('Count', 0)
-                # logger.info(f"DynamoDB debug info for profitable table: {debug_info}")
-                pass # Boto3 calls are in db.py now
-            except Exception as debug_e:
-                logger.warning(f"Error collecting debug info for profitable table: {debug_e}")
-            
-            games = get_profitable_games_from_dynamodb() 
-            logger.info(f"Raw profitable games data count from DynamoDB: {len(games)}")
-        elif DATA_SOURCE == 'firestore':
-            logger.info(f"Fetching profitable games from Firestore collection: {os.environ.get('FIRESTORE_PROFITABLE_PREDICTIONS_COLLECTION', 'profitable_predictions')}")
-            games = get_profitable_games_from_firestore()
-            logger.info(f"Raw profitable games data count from Firestore: {len(games)}")
-        elif DATA_SOURCE == 'sqlite':
-            logger.info("Fetching profitable games from SQLite")
-            games = get_profitable_games_from_db()
-            logger.info(f"Raw profitable games data count from SQLite: {len(games)}")
-        else:
-            logger.error(f"Unknown DATA_SOURCE: {DATA_SOURCE}. Falling back to sample data for index.")
-            games = SAMPLE_GAMES.copy()
-        
-        logger.info(f"Retrieved {len(games)} games before SAMPLE_GAMES fallback logic in index route.")
+        # Get profitable predictions from cache, waiting briefly for initial data
+        games = get_profitable_games_cached()
 
         if not games:
-            logger.warning("No profitable games found (either from DB or initial list was empty), using sample data")
-            games = SAMPLE_GAMES.copy()
-            logger.info(f"Now using {len(games)} SAMPLE_GAMES for display in index route.")
-        else:
-            logger.info(f"Successfully retrieved {len(games)} profitable games for display (did not use SAMPLE_GAMES fallback).")
+            # If no games yet, render a loading page so the user doesn’t see an empty site
+            logger.info("Cache not ready yet – showing loading page")
+            return render_template('loading.html')
         
         # Ensure all games have required fields
         processed_games = [ensure_game_has_required_fields(game) for game in games]
@@ -491,32 +512,22 @@ def index():
         
         # Get unique model names for the toggles
         model_types = sorted(list(set(game.get('model_name', 'Unknown Model') for game in processed_games)))
-        logger.info(f"Available models: {model_types}")
         
         # Apply model filter if selected
         if selected_model:
-            before_filter = len(processed_games)
             processed_games = [game for game in processed_games if 
                               game.get('model_name') and selected_model.lower() in game.get('model_name', '').lower()]
-            logger.info(f"Filtered to {len(processed_games)} games from {before_filter} for model: {selected_model}")
             
             if len(processed_games) == 0:
-                logger.warning(f"Filter '{selected_model}' resulted in zero games. Available models were: {model_types}")
+                logger.warning(f"Filter '{selected_model}' resulted in zero games")
         
         # Apply EV threshold filter
         if selected_ev_threshold > 0:
-            before_ev_filter = len(processed_games)
             # Ensure 'expected_value' is present and is a float for comparison
             processed_games = [
                 game for game in processed_games 
                 if game.get('expected_value') is not None and float(game['expected_value']) >= selected_ev_threshold
             ]
-            logger.info(f"Filtered to {len(processed_games)} games from {before_ev_filter} for EV threshold: {selected_ev_threshold}")
-        
-        # Count upcoming games for info
-        current_time = datetime.now()
-        upcoming_games = [g for g in processed_games if g.get('match_time', current_time) > current_time]
-        logger.info(f"Found {len(upcoming_games)} upcoming games out of {len(processed_games)} total profitable games displayed")
         
         # Calculate statistics based on the displayed profitable games
         stats = calculate_prediction_stats(processed_games)
@@ -569,7 +580,7 @@ def all_predictions():
         
         # Get predictions from Firestore
         try:
-            games, total_count = get_paginated_predictions_from_firestore(
+            games, total_count = get_paginated_predictions_cached(
                 page=page,
                 per_page=per_page,
                 league=league,
@@ -580,7 +591,7 @@ def all_predictions():
             if "requires a composite index" in str(e):
                 # Get metadata for filters even in error case
                 try:
-                    leagues, models = get_prediction_metadata_from_firestore()
+                    leagues, models = get_prediction_metadata_cached()
                 except:
                     leagues, models = [], []
                 
@@ -611,7 +622,7 @@ def all_predictions():
                 raise e
 
         # Get unique leagues and models for filters
-        leagues, models = get_prediction_metadata_from_firestore()
+        leagues, models = get_prediction_metadata_cached()
         
         # Apply language preference to games (similar to index route)
         if language == 'english':
@@ -666,7 +677,7 @@ def all_predictions():
         
         # Get metadata for filters even in error case
         try:
-            leagues, models = get_prediction_metadata_from_firestore()
+            leagues, models = get_prediction_metadata_cached()
         except:
             leagues, models = [], []
         
@@ -707,32 +718,23 @@ def about():
 def serve_static(filename):
     return send_from_directory(app.static_folder, filename)
 
+@app.route('/robots.txt')
+def robots_txt():
+    """Serve robots.txt from the root path where crawlers expect it"""
+    return send_from_directory(app.static_folder, 'robots.txt')
+
 # API endpoints for the React frontend
 @app.route('/api/profitable-predictions')
 def api_profitable_predictions():
     try:
         # Get language preference, default to 'english'
         selected_language = request.args.get('lang', 'english')
-        logger.info(f"API: Selected language: '{selected_language}'")
-        games = []
-        if DATA_SOURCE == 'dynamodb':
-            logger.info("Fetching profitable games from DynamoDB for API")
-            games = get_profitable_games_from_dynamodb()
-        elif DATA_SOURCE == 'firestore':
-            logger.info("Fetching profitable games from Firestore for API")
-            games = get_profitable_games_from_firestore()
-        elif DATA_SOURCE == 'sqlite':
-            logger.info("Fetching profitable games from SQLite for API")
-            games = get_profitable_games_from_db()
-        else:
-            logger.warning(f"Unknown DATA_SOURCE {DATA_SOURCE} for API profitable-predictions, using sample.")
-            games = SAMPLE_GAMES.copy()
         
-        if not games and DATA_SOURCE not in ['dynamodb', 'firestore', 'sqlite']: # Ensure sample only if no valid source produced data
-            logger.warning("No profitable games found for API, using sample data")
+        games = get_profitable_games_cached_with_wait(timeout_seconds=60)
+        
+        if not games:
             games = SAMPLE_GAMES.copy()
         else:
-            logger.info(f"Successfully retrieved {len(games)} profitable games for API")
             # Sort by match time (newest first)
             games.sort(key=lambda x: x.get('match_time', datetime.min), reverse=True)
         
@@ -787,7 +789,6 @@ def api_all_predictions():
     try:
         # Get language preference, default to 'english'
         selected_language = request.args.get('lang', 'english')
-        logger.info(f"API: Selected language: '{selected_language}'")
         
         # Get query parameters
         page = int(request.args.get('page', 1))
@@ -796,50 +797,15 @@ def api_all_predictions():
         model = request.args.get('model', '')
         game_id = request.args.get('game_id', '')
         
-        # Get predictions from appropriate data source
-        if DATA_SOURCE == 'firestore':
-            logger.info("Fetching predictions from Firestore for API")
-            docs = get_paginated_predictions_from_firestore(page, per_page, league, model, game_id)
-            
-            # Convert Firestore documents to game dictionaries
-            games = []
-            for doc in docs:
-                game_dict = _firestore_doc_to_game_dict(doc)
-                if game_dict:
-                    games.append(game_dict)
-            
-            # If filtering by game_id, we want all predictions for that game
-            if game_id:
-                logger.info(f"Found {len(games)} predictions for game {game_id}")
-                return jsonify({
-                    'games': games,
-                    'total': len(games),
-                    'page': page,
-                    'per_page': per_page
-                })
+        # Get predictions from cache
+        games, total_count = get_paginated_predictions_cached(page, per_page, league, model, game_id)
         
-            # For other queries, we need to get the total count
-            total_count = len(games)  # This is just the count for the current page
-            if not game_id:  # Only get total count if not filtering by game_id
-                # Get total count from metadata
-                leagues, models = get_prediction_metadata_from_firestore()
-                total_count = len(leagues) * len(models)  # This is an approximation
-            
-            return jsonify({
-                'games': games,
-                'total': total_count,
-                'page': page,
-                'per_page': per_page
-            })
-        else:
-            # Handle other data sources (DynamoDB, SQLite, etc.)
-            logger.warning(f"Unsupported data source {DATA_SOURCE} for API all-predictions")
-            return jsonify({
-                'games': [],
-                'total': 0,
-                'page': page,
-                'per_page': per_page
-            })
+        return jsonify({
+            'games': games,
+            'total': total_count,
+            'page': page,
+            'per_page': per_page
+        })
     
     except Exception as e:
         logger.error(f"Error in API all-predictions: {str(e)}", exc_info=True)
@@ -855,19 +821,7 @@ def api_all_predictions():
 def api_models():
     """API endpoint to list all available models"""
     try:
-        games = []
-        if DATA_SOURCE == 'dynamodb':
-            logger.info("Fetching all predictions from DynamoDB for API models")
-            games = get_all_predictions_from_dynamodb()
-        elif DATA_SOURCE == 'firestore':
-            logger.info("Fetching all predictions from Firestore for API models")
-            games = get_all_predictions_from_firestore() # Uses the same full fetch
-        elif DATA_SOURCE == 'sqlite':
-            logger.info("Fetching all predictions from SQLite for API models")
-            games = get_all_predictions_from_db()
-        else:
-            logger.warning(f"Unknown DATA_SOURCE {DATA_SOURCE} for API models, using empty list.")
-            # games = SAMPLE_GAMES.copy() # Or return empty if models depend on actual data
+        games = get_all_predictions_cached_with_wait(timeout_seconds=60)
 
         # Get unique model names
         model_names = sorted(list(set(game.get('model_name', 'Unknown Model') for game in games)))

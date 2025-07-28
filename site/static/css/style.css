@@ -400,7 +400,7 @@ body {
 }
 
 .game-card.prediction-correct .card-body {
-    border-left: 4px solid var(--success-color);
+    /* Left border removed - keeping only the colored outline */
 }
 
 .game-card.prediction-incorrect {
@@ -409,7 +409,7 @@ body {
 }
 
 .game-card.prediction-incorrect .card-body {
-    border-left: 4px solid var(--danger-color);
+    /* Left border removed - keeping only the colored outline */
 }
 
 .result-badge {
@@ -1705,8 +1705,8 @@ body {
 .confidence-display {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
     min-height: 2.2rem;
 }
 
@@ -1729,15 +1729,139 @@ body {
 
 /* Prediction container improvements */
 .prediction-container {
-    min-width: 0; /* Allow flex shrinking */
+    min-width: 0;
+    transition: all 0.3s ease;
+}
+
+.prediction-container .prediction-header {
+    text-align: center;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.prediction-container .prediction-header span {
+    display: inline;
 }
 
 .prediction-container .prediction-value {
-    word-break: keep-all;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    display: inline !important;
+}
+
+.prediction-container .confidence-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.prediction-container .confidence-meter {
+    width: 100%;
+    max-width: 200px;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.prediction-container .confidence-display {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.prediction-container .details-button-section {
+    margin-top: 4px;
+}
+
+.prediction-container .details-button-section .btn {
+    border-radius: 20px;
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    border-width: 1.5px;
+}
+
+.prediction-container .details-button-section .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 991px) {
+    .prediction-container {
+        margin-left: 0 !important;
+        margin-top: 12px;
+        text-align: center;
+        max-width: 100%;
+        padding: 12px !important;
+        min-height: 200px !important;
+    }
+    
+    .prediction-container .prediction-header {
+        margin-bottom: 8px;
+        min-height: 60px !important;
+        padding: 8px !important;
+    }
+    
+    .prediction-container .prediction-value {
+        font-size: 1.1rem !important;
+    }
+    
+    .prediction-container .confidence-section {
+        margin-bottom: 12px;
+    }
+    
+    .prediction-container .confidence-display > div:first-child {
+        font-size: 1.1rem !important;
+    }
+    
+    .prediction-container .confidence-meter {
+        height: 6px;
+        max-width: 200px;
+    }
+    
+    .prediction-container .details-button-section .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        min-height: 36px; /* Better touch target */
+    }
+}
+
+@media (max-width: 576px) {
+    .prediction-container {
+        padding: 10px !important;
+        margin-top: 8px;
+        min-height: 180px !important;
+    }
+    
+    .prediction-container .prediction-value {
+        font-size: 1.0rem !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+    }
+    
+    .prediction-container .prediction-header {
+        min-height: 70px !important;
+        padding: 10px !important;
+    }
+    
+    .prediction-container .confidence-display > div:first-child {
+        font-size: 1.0rem !important;
+    }
+    
+    .prediction-container .confidence-meter {
+        height: 5px;
+        max-width: 180px;
+    }
 }
 
 /* Ensure prediction text doesn't wrap */
@@ -1749,6 +1873,19 @@ body {
 /* Dark mode prediction container */
 [data-theme="dark"] .prediction-container .prediction-value {
     color: #4299e1 !important;
+}
+
+/* Dark mode enhancements for the new structure */
+[data-theme="dark"] .prediction-container .details-button-section .btn {
+    border-color: #4299e1;
+    color: #4299e1;
+    background-color: rgba(66, 153, 225, 0.1);
+}
+
+[data-theme="dark"] .prediction-container .details-button-section .btn:hover {
+    background-color: #4299e1;
+    color: white;
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }
 
 /* Footer contact link styling */
@@ -1790,22 +1927,22 @@ body {
 /* Team name responsive sizing for All Predictions page */
 .team-name {
     font-size: 0.9rem;
-    line-height: 1.2;
+    line-height: 1.5;
     word-break: keep-all;
     overflow-wrap: break-word;
     white-space: normal;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: ellipsis;
     max-width: 100%;
-    min-height: 1.2em;
-    max-height: 2.4em; /* Allow for 2 lines */
+    min-height: 1.5em;
+    max-height: 3.5em; /* Allow for 2 lines */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     text-align: center;
     transition: font-size 0.2s ease;
     font-weight: 600;
-    padding: 0 2px;
+    padding: 2px 2px;
     box-sizing: border-box;
 }
 
@@ -1821,49 +1958,55 @@ body {
     line-height: 1.2;
 }
 
-/* For medium length names, try smaller font first */
+/* For medium length names, allow wrapping if needed */
 .team-name[data-medium="true"] {
     font-size: 0.8rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    max-height: 1.2em;
-    -webkit-line-clamp: 1;
-    line-height: 1.2;
+    line-height: 1.5;
+    white-space: normal;
+    overflow: visible;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: 3.5em;
+    min-height: 3.0em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    padding: 2px 2px;
 }
 
 /* For long team names, allow 2 lines with smaller font */
 .team-name[data-short="false"] {
     font-size: 0.75rem;
-    line-height: 1.1;
+    line-height: 1.5;
     white-space: normal;
-    overflow: hidden;
+    overflow: visible;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    max-height: 2.2em;
+    max-height: 3.5em;
+    min-height: 3.0em;
     word-break: break-word;
     overflow-wrap: break-word;
+    padding: 2px 2px;
 }
 
 /* Override the existing team-name styles in the All Predictions page */
 .prediction-card .team-name {
     font-size: 0.9rem !important;
-    line-height: 1.2 !important;
+    line-height: 1.5 !important;
     word-break: keep-all !important;
     overflow-wrap: break-word !important;
     white-space: normal !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     text-overflow: ellipsis !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     text-align: center !important;
     height: auto !important;
-    min-height: 1.2em !important;
-    max-height: 2.4em !important;
-    padding: 0 2px !important;
+    min-height: 1.5em !important;
+    max-height: 3.5em !important;
+    padding: 2px 2px !important;
     margin: 0 auto 8px !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -1882,57 +2025,63 @@ body {
 
 .prediction-card .team-name[data-medium="true"] {
     font-size: 0.8rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    display: block !important;
-    max-height: 1.2em !important;
-    -webkit-line-clamp: 1 !important;
-    line-height: 1.2 !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    max-height: 3.5em !important;
+    min-height: 3.0em !important;
+    word-break: keep-all !important;
+    overflow-wrap: break-word !important;
+    padding: 2px 2px !important;
 }
 
 .prediction-card .team-name[data-short="false"] {
     font-size: 0.75rem !important;
     white-space: normal !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
-    max-height: 2.2em !important;
-    line-height: 1.1 !important;
+    max-height: 3.5em !important;
+    min-height: 3.0em !important;
+    line-height: 1.5 !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
+    padding: 2px 2px !important;
 }
 
 /* For very long team names, make them even smaller */
 .team-column .team-name {
-    max-width: 120px;
+    max-width: 140px;
 }
 
 /* Adjust team badge container to accommodate 2 lines */
 .team-badge {
-    min-height: 70px;
+    min-height: 105px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0.25rem;
+    padding: 0.6rem 0.25rem;
     border-radius: 8px;
     transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Ensure team names don't break the layout */
 .teams-display {
-    min-height: 90px;
+    min-height: 130px;
     align-items: stretch;
 }
 
 .team-column {
     flex: 1;
     min-width: 0; /* Allow flex shrinking */
-    max-width: 140px;
+    max-width: 160px;
     position: relative;
 }
 
@@ -1966,12 +2115,12 @@ body {
     }
     
     .team-column {
-        max-width: 110px;
+        max-width: 130px;
     }
     
     .team-badge {
-        min-height: 65px;
-        padding: 0.4rem 0.2rem;
+        min-height: 95px;
+        padding: 0.5rem 0.2rem;
     }
     
     .team-name.text-small {
@@ -2007,12 +2156,12 @@ body {
     }
     
     .team-column {
-        max-width: 100px;
+        max-width: 120px;
     }
     
     .team-badge {
-        min-height: 60px;
-        padding: 0.3rem 0.15rem;
+        min-height: 90px;
+        padding: 0.4rem 0.15rem;
     }
     
     .prediction-card .team-name {
