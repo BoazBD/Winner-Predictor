@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-879V414DP9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-879V414DP9');
+    </script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Sport Better - Sports Betting Predictions</title>
@@ -22,7 +32,7 @@
     
     <!-- Local CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "cdc0bcb993cc4e4cb73980009f9a5810"}'></script>
     <!-- Prevent flash of light mode content -->
     <script>
         // Apply dark mode immediately if it's saved in localStorage
@@ -664,7 +674,7 @@
     <footer class="footer mt-auto py-3 text-center">
         <div class="container">
             <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2">
-                <span class="text-muted">&copy; 2025 AI Sport Better. {{ t.all_rights_reserved if t else 'All rights reserved.' }} | {{ t.version if t else 'Version' }} 0.2.2</span>
+                <span class="text-muted">&copy; 2025 AI Sport Better. {{ t.all_rights_reserved if t else 'All rights reserved.' }} | {{ t.version if t else 'Version' }} 0.2.3</span>
                 <span class="text-muted d-none d-md-inline">|</span>
                 <a href="https://www.linkedin.com/in/boaz-bar-david/" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
                     <i class="bi bi-linkedin me-1"></i>{{ t.contact_us if t else 'Contact Us' }}

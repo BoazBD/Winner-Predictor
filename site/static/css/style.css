@@ -159,9 +159,9 @@ body {
 
 /* Adjust section widths to balance the layout with new spacing */
 .game-card .game-info {
-    flex: 1.25;
+    flex: 1.4;
     min-width: 150px;
-    max-width: 220px;
+    max-width: 300px;
     padding: 0 0.05rem;
     margin: 0;
     text-align: left;
@@ -171,9 +171,10 @@ body {
 .game-card .model-badge,
 .game-card .match-time {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 .game-card .team-name {
@@ -199,7 +200,7 @@ body {
     column-gap: 10px !important;
     padding: 0 !important;
     margin: 0 auto !important;
-    flex: 1.5;
+    flex: 1.3;
     min-width: 180px;
     max-width: 280px;
     width: auto;
@@ -352,44 +353,129 @@ body {
 /* Media queries */
 @media (max-width: 991px) {
     .game-card .card-body {
-        flex-direction: column;
-        gap: 0.2rem;
-        align-items: center;
-        padding: 0.35rem 0.3rem;
+        flex-direction: row !important;
+        gap: 0.2rem !important;
+        align-items: stretch !important;
+        padding: 0.4rem 0.4rem 0.4rem 0 !important;
+        justify-content: space-between !important;
     }
     
-    .game-card .game-info,
+    .game-card .game-info {
+        flex: 1.2 !important;
+        max-width: 120px !important;
+        min-width: 90px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        text-align: left !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+    
+    .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+    
     .game-card .prediction-container {
-        flex: 0 0 100%;
-        max-width: 100%;
-        min-width: 100%;
-        margin: 0;
-        text-align: center;
-        padding: 0.1rem;
+        flex: 0.9 !important;
+        max-width: 90px !important;
+        min-width: 70px !important;
+        margin: 0 !important;
+        padding: 0.2rem !important;
+        text-align: center !important;
+        min-height: 80px !important;
+        max-height: 90px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        overflow: visible !important;
+        border-left: 2px solid #007bff !important;
     }
     
-    .game-info-content {
-        align-items: center;
-        padding-right: 0;
-    }
-
-    .game-card .prediction-container {
-        text-align: center;
-    }
-    
-    .game-card .prediction-value, 
-    .game-card .confidence-container {
-        justify-content: center;
-        align-items: center;
-        padding-left: 0;
+    /* Text sizes for 991px */
+    .league-badge {
+        font-size: 0.6rem !important;
+        margin: 0 0 2px 0 !important;
+        padding: 1px 4px !important;
+        text-align: left !important;
     }
     
+    .match-time {
+        font-size: 0.6rem !important;
+        margin: 0 0 2px 0 !important;
+        padding: 1px 4px !important;
+        text-align: left !important;
+    }
+    
+    .model-badge {
+        font-size: 0.55rem !important;
+        margin: 0 0 2px 0 !important;
+        text-align: left !important;
+    }
+    
+    .predicted-timestamp {
+        font-size: 0.5rem !important;
+        margin: 0 !important;
+        text-align: left !important;
+    }
+    
+    /* Prediction box text for 991px */
+    .prediction-header .text-uppercase {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+        margin: 0 !important;
+        order: 1;
+    }
+    
+    .prediction-value {
+        font-size: 0.65rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+        margin: 0 !important;
+        order: 2;
+    }
+    
+    .confidence-meter {
+        height: 4px !important;
+        width: 75px !important;
+        margin: 2px 0 !important;
+    }
+    
+    .confidence-section {
+        order: 3;
+    }
+    
+    .details-button-section {
+        order: 4;
+        font-size: 0.5rem !important;
+    }
+    
+    /* Teams container for 991px */
     .game-card .teams-container {
-        padding: 0.05rem 0;
-        margin: 0.5rem auto !important;
-        max-width: 250px;
-        width: 250px;
-        min-width: 250px;
+        flex: 1.1 !important;
+        min-width: 90px !important;
+        max-width: 120px !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        justify-content: space-evenly !important;
+    }
+    
+    .team-name {
+        font-size: 0.65rem !important;
+        min-height: 20px !important;
+        max-height: 25px !important;
+    }
+    
+    .team-odds {
+        font-size: 0.6rem !important;
+    }
+    
+    .draw-odds {
+        font-size: 0.6rem !important;
     }
 }
 
@@ -870,16 +956,25 @@ body {
     text-align: center;
 }
 
-.final-score-badge {
-    font-size: 0.85em;
-    color: #888;
-    background: #f3f3f3;
-    border-radius: 4px;
-    min-width: 1.6em;
+    .final-score-badge {
+        font-size: 0.85em;
+        color: #888;
+        background: #f3f3f3;
+        border-radius: 4px;
+        min-width: 1.6em;
+        text-align: center;
+        margin-top: 0.05em;
+        font-weight: 600;
+        display: inline-block;
+    }
+.final-result-label {
+    font-size: 0.65rem;
+    color: #666;
+    margin-top: 2px;
+    font-weight: 500;
     text-align: center;
-    margin-top: 0.05em;
-    font-weight: 600;
-    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .predicted-timestamp {
@@ -914,9 +1009,10 @@ body {
 .game-card .model-badge,
 .game-card .match-time {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+    word-wrap: break-word;
 }
 
 .middle-section {
@@ -950,10 +1046,17 @@ body {
 }
 
 /* Responsive adjustment for mobile */
+@media (max-width: 768px) {
+    .vs-badge-x {
+        font-size: 0.6rem;
+        top: -10px;
+    }
+}
+
 @media (max-width: 576px) {
     .vs-badge-x {
-        font-size: 0.95rem;
-        top: -26px;
+        font-size: 0.5rem;
+        top: -8px;
     }
 }
 
@@ -1050,6 +1153,10 @@ body {
 [data-theme="dark"] .game-card .final-score-badge {
     background-color: #4a5568 !important;
     color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .final-result-label {
+    color: #a0aec0 !important;
 }
 
 [data-theme="dark"] .game-card .vs-badge-x {
@@ -1745,6 +1852,15 @@ body {
     padding: 4px;
 }
 
+/* Base mobile-first overrides */
+@media (max-width: 768px) {
+    .prediction-container .prediction-header {
+        min-height: auto !important;
+        padding: 0px !important;
+        line-height: 0.8 !important;
+    }
+}
+
 .prediction-container .prediction-header span {
     display: inline;
 }
@@ -1795,72 +1911,93 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* Enhanced mobile responsiveness */
+/* Enhanced mobile responsiveness - ULTRA COMPACT */
 @media (max-width: 991px) {
     .prediction-container {
         margin-left: 0 !important;
-        margin-top: 12px;
+        margin-top: 0px !important;
         text-align: center;
-        max-width: 100%;
-        padding: 12px !important;
-        min-height: 200px !important;
+        max-width: 110px !important;
+        padding: 0.3rem !important;
+        min-height: 85px !important;
+        max-height: 110px !important;
+        flex: 1.1 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        overflow: visible !important;
+        justify-content: space-between !important;
     }
     
     .prediction-container .prediction-header {
-        margin-bottom: 8px;
-        min-height: 60px !important;
-        padding: 8px !important;
+        margin-bottom: 1px !important;
+        min-height: auto !important;
+        padding: 0px !important;
+        line-height: 0.8 !important;
     }
     
     .prediction-container .prediction-value {
-        font-size: 1.1rem !important;
+        font-size: 0.4rem !important;
+        line-height: 0.9 !important;
     }
     
     .prediction-container .confidence-section {
-        margin-bottom: 12px;
+        margin-bottom: 1px !important;
     }
     
     .prediction-container .confidence-display > div:first-child {
-        font-size: 1.1rem !important;
+        font-size: 0.35rem !important;
+        line-height: 0.8 !important;
     }
     
     .prediction-container .confidence-meter {
-        height: 6px;
-        max-width: 200px;
+        height: 0.5px !important;
+        max-width: 25px !important;
+        width: 25px !important;
     }
     
     .prediction-container .details-button-section .btn {
-        padding: 8px 16px;
-        font-size: 0.85rem;
-        min-height: 36px; /* Better touch target */
+        padding: 0px 2px !important;
+        font-size: 0.25rem !important;
+        min-height: 8px !important;
+        max-width: 35px !important;
     }
 }
 
 @media (max-width: 576px) {
     .prediction-container {
-        padding: 10px !important;
-        margin-top: 8px;
-        min-height: 180px !important;
+        padding: 0.25rem !important;
+        margin-top: 0px !important;
+        min-height: 75px !important;
+        max-height: 95px !important;
+        max-width: 95px !important;
+        flex: 1.0 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        overflow: visible !important;
+        justify-content: space-between !important;
     }
     
     .prediction-container .prediction-value {
-        font-size: 1.0rem !important;
-        line-height: 1.4 !important;
+        font-size: 0.3rem !important;
+        line-height: 0.8 !important;
         white-space: normal !important;
     }
     
     .prediction-container .prediction-header {
-        min-height: 70px !important;
-        padding: 10px !important;
+        min-height: auto !important;
+        padding: 0px !important;
+        line-height: 0.7 !important;
     }
     
     .prediction-container .confidence-display > div:first-child {
-        font-size: 1.0rem !important;
+        font-size: 0.25rem !important;
+        line-height: 0.7 !important;
     }
     
     .prediction-container .confidence-meter {
-        height: 5px;
-        max-width: 180px;
+        height: 0.3px !important;
+        max-width: 18px !important;
+        width: 18px !important;
     }
 }
 
@@ -1868,6 +2005,31 @@ body {
 .game-card .prediction-container {
     flex-shrink: 1;
     min-width: 120px;
+}
+
+/* Mobile overrides for prediction container size */
+@media (max-width: 768px) {
+    .game-card .prediction-container {
+        min-width: 85px !important;
+        max-width: 110px !important;
+        flex: 1.1 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        min-height: 85px !important;
+        max-height: 110px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .game-card .prediction-container {
+        min-width: 75px !important;
+        max-width: 95px !important;
+        flex: 1.0 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        min-height: 75px !important;
+        max-height: 95px !important;
+    }
 }
 
 /* Dark mode prediction container */
@@ -2172,3 +2334,2743 @@ body {
         font-size: 0.65rem !important;
     }
 } 
+
+/* ===== MOBILE RESPONSIVENESS IMPROVEMENTS ===== */
+
+/* Mobile Index Page (Profitable Predictions) - ULTRA Compact for Phone Screens */
+@media (max-width: 768px) {
+    /* Global mobile optimization */
+    body {
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+    }
+    
+    h1, h2 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Game cards - properly sized for new prediction box */
+    .game-card {
+        margin-bottom: 0.4rem !important;
+        border-radius: 6px !important;
+        max-height: 120px !important;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    .game-card .card-body {
+        padding: 0.3rem 0.3rem 0.3rem 0 !important;
+        gap: 0.2rem !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+        height: auto !important;
+        min-height: 90px !important;
+    }
+    
+    /* Game info section - moved to left wall */
+    .game-card .game-info {
+        flex: 1 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 90px !important;
+        max-width: 130px !important;
+        overflow: visible !important;
+    }
+    
+    .league-badge {
+        font-size: 0.4rem !important;
+        padding: 1px 2px !important;
+        margin: 0 0 1px 0 !important;
+        line-height: 1.1 !important;
+        display: block !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .match-time {
+        font-size: 0.5rem !important;
+        margin: 0 0 1px 0 !important;
+        padding: 1px 3px !important;
+        line-height: 1.1 !important;
+        display: block !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .model-badge {
+        font-size: 0.45rem !important;
+        margin: 0 0 1px 0 !important;
+        line-height: 1.1 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+    
+    .predicted-timestamp {
+        font-size: 0.4rem !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Teams container - balanced with new prediction box */
+    .game-card .teams-container {
+        flex: 1.0 !important;
+        margin: 0 !important;
+        min-width: 80px !important;
+        max-width: 100px !important;
+        padding: 0 !important;
+        display: flex !important;
+        justify-content: space-evenly !important;
+        align-items: center !important;
+        gap: 1px !important;
+        overflow: hidden;
+        column-gap: 1px !important;
+        background: none !important;
+        border: none !important;
+    }
+    
+    .game-card .team {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .game-card .team-name {
+        font-size: 0.45rem !important;
+        min-height: 8px !important;
+        max-height: 16px !important;
+        line-height: 0.9 !important;
+        margin-bottom: 0px !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        width: 100%;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .team-odds, .draw-odds {
+        font-size: 0.5rem !important;
+        padding: 0px 1px !important;
+        line-height: 1 !important;
+        margin-bottom: 0px !important;
+        min-width: 22px !important;
+        text-align: center;
+    }
+    
+    .final-score-badge {
+        font-size: 0.45rem !important;
+        padding: 1px 2px !important;
+        line-height: 1 !important;
+    }
+    
+    .final-result-label {
+        font-size: 0.4rem !important;
+        margin-top: 1px !important;
+        font-weight: 400 !important;
+    }
+    
+    /* PREDICTION CONTAINER - COMPLETE MOBILE REDESIGN */
+    .prediction-container {
+        flex: 1.1 !important;
+        padding: 0.3rem !important;
+        min-width: 85px !important;
+        max-width: 110px !important;
+        min-height: 85px !important;
+        max-height: 110px !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: center !important;
+        overflow: visible !important;
+        border-left-width: 2px !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+    }
+    
+    .prediction-header {
+        margin-bottom: 0px !important;
+        line-height: 0.8 !important;
+        text-align: center !important;
+    }
+    
+    /* PREDICTION HEADER - TOP SECTION */
+    .prediction-header {
+        margin-bottom: 0px !important;
+        line-height: 1.0 !important;
+        text-align: center !important;
+        word-wrap: break-word !important;
+        flex-shrink: 0 !important;
+        order: 1;
+    }
+    
+    .prediction-header .text-uppercase {
+        font-size: 0.4rem !important;
+        line-height: 1.0 !important;
+        display: block !important;
+        word-wrap: break-word !important;
+        margin: 0 !important;
+        color: #666 !important;
+    }
+    
+    /* PREDICTION VALUE - MIDDLE SECTION */
+    .prediction-value {
+        font-size: 0.55rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        font-weight: bold !important;
+        word-wrap: break-word !important;
+        flex-shrink: 0 !important;
+        order: 2;
+    }
+    
+    /* CONFIDENCE SECTION - MIDDLE-BOTTOM */
+    .confidence-section {
+        margin: 0 !important;
+        flex-grow: 0 !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        order: 3;
+    }
+    
+    .confidence-meter {
+        height: 6px !important;
+        margin: 2px 0 !important;
+        width: 85px !important;
+    }
+    
+    .confidence-display {
+        text-align: center !important;
+        margin: 0 !important;
+    }
+    
+    .confidence-display .fw-bold {
+        font-size: 0.7rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        font-weight: bold !important;
+    }
+    
+    .confidence-display .small {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        color: #666 !important;
+        text-transform: uppercase;
+    }
+    
+    /* DETAILS BUTTON - BOTTOM SECTION */
+    .details-button-section {
+        margin: 0 !important;
+        width: 100% !important;
+        flex-shrink: 0 !important;
+        order: 4;
+    }
+    
+    .details-button-section .btn {
+        font-size: 0.6rem !important;
+        padding: 4px 8px !important;
+        max-width: 80px !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        min-height: 20px !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Details content - mobile optimized */
+    .details-content {
+        padding: 0.4rem !important;
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-top: 0.3rem !important;
+    }
+    
+    .details-content .table {
+        font-size: 0.55rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .details-content th,
+    .details-content td {
+        padding: 0.2rem 0.1rem !important;
+        vertical-align: middle !important;
+        border-color: #dee2e6 !important;
+    }
+    
+    .details-content th {
+        background-color: #e9ecef !important;
+        font-weight: 600 !important;
+        font-size: 0.5rem !important;
+        text-transform: uppercase;
+    }
+    
+    /* Result and EV badges - ultra compact */
+    .result-badge {
+        font-size: 0.5rem !important;
+        padding: 1px 3px !important;
+        position: absolute;
+        top: 0.1rem !important;
+        right: 0.1rem !important;
+        max-width: 60px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    .ev-badge {
+        font-size: 0.5rem !important;
+        padding: 1px 3px !important;
+        position: absolute;
+        top: 0.1rem !important;
+        left: 0.1rem !important;
+        max-width: 50px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Hero section - compact */
+    .hero-section {
+        padding: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .hero-section .display-5 {
+        font-size: 1.2rem !important;
+    }
+    
+    .hero-section .lead {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .hero-section .btn {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+    
+    /* Stats grid - compact */
+    .stats-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.3rem !important;
+    }
+    
+    .stat-card {
+        padding: 0.4rem !important;
+    }
+    
+    .stat-card h4 {
+        font-size: 0.9rem !important;
+    }
+    
+    .stat-card .small {
+        font-size: 0.6rem !important;
+    }
+    
+    .stat-card i {
+        font-size: 1rem !important;
+    }
+    
+    /* Filter dropdowns - compact */
+    .filter-title {
+        font-size: 0.7rem !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+}
+
+/* Extra small screens - EXTREMELY compact for tiny phone screens */
+@media (max-width: 576px) {
+    /* Global mobile font reduction for tiny screens */
+    body {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+    
+    h1, h2 {
+        font-size: 1rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    /* Properly sized cards for small screens with new prediction box */
+    .game-card {
+        max-height: 105px !important;
+        height: auto !important;
+        margin-bottom: 0.3rem !important;
+        overflow: hidden;
+        border-radius: 5px !important;
+    }
+    
+    .game-card .card-body {
+        height: auto !important;
+        min-height: 80px !important;
+        padding: 0.25rem 0.25rem 0.25rem 0 !important;
+        gap: 0.15rem !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+    }
+    
+    /* Game info section - moved to left wall */
+    .game-card .game-info {
+        flex: 0.9 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        line-height: 0.9 !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 75px !important;
+        max-width: 110px !important;
+        overflow: visible !important;
+    }
+    
+    /* Compact but readable fonts with proper text wrapping */
+    .league-badge {
+        font-size: 0.35rem !important;
+        padding: 0px 1px !important;
+        margin: 0 0 1px 0 !important;
+        line-height: 1.0 !important;
+        display: block !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .match-time {
+        font-size: 0.4rem !important;
+        padding: 0px 2px !important;
+        margin: 0 0 1px 0 !important;
+        line-height: 1.0 !important;
+        display: block !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .model-badge {
+        font-size: 0.35rem !important;
+        margin: 0 0 1px 0 !important;
+        line-height: 1.0 !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-wrap: break-word !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+    
+    .predicted-timestamp {
+        font-size: 0.3rem !important;
+        margin: 0 !important;
+        line-height: 0.9 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Teams container balanced for small screens with new prediction box */
+    .game-card .teams-container {
+        flex: 1.1 !important;
+        margin: 0 !important;
+        min-width: 70px !important;
+        max-width: 85px !important;
+        padding: 0 !important;
+        display: flex !important;
+        justify-content: space-evenly !important;
+        align-items: center !important;
+        gap: 1px !important;
+        overflow: hidden;
+        column-gap: 1px !important;
+        background: none !important;
+        border: none !important;
+    }
+    
+    .game-card .team {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .game-card .team-name {
+        font-size: 0.35rem !important;
+        min-height: 6px !important;
+        max-height: 12px !important;
+        line-height: 0.8 !important;
+        margin-bottom: 0px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        width: 100%;
+    }
+    
+    .team-odds, .draw-odds {
+        font-size: 0.4rem !important;
+        padding: 0px !important;
+        margin-bottom: 0px !important;
+        min-width: 18px !important;
+        line-height: 0.9 !important;
+        text-align: center;
+    }
+    
+    /* PREDICTION CONTAINER - COMPLETE REDESIGN FOR SMALL SCREENS */
+    .prediction-container {
+        flex: 1.0 !important;
+        padding: 0.25rem !important;
+        min-width: 75px !important;
+        max-width: 95px !important;
+        min-height: 75px !important;
+        max-height: 95px !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: center !important;
+        overflow: visible !important;
+        border-left-width: 2px !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+    }
+    
+    .prediction-header {
+        margin-bottom: 0px !important;
+        line-height: 0.7 !important;
+        text-align: center !important;
+    }
+    
+    /* PREDICTION HEADER - TOP SECTION FOR SMALL SCREENS */
+    .prediction-header {
+        margin-bottom: 0px !important;
+        line-height: 1.0 !important;
+        text-align: center !important;
+        word-wrap: break-word !important;
+        flex-shrink: 0 !important;
+        order: 1;
+    }
+    
+    .prediction-header .text-uppercase {
+        font-size: 0.38rem !important;
+        line-height: 1.0 !important;
+        display: block !important;
+        word-wrap: break-word !important;
+        margin: 0 !important;
+        color: #666 !important;
+    }
+    
+    /* PREDICTION VALUE - MIDDLE SECTION FOR SMALL SCREENS */
+    .prediction-value {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        font-weight: bold !important;
+        word-wrap: break-word !important;
+        flex-shrink: 0 !important;
+        order: 2;
+    }
+    
+    /* CONFIDENCE SECTION - MIDDLE-BOTTOM FOR SMALL SCREENS */
+    .confidence-section {
+        margin: 0 !important;
+        flex-grow: 0 !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        order: 3;
+    }
+    
+    .confidence-meter {
+        height: 5px !important;
+        margin: 1px 0 !important;
+        width: 75px !important;
+    }
+    
+    .confidence-display {
+        text-align: center !important;
+        margin: 0 !important;
+    }
+    
+    .confidence-display .fw-bold {
+        font-size: 0.6rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        font-weight: bold !important;
+    }
+    
+    .confidence-display .small {
+        font-size: 0.45rem !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        display: block !important;
+        color: #666 !important;
+        text-transform: uppercase;
+    }
+    
+    /* DETAILS BUTTON - BOTTOM SECTION FOR SMALL SCREENS */
+    .details-button-section {
+        margin: 0 !important;
+        width: 100% !important;
+        flex-shrink: 0 !important;
+        order: 4;
+    }
+    
+    .details-button-section .btn {
+        font-size: 0.55rem !important;
+        padding: 3px 6px !important;
+        line-height: 1.0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 70px !important;
+        min-height: 18px !important;
+        border-radius: 3px !important;
+    }
+    
+    /* Mobile optimized details content for small screens */
+    .details-content {
+        padding: 0.35rem !important;
+        background: #f8f9fa;
+        border-radius: 3px;
+        margin-top: 0.25rem !important;
+    }
+    
+    .details-content .table {
+        font-size: 0.5rem !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .details-content th,
+    .details-content td {
+        padding: 0.15rem 0.08rem !important;
+        vertical-align: middle !important;
+        border-color: #dee2e6 !important;
+    }
+    
+    .details-content th {
+        background-color: #e9ecef !important;
+        font-weight: 600 !important;
+        font-size: 0.45rem !important;
+        text-transform: uppercase;
+    }
+    
+    /* Ultra compact badges */
+    .result-badge {
+        font-size: 0.4rem !important;
+        padding: 0px 2px !important;
+        top: 0.05rem !important;
+        right: 0.05rem !important;
+        max-width: 45px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    .ev-badge {
+        font-size: 0.4rem !important;
+        padding: 0px 2px !important;
+        top: 0.05rem !important;
+        left: 0.05rem !important;
+        max-width: 35px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    
+    /* Ultra compact final score badge */
+    .final-score-badge {
+        font-size: 0.4rem !important;
+        padding: 0px 1px !important;
+    }
+    
+    .final-result-label {
+        font-size: 0.35rem !important;
+        margin-top: 0.5px !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Hero section adjustments */
+    .hero-section {
+        padding: 0.3rem !important;
+    }
+    
+    .hero-section .display-5 {
+        font-size: 1rem !important;
+    }
+    
+    .hero-section .lead {
+        font-size: 0.7rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .hero-section .btn {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    /* Stats grid - even more compact */
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.2rem !important;
+    }
+    
+    .stat-card {
+        padding: 0.3rem !important;
+    }
+    
+    .stat-card h4 {
+        font-size: 0.8rem !important;
+    }
+    
+    .stat-card .small {
+        font-size: 0.5rem !important;
+    }
+    
+    .stat-card i {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.1rem !important;
+    }
+}
+    
+    .ev-badge {
+        font-size: 0.5rem !important;
+        padding: 0.1rem 0.25rem !important;
+    }
+
+/* ===== ALL PREDICTIONS PAGE MOBILE IMPROVEMENTS ===== */
+
+/* Mobile All Predictions Page Improvements */
+@media (max-width: 768px) {
+    /* Compact the filter section */
+    .accordion-body {
+        padding: 0.75rem !important;
+    }
+    
+    .form-label {
+        font-size: 0.8rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .form-select-sm,
+    .form-control-sm {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.7rem !important;
+        padding: 0.35rem 0.6rem !important;
+    }
+    
+    /* Prediction cards - more compact */
+    .prediction-card {
+        margin-bottom: 0.75rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .prediction-card .card-header {
+        padding: 0.5rem !important;
+    }
+    
+    .prediction-card .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    /* League and time badges - smaller */
+    .league-badge {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    .match-time.badge {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    .model-badge {
+        font-size: 0.6rem !important;
+    }
+    
+    .result-badge {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    /* Teams container - more compact */
+    .match-teams-container {
+        padding: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .teams-display {
+        gap: 8px !important;
+        min-height: 100px !important;
+    }
+    
+    .team-badge {
+        min-height: 100px !important;
+        height: 100px !important;
+        padding: 0.5rem 0.25rem !important;
+    }
+    
+    .team-name {
+        font-size: 0.7rem !important;
+        padding: 0 3px !important;
+        min-height: 1em !important;
+        max-height: 2.2em !important;
+        line-height: 1.1 !important;
+    }
+    
+    .team-name[data-short="true"] {
+        font-size: 0.75rem !important;
+    }
+    
+    .team-name[data-medium="true"] {
+        font-size: 0.65rem !important;
+    }
+    
+    .team-name[data-short="false"]:not([data-medium="true"]) {
+        font-size: 0.6rem !important;
+    }
+    
+    .odds-badge {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+        min-width: 45px !important;
+        bottom: 10px !important;
+    }
+    
+    .outcome-label {
+        font-size: 0.65rem !important;
+        margin-top: 2px !important;
+    }
+    
+    /* Prediction stats table - more compact */
+    .prediction-stats-container .table {
+        font-size: 0.65rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .prediction-stats-container th,
+    .prediction-stats-container td {
+        padding: 0.25rem 0.15rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    .prediction-stats-container thead th {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.1rem !important;
+    }
+    
+    /* Adjust column widths for mobile */
+    .prediction-stats-container th:nth-child(1),
+    .prediction-stats-container td:nth-child(1) {
+        width: 20% !important;
+    }
+    
+    .prediction-stats-container th:nth-child(2),
+    .prediction-stats-container td:nth-child(2) {
+        width: 22% !important;
+    }
+    
+    .prediction-stats-container th:nth-child(3),
+    .prediction-stats-container td:nth-child(3) {
+        width: 15% !important;
+    }
+    
+    .prediction-stats-container th:nth-child(4),
+    .prediction-stats-container td:nth-child(4) {
+        width: 18% !important;
+    }
+    
+    .prediction-stats-container th:nth-child(5),
+    .prediction-stats-container td:nth-child(5) {
+        width: 25% !important;
+    }
+    
+    .prediction-stats-container td:nth-child(5) i {
+        font-size: 0.9rem !important;
+    }
+    
+    /* Card layout adjustments */
+    .card-body .col-md-5 {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .card-body .col-md-7 {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    /* Prediction timestamp - smaller */
+    .prediction-timestamp {
+        font-size: 0.65rem !important;
+        padding: 2px 0 !important;
+    }
+    
+    .game-id-display {
+        font-size: 0.6rem !important;
+        position: static !important;
+        margin-top: 0.25rem !important;
+    }
+    
+    /* Pagination - more compact */
+    .pagination-sm .page-link {
+        font-size: 0.75rem !important;
+        padding: 0.375rem 0.5rem !important;
+    }
+    
+    /* Count badge - smaller */
+    .prediction-count {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.75rem !important;
+    }
+}
+
+/* Extra small screens for all predictions page */
+@media (max-width: 576px) {
+    /* Even more compact filter section */
+    .accordion-body {
+        padding: 0.5rem !important;
+    }
+    
+    .form-select-sm,
+    .form-control-sm {
+        font-size: 0.7rem !important;
+        padding: 0.25rem 0.4rem !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.65rem !important;
+        padding: 0.3rem 0.5rem !important;
+    }
+    
+    /* Even smaller prediction cards */
+    .prediction-card {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .prediction-card .card-header {
+        padding: 0.4rem !important;
+    }
+    
+    .prediction-card .card-body {
+        padding: 0.6rem !important;
+    }
+    
+    /* Smaller badges */
+    .league-badge {
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.3rem !important;
+    }
+    
+    .match-time.badge {
+        font-size: 0.6rem !important;
+        padding: 0.15rem 0.3rem !important;
+    }
+    
+    .model-badge {
+        font-size: 0.55rem !important;
+    }
+    
+    .result-badge {
+        font-size: 0.55rem !important;
+        padding: 0.15rem 0.3rem !important;
+    }
+    
+    /* Even smaller teams section */
+    .match-teams-container {
+        padding: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .teams-display {
+        gap: 6px !important;
+        min-height: 90px !important;
+    }
+    
+    .team-badge {
+        min-height: 90px !important;
+        height: 90px !important;
+        padding: 0.4rem 0.2rem !important;
+    }
+    
+    .team-name {
+        font-size: 0.65rem !important;
+        padding: 0 2px !important;
+        max-height: 2em !important;
+        line-height: 1 !important;
+    }
+    
+    .team-name[data-short="true"] {
+        font-size: 0.7rem !important;
+    }
+    
+    .team-name[data-medium="true"] {
+        font-size: 0.6rem !important;
+    }
+    
+    .team-name[data-short="false"]:not([data-medium="true"]) {
+        font-size: 0.55rem !important;
+    }
+    
+    .odds-badge {
+        font-size: 0.75rem !important;
+        padding: 0.2rem 0.4rem !important;
+        min-width: 40px !important;
+        bottom: 8px !important;
+    }
+    
+    .outcome-label {
+        font-size: 0.6rem !important;
+    }
+    
+    /* Even smaller table */
+    .prediction-stats-container .table {
+        font-size: 0.6rem !important;
+    }
+    
+    .prediction-stats-container th,
+    .prediction-stats-container td {
+        padding: 0.2rem 0.1rem !important;
+        line-height: 1.1 !important;
+    }
+    
+    .prediction-stats-container thead th {
+        font-size: 0.55rem !important;
+        padding: 0.15rem 0.05rem !important;
+    }
+    
+    .prediction-stats-container td:nth-child(5) i {
+        font-size: 0.8rem !important;
+    }
+    
+    /* Smaller timestamps */
+    .prediction-timestamp {
+        font-size: 0.6rem !important;
+    }
+    
+    .game-id-display {
+        font-size: 0.55rem !important;
+    }
+    
+    /* Smaller pagination */
+    .pagination-sm .page-link {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.4rem !important;
+    }
+    
+    .prediction-count {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+}
+
+/* ===== GENERAL MOBILE IMPROVEMENTS (NAVIGATION & LAYOUT) ===== */
+
+/* Mobile Navigation Improvements */
+@media (max-width: 991.98px) {
+    /* Adjust body padding for smaller navbar */
+    body {
+        padding-top: 60px !important;
+    }
+    
+    /* More compact navbar */
+    .navbar {
+        padding: 8px 0 !important;
+    }
+    
+    .container {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+    
+    /* Dark mode toggle - smaller */
+    .dark-mode-toggle {
+        left: 10px !important;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Navbar brand - more compact */
+    .navbar-brand {
+        margin-left: 45px !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .navbar-brand img {
+        height: 30px !important;
+        margin-right: 8px !important;
+    }
+    
+    /* Language toggle - more compact */
+    .navbar-language-toggle {
+        margin: 8px 0 !important;
+    }
+    
+    .navbar-language-toggle .btn {
+        font-size: 0.75rem !important;
+        padding: 0.3rem 0.6rem !important;
+    }
+    
+    /* Nav links - more compact */
+    .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+    
+    /* Navbar menu - better mobile positioning */
+    .navbar-menu {
+        position: absolute !important;
+        top: 100% !important;
+        right: 10px !important;
+        left: auto !important;
+        background-color: var(--navbar-bg) !important;
+        border-radius: 8px !important;
+        padding: 1rem !important;
+        width: 280px !important;
+        max-width: calc(100vw - 20px) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+        z-index: 1050 !important;
+    }
+    
+    .navbar-menu.show {
+        display: flex !important;
+    }
+    
+    /* Compact navbar navigation */
+    .navbar-nav {
+        width: 100% !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .navbar-nav .nav-item {
+        width: 100% !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .navbar-nav .nav-link {
+        text-align: center !important;
+        border-radius: 6px !important;
+        margin: 0 !important;
+    }
+    
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        background-color: rgba(255,255,255,0.15) !important;
+    }
+}
+
+/* Extra small screens navigation */
+@media (max-width: 576px) {
+    body {
+        padding-top: 55px !important;
+    }
+    
+    .navbar {
+        padding: 6px 0 !important;
+    }
+    
+    .container {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    .dark-mode-toggle {
+        left: 8px !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .navbar-brand {
+        margin-left: 40px !important;
+        font-size: 1rem !important;
+    }
+    
+    .navbar-brand img {
+        height: 25px !important;
+        margin-right: 6px !important;
+    }
+    
+    .navbar-language-toggle .btn {
+        font-size: 0.7rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    .nav-link {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    .navbar-menu {
+        right: 8px !important;
+        width: 260px !important;
+        padding: 0.75rem !important;
+    }
+}
+
+/* Mobile Footer Improvements */
+@media (max-width: 768px) {
+    .footer {
+        padding: 15px 0 !important;
+        margin-top: 30px !important;
+    }
+    
+    .footer .container {
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+    
+    .footer .d-flex {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        text-align: center !important;
+    }
+    
+    .footer .text-muted {
+        font-size: 0.8rem !important;
+    }
+    
+    .footer a {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .footer {
+        padding: 12px 0 !important;
+        margin-top: 20px !important;
+    }
+    
+    .footer .text-muted {
+        font-size: 0.75rem !important;
+    }
+    
+    .footer a {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Mobile Container and Layout Improvements */
+@media (max-width: 768px) {
+    .container {
+        max-width: 100% !important;
+    }
+    
+    .main-content {
+        padding: 0 !important;
+    }
+    
+    /* Improve spacing for mobile */
+    .my-4 {
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    .py-3 {
+        padding-top: 0.75rem !important;
+        padding-bottom: 0.75rem !important;
+    }
+    
+    /* More compact row and column spacing */
+    .row {
+        margin-left: -8px !important;
+        margin-right: -8px !important;
+    }
+    
+    .row > * {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .container {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    .my-4 {
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .py-3 {
+        padding-top: 0.3rem !important;
+        padding-bottom: 0.3rem !important;
+    }
+    
+    .row {
+        margin-left: -5px !important;
+        margin-right: -5px !important;
+    }
+    
+    .row > * {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+    
+    /* Ultra compact page title */
+    h2 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* Ultra compact filter dropdowns */
+    .filter-title {
+        font-size: 0.7rem !important;
+    }
+    
+    .btn-sm {
+        font-size: 0.6rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+    
+    /* Remove extra spacing from profitable predictions section */
+    .col-12 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+
+/* Mobile Dark Mode Improvements */
+@media (max-width: 768px) {
+    [data-theme="dark"] .navbar-menu {
+        background-color: #1a202c !important;
+        border: 1px solid #4a5568 !important;
+    }
+    
+    [data-theme="dark"] .navbar-nav .nav-link:hover,
+    [data-theme="dark"] .navbar-nav .nav-link.active {
+        background-color: rgba(255,255,255,0.1) !important;
+    }
+}
+
+/* Override base teams-container for mobile to remove gaps */
+@media (max-width: 768px) {
+    .teams-container {
+        column-gap: 0px !important;
+        gap: 0px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+/* Additional Mobile Optimizations for Filters and Overall Experience */
+@media (max-width: 768px) {
+    /* Mobile Filter Section Improvements */
+    .d-flex.flex-column.flex-md-row {
+        flex-direction: column !important;
+        gap: 0.4rem !important;
+        align-items: stretch !important;
+    }
+    
+    .d-flex.align-items-center.gap-2 {
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        margin-bottom: 0.4rem !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .filter-title {
+        font-size: 0.8rem !important;
+        white-space: nowrap;
+        min-width: fit-content;
+        margin-bottom: 0 !important;
+        font-weight: 600 !important;
+        margin-right: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .dropdown .btn {
+        font-size: 0.75rem !important;
+        padding: 6px 10px !important;
+        min-width: 110px !important;
+        max-width: 160px !important;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        flex-shrink: 0 !important;
+    }
+    
+    .dropdown-menu {
+        font-size: 0.75rem !important;
+        max-height: 180px !important;
+        overflow-y: auto;
+        border-radius: 4px !important;
+        padding: 0.4rem !important;
+    }
+    
+    .dropdown-item {
+        padding: 6px 10px !important;
+        font-size: 0.75rem !important;
+        border-radius: 3px !important;
+        margin-bottom: 1px !important;
+    }
+    
+    /* Mobile content spacing */
+    .my-4 {
+        margin-top: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 0.75rem !important;
+    }
+    
+    /* Mobile headings */
+    h2 {
+        font-size: 1.2rem !important;
+        margin-bottom: 0.75rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    .container {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    /* Mobile alert improvements */
+    .alert {
+        font-size: 0.75rem !important;
+        padding: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .alert i {
+        font-size: 0.8rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Ultra-compact mobile filters */
+    .filter-title {
+        font-size: 0.75rem !important;
+        margin-right: 6px !important;
+    }
+    
+    .dropdown .btn {
+        font-size: 0.7rem !important;
+        padding: 5px 8px !important;
+        min-width: 90px !important;
+        max-width: 130px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .dropdown-menu {
+        font-size: 0.7rem !important;
+        max-height: 150px !important;
+        padding: 0.3rem !important;
+    }
+    
+    .dropdown-item {
+        padding: 3px 4px !important;
+        font-size: 0.6rem !important;
+    }
+    
+    .container {
+        padding-left: 5px !important;
+        padding-right: 5px !important;
+    }
+    
+    .my-4 {
+        margin-top: 0.3rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .mb-4 {
+        margin-bottom: 0.3rem !important;
+    }
+    
+    /* Ultra-compact alerts */
+    .alert {
+        font-size: 0.65rem !important;
+        padding: 0.3rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .alert i {
+        font-size: 0.7rem !important;
+    }
+    
+    /* Ensure no horizontal scrolling */
+    body {
+        overflow-x: hidden !important;
+    }
+    
+    .container, .row, .col-12 {
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+    /* Improve touch targets */
+    .btn, .dropdown-toggle, .nav-link {
+        min-height: 32px !important;
+        min-width: 32px !important;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+    
+    /* Better mobile scrolling */
+    .details-content {
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .dropdown-menu {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Bootstrap class overrides for mobile prediction containers */
+@media (max-width: 768px) {
+    .prediction-container.ms-n4,
+    .prediction-container.p-2,
+    .card-body .prediction-container {
+        margin-left: 0 !important;
+        padding: 0.3rem !important;
+        margin-top: 0px !important;
+        max-height: 110px !important;
+        min-height: 85px !important;
+        max-width: 110px !important;
+        flex: 1.1 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        overflow: visible !important;
+        justify-content: space-between !important;
+    }
+    
+    .prediction-container .text-uppercase {
+        font-size: 0.4rem !important;
+        line-height: 1.0 !important;
+        word-wrap: break-word !important;
+        color: #666 !important;
+        order: 1;
+    }
+    
+    .prediction-container .prediction-value {
+        font-size: 0.55rem !important;
+        line-height: 1.0 !important;
+        word-wrap: break-word !important;
+        order: 2;
+    }
+    
+    .prediction-container .fw-bold {
+        font-size: 0.7rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    .prediction-container .small {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+        text-transform: uppercase;
+    }
+}
+
+@media (max-width: 576px) {
+    .prediction-container.ms-n4,
+    .prediction-container.p-2,
+    .card-body .prediction-container {
+        padding: 0.25rem !important;
+        margin-top: 0px !important;
+        max-height: 95px !important;
+        min-height: 75px !important;
+        max-width: 95px !important;
+        flex: 1.0 !important;
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        overflow: visible !important;
+        justify-content: space-between !important;
+    }
+    
+    .prediction-container .text-uppercase {
+        font-size: 0.38rem !important;
+        line-height: 1.0 !important;
+        word-wrap: break-word !important;
+        color: #666 !important;
+        order: 1;
+    }
+    
+    .prediction-container .prediction-value {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        word-wrap: break-word !important;
+        order: 2;
+    }
+    
+    .prediction-container .fw-bold {
+        font-size: 0.6rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    .prediction-container .small {
+        font-size: 0.45rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+        text-transform: uppercase;
+    }
+}
+
+/* Final ultra-compact mobile spacing optimizations */
+@media (max-width: 768px) {
+    /* Remove any Bootstrap or default spacing from team elements */
+    .game-card .odds-score-vertical {
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+    
+    .game-card .final-score-badge {
+        margin: 0 !important;
+        padding: 1px 2px !important;
+    }
+    
+    .game-card .vs-badge-x {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Ensure no hidden spacing in team containers */
+    .game-card .team > * {
+        margin: 0 !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Ultra-compact spacing for smallest screens */
+    .game-card .odds-score-vertical {
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+    
+    .game-card .final-score-badge {
+        margin: 0 !important;
+        padding: 0px 1px !important;
+    }
+    
+    .game-card .vs-badge-x {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .game-card .team > * {
+        margin: 0 !important;
+    }
+}
+
+/* Dark mode fixes for redesigned prediction container */
+[data-theme="dark"] .prediction-container .text-uppercase {
+    color: #a0aec0 !important;
+}
+
+[data-theme="dark"] .prediction-container .small {
+    color: #a0aec0 !important;
+}
+
+[data-theme="dark"] .prediction-container .fw-bold {
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .prediction-container .prediction-value {
+    color: #63b3ed !important;
+}
+
+/* Dark mode support for mobile details content */
+@media (max-width: 768px) {
+    [data-theme="dark"] .details-content {
+        background: #2d3748 !important;
+        border-color: #4a5568 !important;
+    }
+    
+    [data-theme="dark"] .details-content th {
+        background-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+    
+    [data-theme="dark"] .details-content td {
+        color: #cbd5e0 !important;
+        border-color: #4a5568 !important;
+    }
+}
+
+@media (max-width: 576px) {
+    [data-theme="dark"] .details-content {
+        background: #2d3748 !important;
+        border-color: #4a5568 !important;
+    }
+    
+    [data-theme="dark"] .details-content th {
+        background-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+    
+    [data-theme="dark"] .details-content td {
+        color: #cbd5e0 !important;
+        border-color: #4a5568 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Force all left elements completely flush to left wall */
+    .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    .game-card .game-info {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Force all left elements completely flush to left wall */
+    .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    .game-card .game-info {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+}
+
+/* ===== COMPREHENSIVE MOBILE FIXES - HIGHEST PRIORITY ===== */
+
+/* Force changes for all tablet and mobile screens */
+@media (max-width: 991px) {
+    body .container .game-card .card-body {
+        padding-left: 0 !important;
+    }
+    
+    body .container .game-card .game-info,
+    body .container .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.5rem !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.65rem !important;
+    }
+    
+    body .container .game-card .prediction-container .confidence-meter {
+        height: 4px !important;
+        width: 75px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body .container .game-card .card-body {
+        padding-left: 0 !important;
+    }
+    
+    body .container .game-card .game-info,
+    body .container .game-card .game-info *,
+    body .container .game-card .game-info .league-badge,
+    body .container .game-card .game-info .match-time,
+    body .container .game-card .game-info .model-badge,
+    body .container .game-card .game-info .predicted-timestamp {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.4rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.55rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    body .container .game-card .prediction-container .confidence-meter {
+        height: 6px !important;
+        width: 85px !important;
+        margin: 2px 0 !important;
+    }
+}
+
+@media (max-width: 576px) {
+    body .container .game-card .card-body {
+        padding-left: 0 !important;
+    }
+    
+    body .container .game-card .game-info,
+    body .container .game-card .game-info *,
+    body .container .game-card .game-info .league-badge,
+    body .container .game-card .game-info .match-time,
+    body .container .game-card .game-info .model-badge,
+    body .container .game-card .game-info .predicted-timestamp {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.38rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    body .container .game-card .prediction-container .confidence-meter {
+        height: 5px !important;
+        width: 75px !important;
+        margin: 1px 0 !important;
+    }
+}
+
+/* Force all small screens (catch-all) */
+@media (max-width: 480px) {
+    body .container .game-card .card-body {
+        padding-left: 0 !important;
+    }
+    
+    body .container .game-card .game-info,
+    body .container .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.35rem !important;
+    }
+    
+    body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.45rem !important;
+    }
+    
+    body .container .game-card .prediction-container .confidence-meter {
+        height: 5px !important;
+        width: 70px !important;
+    }
+}
+/* CSS Updated - Fri Aug  1 23:43:58 IDT 2025 */
+
+/* ===== ULTRA-HIGH PRIORITY MOBILE OVERRIDES ===== */
+
+/* Super specific overrides for absolutely all mobile screens */
+@media screen and (max-width: 1024px) {
+    html body .container-fluid .game-card .card-body,
+    html body .container .game-card .card-body,
+    html body .game-card .card-body {
+        padding-left: 0 !important;
+        margin-left: 0 !important;
+    }
+    
+    html body .container-fluid .game-card .game-info,
+    html body .container .game-card .game-info,
+    html body .game-card .game-info {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+    }
+    
+    html body .container-fluid .game-card .game-info *,
+    html body .container .game-card .game-info *,
+    html body .game-card .game-info * {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        text-align: left !important;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    html body .prediction-container .prediction-header .text-uppercase,
+    html body .game-card .prediction-container .prediction-header .text-uppercase,
+    html body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.4rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+    }
+    
+    html body .prediction-container .prediction-value,
+    html body .game-card .prediction-container .prediction-value,
+    html body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.55rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    html body .prediction-container .confidence-meter,
+    html body .game-card .prediction-container .confidence-meter,
+    html body .container .game-card .prediction-container .confidence-meter {
+        height: 6px !important;
+        width: 85px !important;
+        margin: 2px 0 !important;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    html body .prediction-container .prediction-header .text-uppercase,
+    html body .game-card .prediction-container .prediction-header .text-uppercase,
+    html body .container .game-card .prediction-container .prediction-header .text-uppercase {
+        font-size: 0.38rem !important;
+        line-height: 1.0 !important;
+        color: #666 !important;
+    }
+    
+    html body .prediction-container .prediction-value,
+    html body .game-card .prediction-container .prediction-value,
+    html body .container .game-card .prediction-container .prediction-value {
+        font-size: 0.5rem !important;
+        line-height: 1.0 !important;
+        font-weight: bold !important;
+    }
+    
+    html body .prediction-container .confidence-meter,
+    html body .game-card .prediction-container .confidence-meter,
+    html body .container .game-card .prediction-container .confidence-meter {
+        height: 5px !important;
+        width: 75px !important;
+        margin: 1px 0 !important;
+    }
+}
+
+/* CSS Updated - Tue Jan  7 10:39:28 EST 2025 */
+
+/* ===== LEAGUE BADGE SIZE REDUCTIONS - ULTRA HIGH PRIORITY ===== */
+
+@media screen and (max-width: 991px) {
+    html body .game-card .league-badge,
+    html body .container .game-card .league-badge,
+    html body .container-fluid .game-card .league-badge {
+        font-size: 0.45rem !important;
+        padding: 1px 2px !important;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    html body .game-card .league-badge,
+    html body .container .game-card .league-badge,
+    html body .container-fluid .game-card .league-badge {
+        font-size: 0.4rem !important;
+        padding: 1px 2px !important;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    html body .game-card .league-badge,
+    html body .container .game-card .league-badge,
+    html body .container-fluid .game-card .league-badge {
+        font-size: 0.35rem !important;
+        padding: 0px 1px !important;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    html body .game-card .league-badge,
+    html body .container .game-card .league-badge,
+    html body .container-fluid .game-card .league-badge {
+        font-size: 0.3rem !important;
+        padding: 0px 1px !important;
+    }
+}
+/* Vertical centering and league size update - Fri Aug  1 23:49:35 IDT 2025 */
+
+/* Modern Game Card Design - Inspired by game-edge-ai */
+.modern-game-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-game-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+/* Status-based background colors */
+.modern-game-card.status-correct {
+    background: #dcfce7;
+    border-color: #16a34a;
+    border-width: 2px;
+}
+
+.modern-game-card.status-incorrect {
+    background: #fee2e2;
+    border-color: #dc2626;
+    border-width: 2px;
+}
+
+/* Card badges */
+.card-badges {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: 120px; /* Prevent badges from being too wide */
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(4px);
+}
+
+.status-badge.status-correct {
+    background-color: #16a34a;
+    color: #ffffff;
+}
+
+.status-badge.status-incorrect {
+    background-color: #dc2626;
+    color: #ffffff;
+}
+
+.ev-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background-color: #f59e0b;
+    color: #ffffff;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(4px);
+}
+
+/* Main card content layout */
+.modern-card-content {
+    display: flex;
+    gap: 20px;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+    .modern-card-content {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    
+    .prediction-info-section {
+        margin-top: 16px; /* More space for badges on desktop */
+        margin-right: 8px; /* Space from right edge where badges are */
+    }
+}
+
+/* Game Info Section */
+.game-info-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.league-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.league-info i {
+    color: #3b82f6;
+    font-size: 14px;
+}
+
+.league-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2937;
+}
+
+.game-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.meta-item i {
+    width: 12px;
+    font-size: 12px;
+}
+
+/* Teams and Odds Section */
+.teams-odds-section {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.final-score-display {
+    text-align: center;
+    margin-bottom: 16px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.final-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.team-cell {
+    padding: 8px;
+    text-align: center;
+    border-radius: 8px;
+    background-color: #f3f4f6;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.team-cell.recommended-bet {
+    background-color: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+.team-name {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.team-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.team-odds {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+/* Prediction Info Section */
+.prediction-info-section {
+    flex: 1;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    min-width: 0;
+    margin-top: 8px; /* Space for badges above */
+}
+
+.prediction-header {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.prediction-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.prediction-value {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.prediction-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #3b82f6;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.stat-value i {
+    color: #f59e0b;
+    font-size: 12px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+.details-btn {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #374151;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.details-btn:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+/* Details Section */
+.details-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.details-content {
+    padding: 0;
+}
+
+.details-th {
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.75rem;
+    padding: 8px 4px;
+}
+
+.details-td {
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 8px 4px;
+}
+
+.final-result-info {
+    margin-top: 16px;
+}
+
+.game-id-info {
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1023px) {
+    .prediction-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .stat-item {
+        width: 100%;
+    }
+    
+    .details-btn {
+        align-self: stretch;
+        justify-content: center;
+    }
+    
+    .prediction-info-section {
+        margin-top: 12px; /* Medium spacing for tablets */
+        margin-right: 4px;
+    }
+}
+
+@media (max-width: 767px) {
+    .modern-game-card {
+        padding: 12px;
+        margin-bottom: 16px;
+        position: relative; /* Ensure proper positioning context for badges */
+    }
+    
+    .modern-card-content {
+        gap: 16px;
+        padding-top: 10px; /* Add top padding for absolute positioned badges */
+    }
+    
+    .card-badges {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        margin-bottom: 0;
+        justify-content: flex-end;
+        flex-direction: column;
+        align-items: flex-end;
+        max-width: 100px;
+    }
+    
+    .teams-grid {
+        gap: 4px;
+    }
+    
+    .team-cell {
+        padding: 4px 2px;
+    }
+    
+    /* Match game-edge-ai: Keep team names large for readability */
+    .team-name {
+        font-size: 1.125rem; /* text-lg equivalent */
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    
+    /* Match game-edge-ai: Small labels */
+    .team-label {
+        font-size: 0.75rem; /* text-xs equivalent */
+        font-weight: 500;
+    }
+    
+    /* Match game-edge-ai: Medium odds */
+    .team-odds {
+        font-size: 0.875rem; /* text-sm equivalent */
+        font-weight: 700;
+    }
+    
+    .prediction-info-section {
+        padding: 8px;
+        margin-top: 0;
+    }
+    
+    .prediction-stats {
+        flex-direction: row;
+        gap: 8px;
+    }
+    
+    /* Match game-edge-ai: Large stat values */
+    .stat-value {
+        font-size: 1.125rem; /* text-lg equivalent */
+        font-weight: 700;
+    }
+    
+    /* Match game-edge-ai: Small stat labels */
+    .stat-label {
+        font-size: 0.75rem; /* text-xs equivalent */
+    }
+    
+    /* Match game-edge-ai: Compact button */
+    .details-btn {
+        padding: 4px 12px;
+        font-size: 0.75rem; /* text-xs equivalent */
+        height: 36px; /* h-9 equivalent */
+    }
+    
+    .game-info-section {
+        margin-bottom: 8px;
+    }
+    
+    .game-meta {
+        gap: 4px;
+    }
+    
+    /* Match game-edge-ai: Small meta info */
+    .meta-item {
+        font-size: 0.75rem; /* text-xs equivalent */
+    }
+    
+    .league-name {
+        font-size: 0.75rem; /* text-xs equivalent */
+        font-weight: 600;
+    }
+    
+    /* Match game-edge-ai: Large final score */
+    .final-score-display {
+        font-size: 1.125rem; /* text-lg equivalent */
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    
+    /* Match game-edge-ai: Small prediction labels */
+    .prediction-label {
+        font-size: 0.75rem; /* text-xs equivalent */
+    }
+    
+    /* Match game-edge-ai: Medium prediction values */
+    .prediction-value {
+        font-size: 0.875rem; /* text-sm equivalent */
+        font-weight: 700;
+    }
+}
+
+@media (max-width: 575px) {
+    .modern-game-card {
+        position: relative; /* Ensure proper positioning context for badges */
+    }
+    
+    .modern-card-content {
+        gap: 12px;
+        padding-top: 8px;
+    }
+    
+    /* Match game-edge-ai: Keep important elements readable on small screens */
+    .team-name {
+        font-size: 1rem; /* Slightly smaller but still prominent */
+        line-height: 1.2;
+    }
+    
+    .team-odds {
+        font-size: 0.875rem;
+    }
+    
+    .prediction-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .details-btn {
+        width: 100%;
+        height: 32px; /* Slightly smaller for very small screens */
+    }
+    
+    .card-badges {
+        flex-wrap: wrap;
+        margin-bottom: 0;
+        gap: 3px;
+        top: 6px;
+        right: 6px;
+        max-width: 90px;
+    }
+    
+    .status-badge, .ev-badge-modern {
+        font-size: 0.7rem !important;
+        padding: 2px 5px !important;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .prediction-info-section {
+        margin-top: 0;
+        padding: 8px;
+    }
+    
+    .prediction-header {
+        margin-bottom: 8px;
+    }
+    
+    /* Ensure readability on very small screens */
+    .stat-value {
+        font-size: 1rem; /* Slightly smaller but still prominent */
+    }
+}
+
+/* Additional fix for very long team names */
+@media (max-width: 1200px) {
+    .team-name {
+        font-size: 0.875rem;
+        line-height: 1.2;
+    }
+}
+
+@media (max-width: 900px) {
+    .team-name {
+        font-size: 0.8rem;
+        line-height: 1.1;
+    }
+}
+
+/* Allow wrapping for very small screens */
+@media (max-width: 575px) {
+    .team-name {
+        white-space: normal;
+        word-break: break-word;
+        hyphens: auto;
+        min-height: 2.4em; /* Space for 2 lines */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-align: center;
+    }
+    
+    .team-cell {
+        padding: 6px 3px;
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+/* Ensure flex layout doesn't allow overflow */
+.modern-card-content > * {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .modern-game-card {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .modern-game-card.status-correct {
+    background: #065f46;
+    border-color: #10b981;
+    border-width: 2px;
+}
+
+[data-theme="dark"] .modern-game-card.status-incorrect {
+    background: #991b1b;
+    border-color: #ef4444;
+    border-width: 2px;
+}
+
+[data-theme="dark"] .league-name {
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .meta-item {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .final-score-display {
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .final-label {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .team-cell {
+    background-color: #374151;
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .team-cell.recommended-bet {
+    background-color: #451a03;
+    color: #fbbf24;
+    border-color: #f59e0b;
+}
+
+[data-theme="dark"] .prediction-info-section {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .prediction-label {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .prediction-value {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .stat-value {
+    color: #60a5fa;
+}
+
+[data-theme="dark"] .stat-label {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .details-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .details-btn:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+}
+
+[data-theme="dark"] .details-section {
+    border-color: #374151;
+}
+
+[data-theme="dark"] .details-th {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .details-td {
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .game-id-info {
+    color: #9ca3af;
+}
+
+/* JavaScript active state styling for dark mode */
+[data-theme="dark"] .details-btn.active {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+}
+
+/* Mobile badge styling for dark mode */
+@media (max-width: 767px) {
+    [data-theme="dark"] .status-badge, 
+    [data-theme="dark"] .ev-badge-modern {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    }
+}
+
+/* Ultra small mobile badge adjustments */
+@media (max-width: 400px) {
+    .card-badges {
+        top: 4px;
+        right: 4px;
+        max-width: 80px;
+        gap: 2px;
+    }
+    
+    .status-badge, .ev-badge-modern {
+        font-size: 0.65rem !important;
+        padding: 1px 4px !important;
+    }
+}

@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Check if running locally or in Lambda (simplified for Firestore Lambda, assuming not local for now)
-IS_LOCAL = False # os.environ.get('IS_LOCAL', 'False').lower() == 'true'
+IS_LOCAL = os.environ.get('IS_LOCAL', 'False').lower() == 'true'
 
 # Environment variables with defaults (some will be from Lambda env, others are for consistency)
 AWS_REGION = os.environ.get('AWS_REGION', 'il-central-1')
@@ -41,12 +41,7 @@ MAX_BET = 10.0 # Using float
 RATIOS = ["ratio1", "ratio2", "ratio3"]
 
 # Initialize Firestore client
-try:
-    db = firestore.Client()
-    logger.info("Firestore client initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize Firestore client: {e}")
-    db = None
+db = firestore.Client()
 
 # Initialize translator
 translator = Translator()
@@ -84,7 +79,8 @@ BIG_GAMES = [
     "גביע הליגה האנגלי",
     "גביע אסיה",
     "גביע גרמני",
-    "אליפות העולם לקבוצות"
+    "אליפות העולם לקבוצות",
+    "גביע הטוטו",
 ]
 
 # Custom InputLayer class to handle batch_shape parameter
@@ -106,7 +102,6 @@ tf.keras.utils.get_custom_objects().update({
 })
 
 def list_models_in_s3():
-    print("LIST_MODELS_IN_S3: Entered function")
     models = []
     s3_client = boto3.client('s3', region_name=AWS_REGION)
     try:
@@ -130,13 +125,10 @@ def download_model(model_info):
     print(f"DOWNLOAD_MODEL: Entered for {model_info['key']}")
     s3_client = boto3.client('s3', region_name=AWS_REGION)
     try:
-        logger.info(f"Downloading model from s3://{S3_BUCKET}/{model_info['key']} to {model_info['local_path']}")
         s3_client.download_file(S3_BUCKET, model_info['key'], model_info['local_path'])
-        logger.info(f"Model downloaded to {model_info['local_path']}")
         return model_info['local_path']
     except Exception as e:
         print(f"DOWNLOAD_MODEL: Exception for {model_info['key']}: {str(e)}")
-        logger.error(f"Error downloading model {model_info['key']}: {str(e)}")
         raise
 
 def fetch_games_from_athena():
@@ -144,7 +136,6 @@ def fetch_games_from_athena():
 
     try:
         # First, get the latest run_time in the dataset
-        logger.info("Fetching games from Athena")
         latest_run_time_query = f'SELECT MAX(run_time) as latest_run_time FROM "{ATHENA_DATABASE}"."api_odds"'
         logger.info(f"Latest run_time query: {latest_run_time_query}")
 
@@ -186,10 +177,6 @@ def fetch_games_from_athena():
             unique_id, run_time
         """
 
-        logger.info(
-            f"Executing Athena query for games since {seven_days_before.strftime('%Y-%m-%d')}"
-        )
-
         # Execute query using AWS Wrangler
         df = wr.athena.read_sql_query(
             sql=query, database=ATHENA_DATABASE, boto3_session=session
@@ -217,28 +204,12 @@ def fetch_games_from_athena():
     except Exception as e:
         logger.error(f"Error fetching games from Athena: {str(e)}")
 
-        # If there's an error and we're in local mode, fall back to the parquet file
-        if IS_LOCAL:
-            logger.warning(f"Falling back to local parquet file: {LOCAL_DATA_FILE}")
-            try:
-                df = pd.read_parquet(LOCAL_DATA_FILE)
-                logger.info(
-                    f"Loaded {len(df)} records for {df['unique_id'].nunique()} unique games from {LOCAL_DATA_FILE}"
-                )
-                return df
-            except Exception as e2:
-                logger.error(f"Error loading data from {LOCAL_DATA_FILE}: {str(e2)}")
-                raise
-        else:
-            raise
 
 def scale_features(features: pd.DataFrame) -> pd.DataFrame:
-    print("SCALE_FEATURES: Entered function")
     # Assuming MIN_BET and MAX_BET are defined globally (e.g., 1.0 and 10.0)
     return (features - MIN_BET) / (MAX_BET - MIN_BET) # Corrected scaling denominator
 
 def prepare_features(features: pd.DataFrame, max_seq_len: int) -> np.array:
-    print("PREPARE_FEATURES: Entered function")
     features_scaled = scale_features(features) # features is a DataFrame
     features_scaled_np = features_scaled.to_numpy() # Convert to NumPy array
     # Take the last max_seq_len rows
@@ -253,22 +224,18 @@ def prepare_features(features: pd.DataFrame, max_seq_len: int) -> np.array:
     return features_final.reshape(1, max_seq_len, features_final.shape[1]) # Reshape for single prediction (batch size 1)
 
 def remove_consecutive_duplicates(df: pd.DataFrame) -> pd.DataFrame:
-    print("REMOVE_CONSECUTIVE_DUPLICATES: Entered function")
     # Assuming RATIOS is defined globally (e.g., ["ratio1", "ratio2", "ratio3"])
     shifted = df[RATIOS].shift()
     mask = ~((df[RATIOS] == shifted).all(axis=1))
     return df[mask]
 
 def process_ratios(group_df: pd.DataFrame) -> pd.DataFrame: # CHANGED: Returns DataFrame
-    print("PROCESS_RATIOS: Entered function")
     # Assuming RATIOS is defined globally
     group_df[RATIOS] = group_df[RATIOS].astype(float)
     group_df = remove_consecutive_duplicates(group_df)
     return group_df # Returns DataFrame, not .values
 
 def preprocess_data(df: pd.DataFrame) -> list:
-    print("PREPROCESS_DATA: Entered function")
-    logger.info("Preprocessing game data")
     game_ids = df['unique_id'].unique()
     logger.info(f"Processing {len(game_ids)} unique games for preprocessing.")
     valid_game_data = []
@@ -286,10 +253,7 @@ def preprocess_data(df: pd.DataFrame) -> list:
         
         processed_game_df_ratios = process_ratios(game_df_ratios) # This is a DataFrame
         
-        logger.info(f"Pre_Processing game {game_id}, found {len(processed_game_df_ratios)} ratio series after process_ratios. Required: {max_seq}")
-
         if processed_game_df_ratios.shape[0] < max_seq:
-            logger.debug(f"Skipping game {game_id}: not enough data points ({processed_game_df_ratios.shape[0]} < {max_seq}) after processing ratios.")
             continue
             
         # features_for_model is a 3D NumPy array (1, max_seq, num_features)
@@ -320,7 +284,6 @@ def translate_to_english(text, context=""):
     # Fallback to TEAM_TRANSLATIONS dictionary (from team_translations.py)
     if text in TEAM_TRANSLATIONS:
         translated_text = TEAM_TRANSLATIONS[text]
-        logger.info(f"Using fallback translation for '{text}': '{translated_text}'")
         _translation_cache[cache_key] = translated_text
         return translated_text
     
@@ -329,7 +292,6 @@ def translate_to_english(text, context=""):
         translation = translator.translate(text, src='iw', dest='en')
         translated_text = translation.text
         _translation_cache[cache_key] = translated_text
-        logger.info(f"Translated (API) '{text}' to '{translated_text}'")
         return translated_text
     except Exception as e:
         print(f"TRANSLATE_TO_ENGLISH: Exception: {str(e)}")
@@ -337,8 +299,6 @@ def translate_to_english(text, context=""):
         return text # Fallback to original text on error
 
 def make_predictions(model, valid_game_data, model_name_from_handler):
-    print("MAKE_PREDICTIONS: Entered function")
-    logger.info(f"Making predictions with model {model_name_from_handler}")
     all_game_predictions = []
     
     for game_data in valid_game_data:
@@ -347,8 +307,17 @@ def make_predictions(model, valid_game_data, model_name_from_handler):
         info = game_data['info'] # Changed from 'latest_game'
         
         # Make prediction (features should already be correctly shaped by prepare_features)
-        prediction_probs = model.predict(features, verbose=0)
+        # If the model name ends with 'ev.h5', pass both sequence and final odds as inputs
+        if model_name_from_handler.endswith("ev"):
+            # features is (1, max_seq, 3)
+            # Extract the latest odds from info
+            final_odds = np.array([[float(info.get('ratio1', 0.0)), float(info.get('ratio2', 0.0)), float(info.get('ratio3', 0.0))]]).astype(float).reshape(1, 3)
+            print(f"Final odds: {final_odds}")  
+            prediction_probs = model.predict([features, final_odds], verbose=0)
+        else:
+            prediction_probs = model.predict(features, verbose=0)
         logger.info(f"Raw prediction for game {game_id} with model {model_name_from_handler}: {prediction_probs}")
+        print(f"Raw prediction for game {game_id} with model {model_name_from_handler}: {prediction_probs}")
         
         home_team = info.get('option1')
         away_team = info.get('option3')
@@ -523,13 +492,16 @@ def save_predictions(predictions):
                 pred['model_timestamp'] = dt_object.strftime(f"%b %d, %Y at %I:%M:%S %p ({display_timezone_str})")
                 
                 # Save to predictions collection
-                predictions_ref.document(doc_id).set(pred)
+                if not IS_LOCAL:
+                    predictions_ref.document(doc_id).set(pred)
                 success_count += 1
                 
                 # If profitable, save to profitable_predictions collection
                 # Use the same doc_id for consistency if a prediction is also profitable
                 if pred['is_profitable']:
-                    profitable_ref.document(doc_id).set(pred)
+                    if not IS_LOCAL:
+                        profitable_ref.document(doc_id).set(pred)
+                    print(f"BBBBB: Saving profitable prediction: {pred}")
                     profitable_count += 1
                     
             except Exception as e:
@@ -543,8 +515,6 @@ def save_predictions(predictions):
         raise
 
 def lambda_handler(event, context):
-    print("LAMBDA_HANDLER: Entered function")
-    logger.info("Starting Firestore prediction Lambda")
     
     all_predictions_for_all_models = []
     models_processed_count = 0
@@ -558,7 +528,6 @@ def lambda_handler(event, context):
 
         print(f"LAMBDA_HANDLER: Found {len(models_list)} models. Fetching Athena data.")
         df_athena = fetch_games_from_athena()
-        logger.info(f"Fetched {len(df_athena)} rows from Athena.")
         print(f"LAMBDA_HANDLER: Fetched {len(df_athena)} rows from Athena.")
 
         if df_athena.empty:
@@ -600,7 +569,6 @@ def lambda_handler(event, context):
                 
                 local_model_path = download_model(model_info)
                 loaded_model = load_model(local_model_path) # Uses global custom objects
-                logger.info(f"Model {derived_model_name} loaded successfully from {local_model_path}")
                 print(f"LAMBDA_HANDLER: Model {derived_model_name} loaded.")
 
                 # Pass the filtered games for this specific model
@@ -625,10 +593,12 @@ def lambda_handler(event, context):
         
         if all_predictions_for_all_models:
             print(f"LAMBDA_HANDLER: Saving {len(all_predictions_for_all_models)} total predictions to Firestore.")
+            print(f"BBBBB: All predictions: {all_predictions_for_all_models}")
+
             save_predictions(all_predictions_for_all_models) # Save all collected predictions
             print("LAMBDA_HANDLER: All predictions saved.")
         else:
-            logger.info("No predictions made from any model after processing all models.")
+            logger.info("No pßredictions made from any model after processing all models.")
             print("LAMBDA_HANDLER: No predictions made from any model.")
 
         return {
@@ -650,3 +620,18 @@ def lambda_handler(event, context):
                 'error': str(e)
             })
         } 
+
+# Debug section for local testing
+if __name__ == "__main__":
+    # Mock event and context for local testing
+    mock_event = {}
+    mock_context = type('MockContext', (), {
+        'function_name': 'predict_model_firestore',
+        'memory_limit_in_mb': 1024,
+        'invoked_function_arn': 'arn:aws:lambda:local:123456789012:function:predict_model_firestore',
+        'aws_request_id': 'local-request-id'
+    })()
+    
+    print("Starting local lambda execution...")
+    result = lambda_handler(mock_event, mock_context)
+    print(f"Lambda execution completed. Result: {result}") 

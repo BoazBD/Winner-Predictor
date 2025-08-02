@@ -67,9 +67,9 @@ if [ "$DATA_SOURCE" = "firestore" ]; then
       --service-account="${SERVICE_ACCOUNT}" \
       --set-env-vars="${ENV_VARS}" \
       --allow-unauthenticated \
-      --memory="1Gi" \
+      --memory="2Gi" \
       --cpu="1" \
-      --max-instances="10" \
+      --max-instances="2" \
       --timeout="300" \
       --revision-suffix="firestore-$(date +%Y%m%d-%H%M%S)" \
       --quiet

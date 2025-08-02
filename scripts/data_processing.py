@@ -102,7 +102,7 @@ def prepare_features_single(features: pd.DataFrame, max_seq_len: int,
 
 
 def prepare_data_for_model(grouped_data: pd.DataFrame, max_seq_length: int, 
-                          scaling_method: str = "standard") -> Tuple[np.array, np.array]:
+                          scaling_method: str = "standard") -> Tuple[np.array, np.array, np.array]:
     """
     Prepare data for training/validation with fixed stride.
     
@@ -112,9 +112,9 @@ def prepare_data_for_model(grouped_data: pd.DataFrame, max_seq_length: int,
         scaling_method: "standard" or "roi"
     
     Returns:
-        Tuple of (X, y) arrays
+        Tuple of (X_seq, X_odds, y) arrays
     """
-    x, y = [], []
+    x_seq, x_odds, y = [], [], []
     total_games = 0
     total_windows = 0
     
@@ -126,31 +126,37 @@ def prepare_data_for_model(grouped_data: pd.DataFrame, max_seq_length: int,
         total_games += 1
         features = group_df[RATIOS]
         target = group_df[["bet1_won", "tie_won", "bet2_won"]].values[-1].astype(float)
+        
+        # Get final odds (last row of original ratios, not scaled)
+        final_odds = features.iloc[-1].values.astype(float)  # Shape: (3,)
 
         # Generate sliding windows for this game with fixed stride
         sliding_windows = prepare_features_sliding_window(features, max_seq_length, scaling_method)
         total_windows += len(sliding_windows)
         
-        # Add each window as a separate training sample with the same target
+        # Add each window as a separate training sample with the same target and final odds
         for window in sliding_windows:
-            x.append(window)
+            x_seq.append(window)
+            x_odds.append(final_odds)
             y.append(target)
     
-    x = np.array(x)
+    x_seq = np.array(x_seq)
+    x_odds = np.array(x_odds)
     y = np.array(y)
     
     print(f"Generated {total_windows} sliding windows from {total_games} games")
     print(f"Average windows per game: {total_windows / total_games if total_games > 0 else 0:.2f}")
-    print(f"Training data shape: X={x.shape}, y={y.shape}")
+    print(f"Training data shape: X_seq={x_seq.shape}, X_odds={x_odds.shape}, y={y.shape}")
     print(f"Using fixed stride: {FIXED_STRIDE}")
     
-    return x, y
+    return x_seq, x_odds, y
 
 
-def save_processed_features(x: np.array, y: np.array, output_path: str, metadata: Dict[str, Any] = None):
+def save_processed_features(x_seq: np.array, x_odds: np.array, y: np.array, output_path: str, metadata: Dict[str, Any] = None):
     """Save processed features and metadata to file."""
     data = {
-        'X': x,
+        'X_seq': x_seq,
+        'X_odds': x_odds,
         'y': y,
         'metadata': metadata or {}
     }
@@ -159,18 +165,26 @@ def save_processed_features(x: np.array, y: np.array, output_path: str, metadata
         pickle.dump(data, f)
     
     print(f"Saved processed features to {output_path}")
-    print(f"X shape: {x.shape}, y shape: {y.shape}")
+    print(f"X_seq shape: {x_seq.shape}, X_odds shape: {x_odds.shape}, y shape: {y.shape}")
 
 
-def load_processed_features(input_path: str) -> Tuple[np.array, np.array, Dict[str, Any]]:
+def load_processed_features(input_path: str) -> Tuple[np.array, np.array, np.array, Dict[str, Any]]:
     """Load processed features and metadata from file."""
     with open(input_path, 'rb') as f:
         data = pickle.load(f)
     
     print(f"Loaded processed features from {input_path}")
-    print(f"X shape: {data['X'].shape}, y shape: {data['y'].shape}")
     
-    return data['X'], data['y'], data['metadata']
+    # Handle backward compatibility for old format
+    if 'X_seq' in data and 'X_odds' in data:
+        print(f"X_seq shape: {data['X_seq'].shape}, X_odds shape: {data['X_odds'].shape}, y shape: {data['y'].shape}")
+        return data['X_seq'], data['X_odds'], data['y'], data['metadata']
+    else:
+        # Old format - create dummy odds (will need reprocessing)
+        print("Old format detected - X_odds not available, returning zeros")
+        print(f"X shape: {data['X'].shape}, y shape: {data['y'].shape}")
+        x_odds_dummy = np.ones((data['X'].shape[0], 3))  # Dummy odds
+        return data['X'], x_odds_dummy, data['y'], data['metadata']
 
 
 def process_and_save_features(input_parquet_path: str, output_path: str, 
@@ -212,7 +226,7 @@ def process_and_save_features(input_parquet_path: str, output_path: str,
     print(f"Found {len(grouped_processed)} unique games")
     
     # Prepare features
-    x, y = prepare_data_for_model(grouped_processed, max_seq_length, scaling_method)
+    x_seq, x_odds, y = prepare_data_for_model(grouped_processed, max_seq_length, scaling_method)
     
     # Create metadata
     metadata = {
@@ -223,11 +237,11 @@ def process_and_save_features(input_parquet_path: str, output_path: str,
         'days_to_discard': days_to_discard,
         'input_file': input_parquet_path,
         'total_games': len(grouped_processed),
-        'total_windows': len(x)
+        'total_windows': len(x_seq)
     }
     
     # Save processed features
-    save_processed_features(x, y, output_path, metadata)
+    save_processed_features(x_seq, x_odds, y, output_path, metadata)
 
 
 def main():

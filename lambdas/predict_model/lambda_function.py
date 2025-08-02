@@ -51,6 +51,7 @@ BIG_GAMES = [
     "גביע הליגה האנגלי",
     "גביע אסיה",
     "גביע גרמני",
+    "אליפות העולם לקבוצות"
 ]
 
 # Custom InputLayer class to handle batch_shape parameter
@@ -226,7 +227,7 @@ def fetch_games_from_athena():
         # Calculate date 7 days before the latest run_time
         seven_days_before = latest_run_time - timedelta(days=7)
 
-        # Query to get ALL odds history from the last 7 days, not just the latest
+        # Query to get ALL odds history from the last 7 days for games that have the latest run_time
         query = f"""
         SELECT 
             *
@@ -236,6 +237,11 @@ def fetch_games_from_athena():
             date_parsed >= '{seven_days_before.strftime("%Y-%m-%d")}'
             AND type = 'Soccer'
             AND league IN ({', '.join(f"'{league}'" for league in BIG_GAMES)})
+            AND unique_id IN (
+                SELECT unique_id 
+                FROM "{ATHENA_DATABASE}"."api_odds"
+                WHERE run_time = '{latest_run_time}'
+            )
         ORDER BY 
             unique_id, run_time
         """

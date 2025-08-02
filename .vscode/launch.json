@@ -66,13 +66,15 @@
                 "ENV": "local",
                 "COMPETITION_LEVEL": "big_games",
                 "PYTHONPATH": "${workspaceFolder}/scripts",
+                "MAX_SEQ_LENGTH": "12"
+
             }
         },
         {
             "name": "Evaluate Model",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/evaluate_model_on_last_week.py",
+            "program": "${workspaceFolder}/scripts/evaluate_model_roi.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
@@ -109,6 +111,65 @@
             "env": {
                 "ENV": "local",
                 "PYTHONPATH": "${workspaceFolder}/"
+            }
+        },
+        {
+            "name": "Data Processing - Standard",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/data_processing.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--input", "processed_winner_100725.parquet",
+                "--max_seq_length", "12",
+                "--scaling_method", "standard",
+                "--competition_level", "big_games"
+            ],
+            "env": {
+                "ENV": "local",
+                "PYTHONPATH": "${workspaceFolder}/scripts"
+            }
+        },
+        {
+            "name": "Data Processing - ROI",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/data_processing.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--input", "processed_winner_100725.parquet",
+                "--output", "processed_features_roi_18.pkl",
+                "--max_seq_length", "18",
+                "--scaling_method", "roi",
+                "--competition_level", "big_games"
+            ],
+            "env": {
+                "ENV": "local",
+                "PYTHONPATH": "${workspaceFolder}/scripts"
+            }
+        },
+        {
+            "name": "Predict Model Firestore Lambda - Local",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/lambdas/predict_model_firestore/lambda_function.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "ENV": "local",
+                "IS_LOCAL": "False",
+                "AWS_REGION": "il-central-1",
+                "ATHENA_DATABASE": "winner-db",
+                "S3_BUCKET": "winner-site-data",
+                "MODEL_TYPE": "lstm",
+                "EPOCHS": "100",
+                "MAX_SEQ": "12",
+                "THRESHOLD": "0.00",
+                // "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/lambdas/predict_model_firestore",
+                "GOOGLE_APPLICATION_CREDENTIALS": "${workspaceFolder}/lambdas/predict_model_firestore/service-account.json"
             }
         }
     ]

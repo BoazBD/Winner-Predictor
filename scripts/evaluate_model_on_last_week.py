@@ -21,9 +21,9 @@ EPOCHS = int(os.environ.get("EPOCHS"))
 THRESHOLD = float(os.environ.get("THRESHOLD"))
 MODEL_VERSION = int(os.environ.get("MODEL_VERSION"))
 MODEL = f"big_games_standard_{EPOCHS}_{MAX_SEQ_LENGTH}_{MODEL_VERSION}.h5"
-MODEL = "lstm_100_12_v1.h5"
+MODEL = "big_games_standard_50_12_ev.h5"
 
-loaded_model = load_model(f"trained_models/{MODEL}")
+loaded_model = load_model(f"trained_models/{MODEL}")                                                                                                             
 
 database = "winner-db"
 print(f"evaluating model {MODEL} with threshold {THRESHOLD}")
@@ -67,8 +67,13 @@ def predict_model(bet, processed):
         return bet_predictions_df
     x = prepare_features_single(x, MAX_SEQ_LENGTH, scaling_method="standard")
 
-    prediction = loaded_model.predict(x.reshape(1, MAX_SEQ_LENGTH, 3), verbose=0)
     latest_odd = game_odds[game_odds["run_time"] == game_odds["run_time"].max()]
+    
+    # Extract final odds for the dual-input model
+    final_odds = latest_odd[RATIOS].values.astype(float).reshape(1, 3)
+    
+    # Pass both sequence and odds to the model
+    prediction = loaded_model.predict([x.reshape(1, MAX_SEQ_LENGTH, 3), final_odds], verbose=0)
     # print(
     #     f"prediction for {bet['unique_id']} , ratios {latest_odd[RATIOS].values}, prediction {prediction[0]}"
     # )
@@ -168,7 +173,7 @@ def main():
         num_predictions = predictions_and_results.shape[0]
         total_bets += num_predictions
         print(
-            f"for date {date}, found {num_predictions} bets, expected earnings:{expected_earnings}"
+            f"for date {date}, found {num_predictions} bets, expected earnings:{expected_earnings}, total earnings:{total_earnings}"
         )
         print(
             "-----------------------------------------------------------------------------------------------------------------------------"

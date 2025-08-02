@@ -2,6 +2,8 @@ boto3==1.34.69
 pandas==2.2.1
 numpy==1.26.4
 tensorflow==2.16.1
-awswrangler==3.5.2  # latest as of now and supports newer pyarrow
+# Pin pyarrow to a version with pre-built wheels to avoid build issues
+pyarrow==15.0.0
+awswrangler==3.5.2
 google-cloud-firestore==2.15.0
-googletrans==3.1.0a0 
+googletrans==3.1.0a0
