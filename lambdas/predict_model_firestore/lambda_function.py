@@ -346,10 +346,9 @@ def make_predictions(model, valid_game_data, model_name_from_handler):
         for i, name_display in enumerate(outcome_names_display):
             prob = float(prediction_probs[0][i])
             odds = odds_values[i]
-            # Ensure odds are not zero to prevent DivisionByZeroError
-            profit_threshold = (1 / odds) + THRESHOLD if odds > 0 else float('inf') 
             ev = (prob * odds) - 1 if odds > 0 else -1.0 # EV is -1 if odds are 0
-            is_prof = prob > profit_threshold if odds > 0 else False
+            is_prof = ev > 0
+
 
             current_prediction_details[prob_names[i]] = prob
             current_prediction_details[ev_names[i]] = ev

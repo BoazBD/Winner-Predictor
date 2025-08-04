@@ -336,6 +336,9 @@ SAMPLE_GAMES = [
 
 def ensure_game_has_required_fields(game):
     """Ensure a game object has all required fields for template rendering"""
+    # Create a copy of the game to avoid modifying cached objects
+    game = game.copy()
+    
     # Required fields for basic rendering
     required_fields = {
         'id': 'unknown',

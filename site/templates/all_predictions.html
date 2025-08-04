@@ -1,1230 +1,477 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Debug info -->
-{# The following debug div block will be removed #}
-{# <div class="alert alert-info d-none">
-    Total games: {{ games|length }}
-    Primary games: {{ games|selectattr("is_primary", "defined")|selectattr("is_primary")|list|length }}
-    Non-primary games: {{ games|selectattr("is_primary", "defined")|rejectattr("is_primary")|list|length }}
-</div> #}
-
-<div class="row mb-4">
-    <div class="col">
-        <h1 class="display-5 text-primary">All Predictions</h1>
-        <p class="lead text-muted">Complete list of all AI-powered sports betting predictions</p>
-        <a href="/" class="btn btn-outline-primary mb-3">Back to Profitable Predictions</a>
-    </div>
-</div>
-
-<div class="container mt-4">
-    {% if error_message %}
-    <div class="alert alert-warning" role="alert">
-        <h4 class="alert-heading">Index Required</h4>
-        <p>{{ error_message }}</p>
-        <hr>
-        <p class="mb-0">Please create the required index in Firebase Console to enable this query.</p>
-    </div>
-    {% endif %}
-    
-<div class="row">
-    <div class="col-md-3">
-        <div class="accordion mb-4" id="filterAccordion">
-            <div class="accordion-item">
-                <h2 class="accordion-header" id="filterHeader">
-                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#filterContent" aria-expanded="true" aria-controls="filterContent">
-                        <strong><i class="bi bi-funnel-fill me-2"></i>Filter Options</strong>
-                    </button>
-                </h2>
-                <div id="filterContent" class="accordion-collapse collapse show" aria-labelledby="filterHeader">
-                    <div class="accordion-body p-3">
-                <form id="filterForm" method="GET" action="/all">
-                            <div class="mb-2">
-                                <label class="form-label small fw-bold">League</label>
-                                <select class="form-select form-select-sm" name="league">
-                            <option value="">All Leagues</option>
-                            {% for league in leagues %}
-                            <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
-                            {% endfor %}
-                        </select>
+<div class="min-h-screen" style="background-color: #fafbfc;">
+    <div class="container mx-auto px-4 py-6" style="max-width: 80rem;">
+        {% if error_message %}
+        <div class="alert" role="alert" style="background-color: #fff3cd; border: 1px solid #ffecb5; color: #856404; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 0.5rem 0; font-weight: 600;">Index Required</h4>
+            <p style="margin: 0 0 1rem 0;">{{ error_message }}</p>
+            <hr style="margin: 1rem 0; border: none; border-top: 1px solid #ffecb5;">
+            <p style="margin: 0;">Please create the required index in Firebase Console to enable this query.</p>
+        </div>
+        {% endif %}
+        
+        <!-- Header Section -->
+        <div style="margin-bottom: 1.5rem;">
+            <a href="/" style="text-decoration: none; color: #6b7280; display: inline-flex; align-items: center; margin-bottom: 1rem; padding: 0.25rem 0.5rem; border-radius: 0.375rem; transition: all 0.2s;">
+                <svg style="width: 1rem; height: 1rem; margin-right: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Back to Home
+            </a>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; flex-direction: column; flex: 1;">
+                    <h1 style="font-size: 1.875rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem 0;">All Predictions</h1>
+                    <p style="color: #6b7280; margin: 0;">Complete overview of AI-powered sports betting predictions</p>
+                </div>
+                
+                <!-- Stats Header -->
+                <div style="display: flex; gap: 2rem; justify-content: flex-start;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #111827;">{{ games|length if games else 0 }}</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Total</div>
                     </div>
-                            <div class="mb-2">
-                                <label class="form-label small fw-bold">Model Type</label>
-                        <div class="dropdown model-dropdown">
-                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle w-100 d-flex justify-content-between align-items-center" 
-                                    type="button" id="modelFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span>
-                                    {% if selected_model %}
-                                        {{ selected_model }}
-                                    {% else %}
-                                        All Models
-                                    {% endif %}
-                                </span>
-                                <i class="bi bi-chevron-down ms-2"></i>
-                            </button>
-                            <ul class="dropdown-menu w-100" aria-labelledby="modelFilterDropdown">
-                                <li><a class="dropdown-item model-item {% if selected_model == '' %}active{% endif %}" href="javascript:void(0)" data-value="">All Models</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                {% for model in model_types %}
-                                <li><a class="dropdown-item model-item {% if selected_model == model %}active{% endif %}" href="javascript:void(0)" data-value="{{ model }}">{{ model }}</a></li>
-                                {% endfor %}
-                            </ul>
-                            <input type="hidden" name="model_type" id="modelTypeInput" value="{{ selected_model }}">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #059669;">
+                            {% set profitable_count = games|selectattr('home_win_is_profitable')|list|length + games|selectattr('draw_is_profitable')|list|length + games|selectattr('away_win_is_profitable')|list|length if games else 0 %}
+                            {{ profitable_count }}
                         </div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Profitable</div>
                     </div>
-                            <div class="mb-2">
-                                <label class="form-label small fw-bold">Game ID</label>
-                                <input type="text" class="form-control form-control-sm" name="game_id" value="{{ selected_game_id|default('') }}" placeholder="Enter Game ID">
-                            </div>
-                            {# <div class="row mb-2"> #}
-                                {# <div class="col-6"> #}
-                                    {# <label class="form-label small fw-bold">Prediction</label> #}
-                                    {# <select class="form-select form-select-sm" name="prediction_type"> #}
-                                        {# <option value="">All</option> #}
-                            {# <option value="Home Win" {% if selected_prediction == 'Home Win' %}selected{% endif %}>Home Win</option> #}
-                            {# <option value="Draw" {% if selected_prediction == 'Draw' %}selected{% endif %}>X</option> #}
-                            {# <option value="Away Win" {% if selected_prediction == 'Away Win' %}selected{% endif %}>Away Win</option> #}
-                        {# </select> #}
-                    {# </div> #}
-                                {# <div class="col-6"> #}
-                                    {# <label class="form-label small fw-bold">Status</label> #}
-                                    {# <select class="form-select form-select-sm" name="status"> #}
-                                        {# <option value="">All</option> #}
-                            {# <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option> #}
-                            {# <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option> #}
-                        {# </select> #}
-                            {# </div> #}
-                            {# <div class="row mb-2"> #}
-                                {# <div class="col-6"> #}
-                                    {# <label class="form-label small fw-bold">Result</label> #}
-                                    {# <select class="form-select form-select-sm" name="result"> #}
-                                        {# <option value="">All</option> #}
-                            {# <option value="correct" {% if selected_result == 'correct' %}selected{% endif %}>Correct</option> #}
-                            {# <option value="incorrect" {% if selected_result == 'incorrect' %}selected{% endif %}>Incorrect</option> #}
-                        {# </select> #}
-                    {# </div> #}
-                                {# <div class="col-6"> #}
-                                    {# <label class="form-label small fw-bold">EV</label> #}
-                                    {# <select class="form-select form-select-sm" name="ev"> #}
-                                        {# <option value="">All</option> #}
-                                        {# <option value="high" {% if selected_ev == 'high' %}selected{% endif %}>High</option> #}
-                                        {# <option value="medium" {% if selected_ev == 'medium' %}selected{% endif %}>Medium</option> #}
-                                        {# <option value="low" {% if selected_ev == 'low' %}selected{% endif %}>Low</option> #}
-                        {# </select> #}
-                                {# </div> #}
-                            {# </div> #}
-                            
-                            <!-- Hidden language parameter -->
-                            <input type="hidden" name="lang" value="{{ selected_language|default('english') }}">
-                            
-                            <div class="d-grid gap-2 mt-3">
-                                <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
-                                    <a href="/all" class="btn btn-sm btn-outline-secondary">Reset Filters</a>
-                            </div>
-                        </form>
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #dc2626;">{{ (games|length - profitable_count) if games else 0 }}</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">Non-Profitable</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-md-9">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h2 class="fs-4 mb-0 text-primary">All Predictions</h2>
-                <p class="small text-muted mb-0">Sorted by newest predictions first</p>
-            </div>
-            <div class="prediction-count badge bg-dark text-white rounded-pill fs-6 py-2 px-3">
-                <i class="bi bi-list-check me-1"></i>
-                {% if games is defined and games %}
-                    {% if total_count is defined and total_count > 0 %}
-                        {{ games|length }} of {{ total_count }} games
-                    {% else %}
-                        {{ games|length }} games
-                    {% endif %}
-                {% else %}
-                    No games found
+
+        <!-- Compact Filter Bar -->
+        <div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <svg style="width: 1rem; height: 1rem; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z"></path>
+                </svg>
+                <span style="font-size: 0.875rem; font-weight: 500; color: #111827;">Filters</span>
+                {% if selected_league or selected_model or selected_game_id %}
+                <a href="/all?lang={{ selected_language|default('english') }}" style="margin-left: auto; padding: 0.125rem 0.5rem; font-size: 0.75rem; color: #6b7280; text-decoration: none; border: 1px solid #d1d5db; border-radius: 0.25rem; transition: all 0.2s;">
+                    <svg style="width: 0.75rem; height: 0.75rem; display: inline; margin-right: 0.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Clear
+                </a>
                 {% endif %}
             </div>
+            
+            <form id="filterForm" method="GET" action="/all">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">
+                    <select name="model_type" style="height: 2.25rem; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; font-size: 0.875rem;">
+                        <option value="">All Models</option>
+                        {% for model in model_types %}
+                        <option value="{{ model }}" {% if selected_model == model %}selected{% endif %}>{{ model }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select name="league" style="height: 2.25rem; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; font-size: 0.875rem;">
+                        <option value="">All Leagues</option>
+                        {% for league in leagues %}
+                        <option value="{{ league }}" {% if selected_league == league %}selected{% endif %}>{{ league }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <div style="position: relative;">
+                        <svg style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 0.75rem; height: 0.75rem; color: #6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" name="game_id" placeholder="Game ID" value="{{ selected_game_id|default('') }}" style="height: 2.25rem; padding: 0.5rem 0.5rem 0.5rem 2.25rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; font-size: 0.875rem; width: 100%;">
+                    </div>
+                    
+                    <button type="submit" style="height: 2.25rem; padding: 0.5rem 1rem; background-color: #3b82f6; color: white; border: none; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                        Apply
+                    </button>
+                </div>
+                <input type="hidden" name="lang" value="{{ selected_language|default('english') }}">
+            </form>
         </div>
-        
+
+        <!-- Results Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg style="width: 1.25rem; height: 1.25rem; color: #3b82f6;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <span style="font-weight: 500;">Predictions</span>
+                <span style="font-size: 0.875rem; color: #6b7280;">• Sorted by match time</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+                <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                <span>EV = Expected Value</span>
+            </div>
+        </div>
+
         <!-- Loading spinner -->
         {% if loading %}
-        <div id="loading-spinner" class="text-center my-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3">Loading predictions...</p>
+        <div id="loading-spinner" style="text-align: center; margin: 3rem 0;">
+            <div style="display: inline-block; width: 2rem; height: 2rem; border: 3px solid #e5e7eb; border-radius: 50%; border-top-color: #3b82f6; animation: spin 1s ease-in-out infinite;"></div>
+            <p style="margin-top: 1rem;">Loading predictions...</p>
         </div>
         {% endif %}
         
-        <!-- Error message if needed -->
+        <!-- Error message -->
         {% if error %}
-        <div class="alert alert-danger">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div style="background-color: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+            <svg style="width: 1rem; height: 1rem; display: inline; margin-right: 0.5rem;" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
             Error loading predictions. Please try again later.
-            <small class="d-none">{{ error }}</small>
         </div>
         {% endif %}
         
         <div id="predictions-container">
             {% if games %}
-                {% for game in games %}
-                    <div class="card prediction-card {% if game.status == 'completed' %}{% if game.prediction_result == true %}prediction-correct{% elif game.prediction_result == false %}prediction-incorrect{% endif %}{% endif %} mb-3">
-                        <div class="card-header bg-light py-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <!-- Left side: League and Time -->
-                                <div class="d-flex align-items-center">
-                                    <span class="league-badge badge bg-secondary me-2">
-                            <i class="bi bi-trophy me-1"></i>
+                <!-- No predictions message -->
+                {% if games|length == 0 %}
+                <div style="text-align: center; padding: 4rem 0;">
+                    <svg style="width: 4rem; height: 4rem; margin: 0 auto 1rem; color: #d1d5db;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h3 style="font-size: 1.125rem; font-weight: 500; color: #111827; margin: 0 0 0.5rem 0;">No predictions found</h3>
+                    <p style="color: #6b7280; margin: 0;">Try adjusting your filters to see more results.</p>
+                </div>
+                {% else %}
+                
+                <!-- Predictions List -->
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% for game in games %}
+                    <div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; transition: all 0.2s; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);" onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(0)'">
+                        
+                        <!-- Mobile Layout -->
+                        <div style="display: block; padding: 1rem;" class="mobile-layout">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="display: inline-block; padding: 0.125rem 0.5rem; background-color: #f3f4f6; color: #374151; border-radius: 0.25rem; font-size: 0.75rem;">
                                         {{ game.display_league|default(game.league|default('Unknown League')) }}
-                        </span>
-                                    <span class="match-time badge bg-light text-dark border">
-                            <i class="bi bi-calendar-event me-1"></i>
-                                        {{ game.match_time.strftime('%Y-%m-%d') }} 
-                                        <strong>{{ game.match_time.strftime('%H:%M') }}</strong>
-                        </span>
-                                </div>
-                                <!-- Right side: Model and Result Badge -->
-                                <div class="d-flex align-items-center">
-                                    <div class="model-badge me-2">
-                            <i class="bi bi-robot me-1"></i>
-                                        <span class="fw-medium small">{{ game.model_name|default('Unknown Model') }}</span>
-                                    </div>
-                                    {% if game.status == 'completed' %}
-                                        {% if game.prediction_result == true %}
-                                            <span class="result-badge bg-success"><i class="bi bi-check-circle me-1"></i> Correct</span>
-                                        {% elif game.prediction_result == false %}
-                                            <span class="result-badge bg-danger"><i class="bi bi-x-circle me-1"></i> Incorrect</span>
-                                        {% endif %}
+                                    </span>
+                                    {% if game.home_win_is_profitable or game.draw_is_profitable or game.away_win_is_profitable %}
+                                    <span style="display: inline-block; padding: 0.125rem 0.5rem; background-color: rgba(5, 150, 105, 0.1); color: #059669; border: 1px solid rgba(5, 150, 105, 0.2); border-radius: 0.25rem; font-size: 0.75rem;">
+                                        Profitable
+                                    </span>
                                     {% endif %}
                                 </div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">
+                                    {{ game.match_time.strftime('%b %d, %H:%M') }}
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-bottom: 0.75rem;">
+                                <div style="font-weight: 600; color: #111827;">
+                                    {{ game.display_home_team|default(game.home_team|default('Home Team')) }} vs {{ game.display_away_team|default(game.away_team|default('Away Team')) }}
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center; margin-bottom: 0.75rem;">
+                                <!-- Home -->
+                                <div style="background-color: rgba(229, 231, 235, 0.3); border-radius: 0.375rem; padding: 0.5rem;">
+                                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Home</div>
+                                    <div style="font-weight: 600; font-size: 0.875rem;">{{ game.odds.home if game.odds.home else '-' }}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.home_win_prob * 100)|round(0) if game.home_win_prob else '-' }}%</div>
+                                    <div style="width: 100%; height: 1.25rem; font-size: 0.75rem; margin-top: 0.25rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                        {% if game.home_win_ev and game.home_win_ev > 0 %}background-color: #059669; color: white;
+                                        {% elif game.home_win_ev and game.home_win_ev < 0 %}background-color: #dc2626; color: white;
+                                        {% else %}background-color: #eab308; color: white;{% endif %}">
+                                        {% if game.home_win_ev %}{{ '+' if game.home_win_ev >= 0 else '' }}{{ (game.home_win_ev * 100)|round(1) }}%{% else %}-{% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Draw -->
+                                <div style="background-color: rgba(229, 231, 235, 0.3); border-radius: 0.375rem; padding: 0.5rem;">
+                                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Draw</div>
+                                    <div style="font-weight: 600; font-size: 0.875rem;">{{ game.odds.draw if game.odds.draw else '-' }}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.draw_prob * 100)|round(0) if game.draw_prob else '-' }}%</div>
+                                    <div style="width: 100%; height: 1.25rem; font-size: 0.75rem; margin-top: 0.25rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                        {% if game.draw_ev and game.draw_ev > 0 %}background-color: #059669; color: white;
+                                        {% elif game.draw_ev and game.draw_ev < 0 %}background-color: #dc2626; color: white;
+                                        {% else %}background-color: #eab308; color: white;{% endif %}">
+                                        {% if game.draw_ev %}{{ '+' if game.draw_ev >= 0 else '' }}{{ (game.draw_ev * 100)|round(1) }}%{% else %}-{% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Away -->
+                                <div style="background-color: rgba(229, 231, 235, 0.3); border-radius: 0.375rem; padding: 0.5rem;">
+                                    <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Away</div>
+                                    <div style="font-weight: 600; font-size: 0.875rem;">{{ game.odds.away if game.odds.away else '-' }}</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.away_win_prob * 100)|round(0) if game.away_win_prob else '-' }}%</div>
+                                    <div style="width: 100%; height: 1.25rem; font-size: 0.75rem; margin-top: 0.25rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                        {% if game.away_win_ev and game.away_win_ev > 0 %}background-color: #059669; color: white;
+                                        {% elif game.away_win_ev and game.away_win_ev < 0 %}background-color: #dc2626; color: white;
+                                        {% else %}background-color: #eab308; color: white;{% endif %}">
+                                        {% if game.away_win_ev %}{{ '+' if game.away_win_ev >= 0 else '' }}{{ (game.away_win_ev * 100)|round(1) }}%{% else %}-{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: #6b7280; padding-top: 0.5rem; border-top: 1px solid #f3f4f6;">
+                                <div style="display: flex; align-items: center; gap: 0.25rem;">
+                                    <svg style="width: 0.75rem; height: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    {{ game.id }}
+                                </div>
+                                <div>{{ game.model_name|default('Unknown Model') }}</div>
                             </div>
                         </div>
-                        
-                        <div class="card-body py-3">
-                            <div class="row">
-                                <!-- Teams and odds section -->
-                                <div class="col-md-5">
-                                    <div class="match-teams-container mb-3">
-                                        <div class="d-flex justify-content-between align-items-center teams-display">
-                                            <!-- Home Team -->
-                                            <div class="team-column text-center">
-                                                <div class="team-badge {% if game.home_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" 
-                                                         data-short="{{ 'true' if game.display_home_team|default(game.home_team|default('Home Team'))|length <= 10 else 'false' }}"
-                                                         {% if game.display_home_team|default(game.home_team|default('Home Team'))|length > 10 and game.display_home_team|default(game.home_team|default('Home Team'))|length <= 16 %}data-medium="true"{% endif %}>
-                                                        {{ game.display_home_team|default(game.home_team|default('Home Team')) }}
-                                                    </div>
-                                                    <div class="odds-badge {% if game.home_win_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="outcome-label">{{ t.home if t else 'Home' }}</div>
-                                            </div>
-                                            
-                                            <!-- Draw Column -->
-                                            <div class="team-column text-center mx-2">
-                                                <div class="team-badge {% if game.draw_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" data-short="true">X</div>
-                                                    <div class="odds-badge {% if game.draw_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="outcome-label">X</div>
-                                            </div>
-                                            
-                                            <!-- Away Team -->
-                                            <div class="team-column text-center">
-                                                <div class="team-badge {% if game.away_win_is_profitable %}active-prediction{% endif %}">
-                                                    <div class="team-name fw-bold mb-2" 
-                                                         data-short="{{ 'true' if game.display_away_team|default(game.away_team|default('Away Team'))|length <= 10 else 'false' }}"
-                                                         {% if game.display_away_team|default(game.away_team|default('Away Team'))|length > 10 and game.display_away_team|default(game.away_team|default('Away Team'))|length <= 16 %}data-medium="true"{% endif %}>
-                                                        {{ game.display_away_team|default(game.away_team|default('Away Team')) }}
-                                                    </div>
-                                                    <div class="odds-badge {% if game.away_win_is_profitable %}highlighted-odds{% endif %}">
-                                                        {% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}
-                                                    </div>
-                                                </div>
-                                                <div class="outcome-label">{{ t.away if t else 'Away' }}</div>
-                                            </div>
+
+                        <!-- Desktop Layout -->
+                        <div style="display: none; padding: 1rem;" class="desktop-layout">
+                            <div style="display: grid; grid-template-columns: 1fr 1.5fr 0.8fr; gap: 1rem; align-items: center;">
+                                <!-- Match Info -->
+                                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <div style="font-weight: 600; color: #111827;">
+                                        {{ game.display_home_team|default(game.home_team|default('Home Team')) }} vs {{ game.display_away_team|default(game.away_team|default('Away Team')) }}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="display: inline-block; padding: 0.125rem 0.5rem; background-color: #f3f4f6; color: #374151; border-radius: 0.25rem; font-size: 0.75rem;">
+                                            {{ game.display_league|default(game.league|default('Unknown League')) }}
+                                        </span>
+                                        <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; color: #6b7280;">
+                                            <svg style="width: 0.75rem; height: 0.75rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            {{ game.match_time.strftime('%b %d, %H:%M') }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Outcomes -->
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; text-align: center;">
+                                    <!-- Home -->
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Home</div>
+                                        <div style="font-weight: 600;">{{ game.odds.home if game.odds.home else '-' }}</div>
+                                        <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.home_win_prob * 100)|round(0) if game.home_win_prob else '-' }}%</div>
+                                        <div style="width: 100%; height: 1.5rem; font-size: 0.75rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                            {% if game.home_win_ev and game.home_win_ev > 0 %}background-color: #059669; color: white;
+                                            {% elif game.home_win_ev and game.home_win_ev < 0 %}background-color: #dc2626; color: white;
+                                            {% else %}background-color: #eab308; color: white;{% endif %}">
+                                            {% if game.home_win_ev %}{{ '+' if game.home_win_ev >= 0 else '' }}{{ (game.home_win_ev * 100)|round(1) }}%{% else %}-{% endif %}
                                         </div>
                                     </div>
                                     
-                                    <div class="prediction-timestamp small text-muted">
-                            <i class="bi bi-clock-history me-1"></i>
-                                        {{ t.predicted if t else 'Predicted' }}:
-                                        {% if game.prediction_timestamp %}
-                                            {{ game.prediction_timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                        {% elif game.timestamp %}
-                                            {{ game.timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                        {% else %}
-                                            No timestamp
-                                        {% endif %}
-                                    </div>
-                                    {% if game.id %}
-                                    <div class="game-id-display small text-muted">
-                                        <span>Game ID: </span>{{ game.id }}
-                                    </div>
-                                    {% endif %}
-                    </div>
-                    
-                                <!-- Prediction Data Column -->
-                                <div class="col-md-7">
-                                    <!-- All Predictions with Probabilities and EVs -->
-                                    <div class="prediction-stats-container">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered mb-0">
-                                                <thead class="table-primary text-dark">
-                                                    <tr>
-                                                        <th>Outcome</th>
-                                                        <th>Probability</th>
-                                                        <th>Odds</th>
-                                                        <th>EV</th>
-                                                        <th class="text-center">Profitable</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td class="fw-medium">Home Win</td>
-                                                        <td>{{ (game.home_win_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if game.odds.home is not none %}{{ game.odds.home }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (game.home_win_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if game.home_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="fw-medium">X</td>
-                                                        <td>{{ (game.draw_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if game.odds.draw is not none %}{{ game.odds.draw }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (game.draw_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if game.draw_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="fw-medium">Away Win</td>
-                                                        <td>{{ (game.away_win_prob * 100)|round(1) }}%</td>
-                                                        <td>{% if game.odds.away is not none %}{{ game.odds.away }}{% else %}-{% endif %}</td>
-                                                        <td>{{ (game.away_win_ev * 100)|round(1) }}%</td>
-                                                        <td class="text-center">{% if game.away_win_is_profitable %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
+                                    <!-- Draw -->
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Draw</div>
+                                        <div style="font-weight: 600;">{{ game.odds.draw if game.odds.draw else '-' }}</div>
+                                        <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.draw_prob * 100)|round(0) if game.draw_prob else '-' }}%</div>
+                                        <div style="width: 100%; height: 1.5rem; font-size: 0.75rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                            {% if game.draw_ev and game.draw_ev > 0 %}background-color: #059669; color: white;
+                                            {% elif game.draw_ev and game.draw_ev < 0 %}background-color: #dc2626; color: white;
+                                            {% else %}background-color: #eab308; color: white;{% endif %}">
+                                            {% if game.draw_ev %}{{ '+' if game.draw_ev >= 0 else '' }}{{ (game.draw_ev * 100)|round(1) }}%{% else %}-{% endif %}
                                         </div>
                                     </div>
+                                    
+                                    <!-- Away -->
+                                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                        <div style="font-size: 0.75rem; color: #6b7280;">Away</div>
+                                        <div style="font-weight: 600;">{{ game.odds.away if game.odds.away else '-' }}</div>
+                                        <div style="font-size: 0.75rem; color: #6b7280;">{{ (game.away_win_prob * 100)|round(0) if game.away_win_prob else '-' }}%</div>
+                                        <div style="width: 100%; height: 1.5rem; font-size: 0.75rem; border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-weight: 500; 
+                                            {% if game.away_win_ev and game.away_win_ev > 0 %}background-color: #059669; color: white;
+                                            {% elif game.away_win_ev and game.away_win_ev < 0 %}background-color: #dc2626; color: white;
+                                            {% else %}background-color: #eab308; color: white;{% endif %}">
+                                            {% if game.away_win_ev %}{{ '+' if game.away_win_ev >= 0 else '' }}{{ (game.away_win_ev * 100)|round(1) }}%{% else %}-{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Meta Info -->
+                                <div style="text-align: right; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <div style="font-size: 0.75rem; color: #6b7280;">{{ game.model_name|default('Unknown Model') }}</div>
+                                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.25rem; font-size: 0.75rem; color: #6b7280;">
+                                        <svg style="width: 0.75rem; height: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        {{ game.id }}
+                                    </div>
+                                    {% if game.home_win_is_profitable or game.draw_is_profitable or game.away_win_is_profitable %}
+                                    <span style="display: inline-block; padding: 0.125rem 0.5rem; background-color: rgba(5, 150, 105, 0.1); color: #059669; border: 1px solid rgba(5, 150, 105, 0.2); border-radius: 0.25rem; font-size: 0.75rem;">
+                                        Profitable
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
                 
                 <!-- Pagination -->
-                <div class="d-flex justify-content-center mt-4">
-                    {% if total_pages is defined and total_pages > 1 %}
-                    <nav aria-label="Prediction pagination" class="mt-4">
-                        <ul class="pagination pagination-sm justify-content-center">
-                            <li class="page-item {% if not has_prev %}disabled{% endif %}">
-                                <a class="page-link" href="{{ url_for('all_predictions', page=page-1, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}" aria-label="Previous">
-                                    <span aria-hidden="true">&laquo;</span>
-                                </a>
+                {% if total_pages is defined and total_pages > 1 %}
+                <nav style="margin-top: 2rem; display: flex; justify-content: center;">
+                    <ul style="display: flex; list-style: none; margin: 0; padding: 0; gap: 0.25rem;">
+                        <li>
+                            <a href="{{ url_for('all_predictions', page=page-1 if page > 1 else page, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}" 
+                               style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; text-decoration: none; color: {% if page <= 1 %}#9ca3af{% else %}#374151{% endif %}; {% if page <= 1 %}pointer-events: none;{% endif %}">
+                                &laquo;
+                            </a>
+                        </li>
+                        
+                        {% set start_page = [1, page - 2]|max %}
+                        {% set end_page = [start_page + 4, total_pages|default(1)]|min %}
+                        {% set start_page = [end_page - 4, 1]|max %}
+                        
+                        {% if start_page > 1 %}
+                            <li>
+                                <a href="{{ url_for('all_predictions', page=1, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}"
+                                   style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; text-decoration: none; color: #374151;">1</a>
                             </li>
-                            
-                            {% set start_page = [1, page - 2]|max %}
-                            {% set end_page = [start_page + 4, total_pages|default(1)]|min %}
-                            {% set start_page = [end_page - 4, 1]|max %}
-                            
-                            {% if start_page > 1 %}
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('all_predictions', page=1, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}">1</a>
-                                </li>
-                                {% if start_page > 2 %}
-                                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                                {% endif %}
+                            {% if start_page > 2 %}
+                                <li style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; color: #9ca3af;">...</li>
                             {% endif %}
-                            
-                            {% for p in range(start_page, end_page + 1) %}
-                                <li class="page-item {% if p == page %}active{% endif %}">
-                                    <a class="page-link" href="{{ url_for('all_predictions', page=p, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}">{{ p }}</a>
-                                </li>
-                            {% endfor %}
-                            
-                            {% if end_page < total_pages|default(1) %}
-                                {% if end_page < total_pages|default(1) - 1 %}
-                                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                                {% endif %}
-                                <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('all_predictions', page=total_pages|default(1), per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}">{{ total_pages|default(1) }}</a>
-                                </li>
-                            {% endif %}
-                            
-                            <li class="page-item {% if not has_next %}disabled{% endif %}">
-                                <a class="page-link" href="{{ url_for('all_predictions', page=page+1, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}" aria-label="Next">
-                                    <span aria-hidden="true">&raquo;</span>
-                                </a>
+                        {% endif %}
+                        
+                        {% for p in range(start_page, end_page + 1) %}
+                            <li>
+                                <a href="{{ url_for('all_predictions', page=p, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}"
+                                   style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; text-decoration: none; {% if p == page %}background-color: #3b82f6; color: white; border-color: #3b82f6;{% else %}color: #374151;{% endif %}">{{ p }}</a>
                             </li>
-                        </ul>
-                    </nav>
-                    {% endif %}
-                </div>
-                
-            {% else %}
-                {% if not loading %}
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    No predictions found matching your filters. Try adjusting your filter criteria.
-                </div>
+                        {% endfor %}
+                        
+                        {% if end_page < total_pages|default(1) %}
+                            {% if end_page < total_pages|default(1) - 1 %}
+                                <li style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; color: #9ca3af;">...</li>
+                            {% endif %}
+                            <li>
+                                <a href="{{ url_for('all_predictions', page=total_pages|default(1), per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}"
+                                   style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; text-decoration: none; color: #374151;">{{ total_pages|default(1) }}</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li>
+                            <a href="{{ url_for('all_predictions', page=page+1 if page < total_pages else page, per_page=per_page, league=selected_league, model_type=selected_model, game_id=selected_game_id, lang=selected_language) }}"
+                               style="display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border: 1px solid #d1d5db; border-radius: 0.375rem; text-decoration: none; color: {% if page >= total_pages %}#9ca3af{% else %}#374151{% endif %}; {% if page >= total_pages %}pointer-events: none;{% endif %}">
+                                &raquo;
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
                 {% endif %}
+                
+                {% endif %}
+            {% else %}
+                <div style="text-align: center; padding: 4rem 0;">
+                    <svg style="width: 4rem; height: 4rem; margin: 0 auto 1rem; color: #d1d5db;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h3 style="font-size: 1.125rem; font-weight: 500; color: #111827; margin: 0 0 0.5rem 0;">No predictions found</h3>
+                    <p style="color: #6b7280; margin: 0;">Try adjusting your filters to see more results.</p>
+                </div>
             {% endif %}
-            </div>
         </div>
     </div>
 </div>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Show mobile layout by default */
+.mobile-layout {
+    display: block;
+}
+.desktop-layout {
+    display: none;
+}
+
+/* Switch to desktop layout on larger screens */
+@media (min-width: 768px) {
+    .mobile-layout {
+        display: none;
+    }
+    .desktop-layout {
+        display: block;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Stack stats vertically on small screens */
+    .stats-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stats-item {
+        text-align: center;
+    }
+}
+
+/* Hover effects */
+a:hover {
+    opacity: 0.8;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+select:focus, input:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Debug info
-    console.log("Document loaded, initializing JS...");
-    
-    // Model dropdown selection handler
-    const modelItems = document.querySelectorAll('.model-item');
-    const modelTypeInput = document.getElementById('modelTypeInput');
-    
-    if (modelItems.length > 0 && modelTypeInput) {
-        // Handle dropdown item clicks
-        modelItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Update the hidden input field
-                modelTypeInput.value = this.getAttribute('data-value');
-                
-                // Update the dropdown button text
-                const dropdownButton = document.getElementById('modelFilterDropdown');
-                if (dropdownButton) {
-                    const buttonText = dropdownButton.querySelector('span');
-                    if (buttonText) {
-                        buttonText.textContent = this.textContent.trim() === 'All Models' ? 'All Models' : this.textContent.trim();
-                    }
-                }
-                
-                // Submit the form via AJAX
-                submitFormAjax();
-            });
-        });
-    }
-    
-    // Function to adjust team name sizes dynamically
-    function adjustTeamNameSizes() {
-        document.querySelectorAll('.team-name').forEach(function(el) {
-            // Reset all attributes and styles first
-            el.style.fontSize = '';
-            el.style.whiteSpace = '';
-            el.style.display = '';
-            el.style.webkitLineClamp = '';
-            el.style.webkitBoxOrient = '';
-            el.style.maxHeight = '';
-            el.classList.remove('text-small', 'text-smaller', 'text-smallest');
-            el.removeAttribute('data-medium');
-            
-            const container = el.closest('.team-column');
-            if (!container) return;
-            
-            const textLength = el.textContent.trim().length;
-            const text = el.textContent.trim();
-            
-            // Categorize team names by length and complexity
-            if (textLength <= 10) {
-                // Short names: single line, normal font
-                el.setAttribute('data-short', 'true');
-                el.removeAttribute('data-medium');
-            } else if (textLength <= 16) {
-                // Medium names: try single line with smaller font first
-                el.setAttribute('data-short', 'false');
-                el.setAttribute('data-medium', 'true');
-            } else {
-                // Long names: allow two lines with smaller font
-                el.setAttribute('data-short', 'false');
-                el.removeAttribute('data-medium');
-            }
-            
-            // Apply styles based on categorization
-            if (el.getAttribute('data-short') === 'true') {
-                // Short names: single line, normal size
-                el.style.fontSize = '0.95rem';
-                el.style.whiteSpace = 'nowrap';
-                el.style.display = 'block';
-                el.style.webkitLineClamp = '1';
-                el.style.maxHeight = '1.2em';
-            } else if (el.getAttribute('data-medium') === 'true') {
-                // Medium names: single line, smaller font
-                el.style.fontSize = '0.8rem';
-                el.style.whiteSpace = 'nowrap';
-                el.style.display = 'block';
-                el.style.webkitLineClamp = '1';
-                el.style.maxHeight = '1.2em';
-            } else {
-                // Long names: two lines, smaller font
-                el.style.fontSize = '0.75rem';
-                el.style.whiteSpace = 'normal';
-                el.style.display = '-webkit-box';
-                el.style.webkitLineClamp = '2';
-                el.style.webkitBoxOrient = 'vertical';
-                el.style.maxHeight = '2.2em';
-            }
-        });
-    }
-
-    // Update data-short attribute for all team names based on character count
-    function updateTeamNameAttributes() {
-        document.querySelectorAll('.team-name').forEach(function(el) {
-            const textLength = el.textContent.trim().length;
-            
-            if (textLength <= 10) {
-                el.setAttribute('data-short', 'true');
-                el.removeAttribute('data-medium');
-            } else if (textLength <= 16) {
-                el.setAttribute('data-short', 'false');
-                el.setAttribute('data-medium', 'true');
-            } else {
-                el.setAttribute('data-short', 'false');
-                el.removeAttribute('data-medium');
-            }
-        });
-    }
-
-    // Language toggle functionality
-    function toggleLanguage() {
-        const currentLang = new URLSearchParams(window.location.search).get('lang') || 'english';
-        const newLang = currentLang === 'english' ? 'hebrew' : 'english';
-        
-        const url = new URL(window.location);
-        url.searchParams.set('lang', newLang);
-        window.location.href = url.toString();
-    }
-
-    // Initialize everything on page load
-    const currentLang = new URLSearchParams(window.location.search).get('lang') || 'english';
-    const toggleBtn = document.getElementById('languageToggle');
-    if (toggleBtn) {
-        toggleBtn.textContent = currentLang === 'english' ? 'עברית' : 'English';
-    }
-    
-    // Update team name attributes and adjust sizes
-    updateTeamNameAttributes();
-    setTimeout(adjustTeamNameSizes, 100);
-    
-    // Also run after images and fonts are loaded
-    window.addEventListener('load', function() {
-        setTimeout(adjustTeamNameSizes, 200);
-    });
-
-    // Run after window resize
-    window.addEventListener('resize', function() {
-        setTimeout(adjustTeamNameSizes, 100);
-    });
-
-    // If we're in loading state, load the actual predictions
-    if (document.getElementById('loading-spinner')) {
-        loadPredictions();
-    }
-    
-    // Function to load predictions via AJAX
-    function loadPredictions() {
-        // Get current URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        
-        // Set the init parameter to 0 to get actual predictions
-        urlParams.delete('init');
-        
-        // Create the fetch URL
-        const fetchUrl = window.location.pathname + '?' + urlParams.toString();
-        
-        // Show loading spinner
-        const spinner = document.getElementById('loading-spinner');
-        if (spinner) {
-            spinner.style.display = 'block';
-        }
-        
-        // Perform the fetch
-        fetch(fetchUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Extract the predictions container content from the response
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const predictionsContainer = doc.getElementById('predictions-container');
-                const predictionCountDiv = doc.querySelector('.prediction-count'); // Get the count div from fetched HTML
-
-                // Replace our container with the new one
-                if (predictionsContainer) {
-                    document.getElementById('predictions-container').innerHTML = predictionsContainer.innerHTML;
-                }
-                
-                // Replace our count display with the new one
-                const currentCountDiv = document.querySelector('.prediction-count');
-                if (predictionCountDiv && currentCountDiv) {
-                    currentCountDiv.innerHTML = predictionCountDiv.innerHTML; // Update the count display
-                }
-                    
-                // Hide the loading spinner
-                if (spinner) {
-                    spinner.style.display = 'none';
-                }
-                
-                // Reinitialize any necessary event handlers
-                initPredictionCards();
-            })
-            .catch(error => {
-                console.error('Error loading predictions:', error);
-                if (spinner) {
-                    spinner.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Error loading predictions. Please try refreshing the page.
-                        </div>
-                    `;
-                }
-            });
-    }
-    
-    // Function to initialize event handlers for prediction cards
-    function initPredictionCards() {
-        // Update data-short attribute for all team names
-        updateTeamNameAttributes();
-        
-        // Adjust team name sizes
-        setTimeout(adjustTeamNameSizes, 50);
-    }
-    
-    // Function to submit form via AJAX
-    function submitFormAjax() {
-        const form = document.getElementById('filterForm');
-        if (!form) return;
-
-        // Show loading indicator
-        const predictionsContainer = document.getElementById('predictions-container');
-        if (predictionsContainer) {
-            predictionsContainer.innerHTML = `
-                <div class="text-center my-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-3">Loading predictions...</p>
-                </div>
-            `;
-        }
-
-        // Get form data
-        const formData = new FormData(form);
-        const urlParams = new URLSearchParams(formData);
-        
-        // Add init=1 parameter for fast initial load
-        urlParams.set('init', '1');
-        
-        // Create the fetch URL
-        const fetchUrl = window.location.pathname + '?' + urlParams.toString();
-        
-        // Update URL without page reload
-        window.history.pushState({}, '', fetchUrl);
-        
-        // Perform the fetch
-        fetch(fetchUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.text();
-            })
-            .then(html => {
-                // Extract the predictions container content from the response
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const predictionsContainer = doc.getElementById('predictions-container');
-                const predictionCountDiv = doc.querySelector('.prediction-count');
-
-                // Replace our container with the new one
-                if (predictionsContainer) {
-                    document.getElementById('predictions-container').innerHTML = predictionsContainer.innerHTML;
-                }
-                
-                // Replace our count display with the new one
-                const currentCountDiv = document.querySelector('.prediction-count');
-                if (predictionCountDiv && currentCountDiv) {
-                    currentCountDiv.innerHTML = predictionCountDiv.innerHTML;
-                }
-                
-                // Reinitialize any necessary event handlers
-                initPredictionCards();
-            })
-            .catch(error => {
-                console.error('Error loading predictions:', error);
-                if (predictionsContainer) {
-                    predictionsContainer.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            Error loading predictions. Please try refreshing the page.
-                        </div>
-                    `;
-                }
-            });
-    }
-    
-    // Add smooth loading transition
+    // Handle form submission for filters
     const filterForm = document.getElementById('filterForm');
     if (filterForm) {
-        filterForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent default form submission
-            submitFormAjax();
+        // Auto-submit on select change
+        const selects = filterForm.querySelectorAll('select');
+        selects.forEach(select => {
+            select.addEventListener('change', function() {
+                filterForm.submit();
+            });
         });
+        
+        // Handle search input with debounce
+        const gameIdInput = filterForm.querySelector('input[name="game_id"]');
+        if (gameIdInput) {
+            let debounceTimer;
+            gameIdInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterForm.submit();
+                }, 500);
+            });
+        }
     }
     
-    // Add click handlers to pagination links for smooth transition
-    document.querySelectorAll('.pagination .page-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            // Only process if the link is not disabled
-            if (!this.parentElement.classList.contains('disabled')) {
-                e.preventDefault();
-                
-                // Show loading indicator
-                const predictionsContainer = document.getElementById('predictions-container');
-                if (predictionsContainer) {
-                    predictionsContainer.innerHTML = `
-                        <div class="text-center my-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-3">Loading predictions...</p>
-                        </div>
-                    `;
-                }
-                
-                // Get the URL and add init=1 parameter
-                const url = new URL(this.href);
-                url.searchParams.set('init', '1');
-                
-                // Update URL without page reload
-                window.history.pushState({}, '', url.toString());
-                
-                // Fetch the new page content
-                fetch(url.toString())
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.text();
-                    })
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const predictionsContainer = doc.getElementById('predictions-container');
-                        const predictionCountDiv = doc.querySelector('.prediction-count');
-
-                        if (predictionsContainer) {
-                            document.getElementById('predictions-container').innerHTML = predictionsContainer.innerHTML;
-                        }
-                        
-                        if (predictionCountDiv) {
-                            const currentCountDiv = document.querySelector('.prediction-count');
-                            if (currentCountDiv) {
-                                currentCountDiv.innerHTML = predictionCountDiv.innerHTML;
-                            }
-                        }
-                        
-                        initPredictionCards();
-                    })
-                    .catch(error => {
-                        console.error('Error loading predictions:', error);
-                        if (predictionsContainer) {
-                            predictionsContainer.innerHTML = `
-                                <div class="alert alert-danger">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    Error loading predictions. Please try refreshing the page.
-                                </div>
-                            `;
-                        }
-                    });
+    // Add loading state to form submission
+    if (filterForm) {
+        filterForm.addEventListener('submit', function() {
+            const submitBtn = filterForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = 'Loading...';
+                submitBtn.disabled = true;
             }
         });
-    });
+    }
 });
 </script>
-
-<style>
-.language-toggle {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.language-toggle .btn {
-    padding: 0.375rem 1rem;
-    min-width: 100px;
-}
-/* Layout & General Styling */
-.prediction-card {
-    position: relative;
-    margin-bottom: 15px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    border-radius: 12px;
-    overflow: hidden;
-    width: 100%;
-    border: 1px solid #e9ecef;
-    transition: all 0.3s;
-}
-
-.prediction-card:hover {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
-    border-color: #dee2e6;
-}
-
-/* Team display */
-.match-teams-container {
-    border-radius: 8px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    margin-right: auto;
-    width: 100%;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.teams-display {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 15px;
-    align-items: stretch;
-    width: 100%;
-    max-width: 100%;
-}
-
-.team-column {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 2px;
-}
-
-.team-column.mx-2 {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-}
-
-.team-badge {
-    padding: 10px 8px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    background-color: white;
-    border: 1px solid #e9ecef;
-    transition: all 0.2s;
-    width: 100%;
-    min-height: 130px; /* Increased height */
-    height: 130px; /* Increased height */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    position: relative;
-}
-
-.team-name {
-    font-size: 0.9rem;
-    width: 100%;
-    overflow: hidden;
-    line-height: 1.2;
-    word-break: keep-all;
-    margin: 0 auto 2px;
-    text-align: center;
-    padding: 0 5px;
-    box-sizing: border-box;
-    height: auto;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    white-space: normal;
-    text-overflow: ellipsis;
-    min-height: 1.2em;
-    max-height: 2.4em;
-    transition: font-size 0.2s ease;
-}
-
-/* Short team names: single line, normal font */
-.team-name[data-short="true"] {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    padding: 0 5px;
-    font-size: 0.95rem;
-    height: auto;
-    line-height: 1.2;
-    max-height: 1.2em;
-    -webkit-line-clamp: 1;
-}
-
-/* Medium team names: single line, smaller font */
-.team-name[data-medium="true"] {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    padding: 0 5px;
-    font-size: 0.8rem;
-    height: auto;
-    line-height: 1.2;
-    max-height: 1.2em;
-    -webkit-line-clamp: 1;
-}
-
-/* Long team names: two lines, smaller font */
-.team-name[data-short="false"]:not([data-medium="true"]) {
-    white-space: normal;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    padding: 0 5px;
-    font-size: 0.75rem;
-    height: auto;
-    line-height: 1.1;
-    max-height: 2.2em;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-
-.odds-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background-color: #e9ecef;
-    color: #495057;
-    font-weight: bold;
-    font-size: 1rem;
-    text-align: center;
-    box-sizing: border-box;
-    min-width: 55px;
-    position: absolute;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-.active-prediction {
-    background-color: #e6f7ed;
-    border-color: #28a745;
-}
-
-.highlighted-odds {
-    background-color: #28a745;
-    color: white;
-}
-
-.badge-profitable {
-    border: 2px solid #28a745 !important;
-    color: #155724 !important;
-    background-color: #d4edda !important;
-}
-
-.outcome-label {
-    font-size: 0.75rem;
-    color: #6c757d;
-    font-weight: 500;
-    margin-top: 4px;
-}
-
-/* Fix card body layout */
-.card-body {
-    padding: 1rem;
-    overflow: hidden; /* Prevent content from spilling out */
-}
-
-.card-body .row {
-    margin: 0;
-    width: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-.card-body .col-md-5 {
-    width: 52% !important; /* Reduced from 55% to 52% */
-    padding-left: 0;
-    padding-right: 10px;
-    flex: 0 0 52% !important; /* Reduced from 55% to 52% */
-    max-width: 52% !important; /* Reduced from 55% to 52% */
-    box-sizing: border-box;
-}
-
-.card-body .col-md-7 {
-    width: 48% !important; /* Increased from 45% to 48% */
-    padding-left: 10px;
-    padding-right: 0;
-    flex: 0 0 48% !important; /* Increased from 45% to 48% */
-    max-width: 48% !important; /* Increased from 45% to 48% */
-    box-sizing: border-box;
-}
-
-/* Responsive adjustments */
-@media (max-width: 991px) {
-    .card-body .col-md-5,
-    .card-body .col-md-7 {
-        width: 100%;
-        flex: 0 0 100%;
-        max-width: 100%;
-        padding: 0;
-    }
-    
-    .match-teams-container {
-        margin-bottom: 15px;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .teams-display {
-        gap: 10px;
-    }
-    
-    .team-badge {
-        min-height: 110px;
-        height: 110px;
-        padding: 8px 5px;
-    }
-    
-    .team-name {
-        font-size: 0.95rem;
-        padding: 0 3px;
-        height: 4rem;
-    }
-    
-    .team-name[data-short="true"] {
-        font-size: 1rem;
-        height: 1.4rem;
-    }
-    
-    .odds-badge {
-        font-size: 0.9rem;
-        padding: 4px 10px;
-        min-width: 50px;
-        bottom: 12px;
-    }
-}
-
-/* Historical odds display */
-.historical-odds {
-    background-color: #f0f8ff;
-    border-radius: 8px;
-    padding: 8px;
-    border: 1px dashed #0dcaf0;
-    overflow: hidden; /* Prevent content from spilling out */
-}
-
-/* History styling */
-.history-prediction {
-    border-left: 3px solid #0dcaf0;
-    background-color: #f8f9fa;
-    overflow: hidden;
-}
-
-/* Status indicators */
-.prediction-correct {
-    /* Left border removed - keeping only the outline */
-}
-
-.prediction-incorrect {
-    /* Left border removed - keeping only the outline */
-}
-
-.result-badge {
-    padding: 4px 8px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    white-space: nowrap;
-}
-
-.card-header > .d-flex > .d-flex {
-    flex-shrink: 0;
-}
-
-/* Table styles */
-.prediction-stats-container .table {
-    font-size: 0.8rem; /* Slightly reduced from 0.85rem */
-    width: 100%;
-    table-layout: fixed;
-    margin-bottom: 0.5rem;
-}
-
-.prediction-stats-container th,
-.prediction-stats-container td {
-    padding: 0.3rem 0.3rem; /* Slightly reduced padding */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Set specific column widths */
-.prediction-stats-container th:nth-child(1), /* OUTCOME */
-.prediction-stats-container td:nth-child(1) {
-    width: 23%; /* Reduced from 25% to 23% */
-}
-
-.prediction-stats-container th:nth-child(2), /* PROBABILITY */
-.prediction-stats-container td:nth-child(2) {
-    width: 23%; /* Reduced from 25% to 23% */
-}
-
-.prediction-stats-container th:nth-child(3), /* ODDS */
-.prediction-stats-container td:nth-child(3) {
-    width: 16%;
-}
-
-.prediction-stats-container th:nth-child(4), /* EV */
-.prediction-stats-container td:nth-child(4) {
-    width: 16%;
-}
-
-.prediction-stats-container th:nth-child(5), /* PROFITABLE */
-.prediction-stats-container td:nth-child(5) {
-    width: 22%; /* Increased from 18% to 22% */
-    text-align: center;
-}
-
-/* Make profitable column visible */
-.prediction-stats-container th:nth-child(5),
-.prediction-stats-container td:nth-child(5) {
-    padding-left: 0;
-    padding-right: 0;
-    min-width: 50px;
-}
-
-/* Make the icons in the profitable column not cut off */
-.prediction-stats-container td:nth-child(5) i {
-    font-size: 1rem;
-    display: inline-block;
-    width: auto;
-}
-
-/* Adjust the header text */
-.prediction-stats-container thead th {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0;
-    padding: 0.3rem 0.2rem;
-}
-
-/* Ensure number columns align properly */
-.prediction-stats-container td:nth-child(2), /* PROBABILITY */
-.prediction-stats-container td:nth-child(3), /* ODDS */
-.prediction-stats-container td:nth-child(4) { /* EV */
-    text-align: right;
-}
-
-/* Filter panel */
-.accordion-button:not(.collapsed) {
-    background-color: #f8f9fa;
-    color: #0d6efd;
-}
-
-.accordion-button:focus {
-    box-shadow: none;
-    border-color: rgba(0,0,0,.125);
-}
-
-/* Make labels and text more compact */
-.form-select-sm, .btn-sm, .small {
-    font-size: 0.85rem;
-}
-
-/* Make sure mobile is optimized */
-@media (max-width: 767.98px) {
-    .row {
-        margin-left: -10px;
-        margin-right: -10px;
-    }
-    
-    .prediction-card .card-body {
-        padding: 12px;
-    }
-    
-    .prediction-stats-container {
-        margin-top: 15px;
-    }
-    
-    .team-column {
-        padding: 0 2px;
-    }
-    
-    .team-badge {
-        padding: 6px 3px;
-    }
-    
-    .team-name {
-        font-size: 0.75rem;
-        min-height: 2.2rem;
-    }
-    
-    .odds-badge {
-        font-size: 0.75rem;
-        padding: 2px 6px;
-    }
-}
-
-/* Ensure table container doesn't overflow */
-.prediction-stats-container {
-    overflow-x: hidden;
-    max-width: 100%;
-}
-
-/* Make numbers not wrap and align right */
-.prediction-stats-container td:nth-child(2), /* PROBABILITY */
-.prediction-stats-container td:nth-child(3), /* ODDS */
-.prediction-stats-container td:nth-child(4) { /* EV */
-    text-align: right;
-    white-space: nowrap;
-}
-
-/* Specific styling for the check/x icons */
-.prediction-stats-container td:nth-child(5) i.bi-check-circle-fill {
-    color: #28a745;
-    font-size: 1.1rem;
-}
-
-.prediction-stats-container td:nth-child(5) i.bi-x-circle-fill {
-    color: #dc3545;
-    font-size: 1.1rem;
-}
-
-/* Make sure profitable header fits */
-.prediction-stats-container th:nth-child(5) {
-    font-size: 0.7rem;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.prediction-timestamp {
-    margin-top: 5px;
-    padding: 3px 0;
-    font-size: 0.85rem !important;
-    display: block;
-    color: #666 !important;
-}
-
-.game-id-display {
-    font-size: 0.75rem !important; /* Smaller font size */
-    color: #888 !important; /* Lighter color */
-    position: absolute;
-    bottom: 1rem; /* Adjust to align with card padding */
-    right: 1rem;  /* Adjust to align with card padding */
-}
-</style>
 {% endblock %} 
