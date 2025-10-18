@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import time
 from typing import Any
 
 import awswrangler as wr
@@ -12,8 +13,8 @@ import requests
 from dotenv import load_dotenv
 
 from Bet import Bet
-from hash import HashGenerator
-from winner_config import (
+from scraper.hash import HashGenerator
+from scraper.winner_config import (
     API_URL,
     HASH_CHECKSUM_URL,
     RECORDING_BETS,
@@ -54,19 +55,37 @@ def remove_bidirectional_control_chars(s: str) -> str:
 
 def fetch_lineChecksum(url: str, proxy_url: str) -> str:
     """Fetch the lineChecksum from the API using the proxy server."""
+    max_retries = 5
+    backoff_factor = 1.0  # seconds
+
     try:
         if ENV == "local":
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()["lineChecksum"]
         else:
-            response = requests.post(
-                proxy_url,
-                json={"url": url, "headers": headers},
-                timeout=10,
-            )
-            response.raise_for_status()
-            return response.json()["lineChecksum"]
+            for attempt in range(1, max_retries + 1):
+                try:
+                    response = requests.post(
+                        proxy_url,
+                        json={"url": url, "headers": headers},
+                        timeout=(3, 30),
+                    )
+                    response.raise_for_status()
+                    return response.json()["lineChecksum"]
+
+                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                    if attempt < max_retries:
+                        sleep_time = backoff_factor * (2 ** (attempt - 1))
+                        logger.warning(
+                            "Request to proxy failed (attempt %d/%d): %s. Retrying in %.1fs...",
+                            attempt, max_retries, e, sleep_time,
+                        )
+                        time.sleep(sleep_time)
+                    else:
+                        logger.error("All retries failed: %s", e)
+                        raise
+
     except requests.RequestException as e:
         logger.error("Failed to fetch lineChecksum from the API: %s", e)
         raise
