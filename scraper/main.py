@@ -26,7 +26,6 @@ load_dotenv()
 
 # Configuration
 ENV = os.environ.get("ENV", "local")
-PROXY_URL = os.environ.get("PROXY_URL")
 AWS_REGION = os.environ.get("AWS_REGION", "il-central-1")
 LOCAL_CSV_PATH = "bets.csv"
 
@@ -53,60 +52,59 @@ def remove_bidirectional_control_chars(s: str) -> str:
     return "".join(c for c in s if c not in bidi_chars)
 
 
-def fetch_lineChecksum(url: str, proxy_url: str) -> str:
-    """Fetch the lineChecksum from the API using the proxy server."""
+def fetch_lineChecksum(url: str) -> str:
+    """Fetch the lineChecksum from the API directly."""
     max_retries = 5
     backoff_factor = 1.0  # seconds
 
-    try:
-        if ENV == "local":
+    for attempt in range(1, max_retries + 1):
+        try:
             response = requests.get(url, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()["lineChecksum"]
-        else:
-            for attempt in range(1, max_retries + 1):
-                try:
-                    response = requests.post(
-                        proxy_url,
-                        json={"url": url, "headers": headers},
-                        timeout=(3, 30),
-                    )
-                    response.raise_for_status()
-                    return response.json()["lineChecksum"]
 
-                except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-                    if attempt < max_retries:
-                        sleep_time = backoff_factor * (2 ** (attempt - 1))
-                        logger.warning(
-                            "Request to proxy failed (attempt %d/%d): %s. Retrying in %.1fs...",
-                            attempt, max_retries, e, sleep_time,
-                        )
-                        time.sleep(sleep_time)
-                    else:
-                        logger.error("All retries failed: %s", e)
-                        raise
-
-    except requests.RequestException as e:
-        logger.error("Failed to fetch lineChecksum from the API: %s", e)
-        raise
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            if attempt < max_retries:
+                sleep_time = backoff_factor * (2 ** (attempt - 1))
+                logger.warning(
+                    "Request failed (attempt %d/%d): %s. Retrying in %.1fs...",
+                    attempt, max_retries, e, sleep_time,
+                )
+                time.sleep(sleep_time)
+            else:
+                logger.error("All retries failed: %s", e)
+                raise
+        except requests.RequestException as e:
+            logger.error("Failed to fetch lineChecksum from the API: %s", e)
+            raise
 
 
-def fetch_data(url: str, proxy_url: str, lineChecksum: str = "") -> dict:
-    """Fetch data from the API."""
+def fetch_data(url: str, lineChecksum: str = "") -> dict:
+    """Fetch data from the API directly."""
     complete_url = f"{url}?lineChecksum={lineChecksum}"
-    try:
-        if ENV == "local":
+    max_retries = 5
+    backoff_factor = 1.0  # seconds
+
+    for attempt in range(1, max_retries + 1):
+        try:
             response = requests.get(complete_url, headers=headers, timeout=10)
             response.raise_for_status()
             return response.json()
-        else:
-            response = requests.post(
-                proxy_url, json={"url": complete_url, "headers": headers}, timeout=10
-            )
-            return response.json()
-    except requests.RequestException as e:
-        logger.error("Failed to fetch data from the API: %s", e)
-        raise
+
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            if attempt < max_retries:
+                sleep_time = backoff_factor * (2 ** (attempt - 1))
+                logger.warning(
+                    "Request failed (attempt %d/%d): %s. Retrying in %.1fs...",
+                    attempt, max_retries, e, sleep_time,
+                )
+                time.sleep(sleep_time)
+            else:
+                logger.error("All retries failed: %s", e)
+                raise
+        except requests.RequestException as e:
+            logger.error("Failed to fetch data from the API: %s", e)
+            raise
 
 
 def process_data(data: dict[str, Any]) -> pd.DataFrame:
@@ -193,8 +191,8 @@ def save_raw_data(data: dict, date, run_time):
 def main(event, context):
     logger.info("Environment: " + ENV)
 
-    lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL, PROXY_URL)
-    data = fetch_data(API_URL, PROXY_URL, lineChecksum)
+    lineChecksum = fetch_lineChecksum(HASH_CHECKSUM_URL)
+    data = fetch_data(API_URL, lineChecksum)
 
     try:
         bet_df = process_data(data)
