@@ -105,7 +105,7 @@ def fetch_and_combine_results(start_date: str, end_date: str) -> pd.DataFrame:
     all_results = pd.DataFrame()
 
     while current_date <= end_date:
-        next_date = min(current_date + pd.Timedelta(days=13), end_date)
+        next_date = min(current_date + pd.Timedelta(days=6), end_date)
         logger.info(f"Fetching results from {current_date} to {next_date}")
         response = request_results_from_api(
             current_date.strftime("%Y-%m-%d"), next_date.strftime("%Y-%m-%d")
