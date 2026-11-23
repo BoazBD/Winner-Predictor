@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% macro sign(x) %}{{ 'pos' if x and x > 0 else ('neg' if x and x < 0 else '') }}{% endmacro %}
+
+{% macro poly_cell(r) %}
+  {{ r.poly_odds | num }}
+  <div class="muted small ext">{{ (r.poly_ask * 100) | round | int }}¢{% if r.poly_url %} · <a href="{{ r.poly_url }}" target="_blank" rel="noopener">{{ t.poly }} ↗</a>{% endif %}</div>
+{% endmacro %}
+
+{% macro bet_table(rows, settled=False) %}
+<div class="table-wrap"><table>
+  <thead><tr>
+    <th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>{{ t.pick }}</th>
+    <th class="n hide-sm">{{ t.winner }}</th><th class="n">{{ t.poly }}</th><th class="n hide-sm">{{ t.p }}</th>
+    <th class="n">{{ t.ev }}</th><th class="hide-sm">{{ t.bought }}</th>
+    {% if settled %}<th>{{ t.result }}</th><th class="n">{{ t.pnl }}</th><th class="n" title="{{ t.clv_help }}">CLV</th><th class="n hide-sm">{{ t.running }}</th>{% endif %}
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td class="t">{{ r.kickoff | when }}</td>
+      <td class="match">{{ r.home }} – {{ r.away }}<span class="muted">{{ r.league }}</span></td>
+      <td class="pick-cell">{{ r.pick }}</td>
+      <td class="n hide-sm">{{ r.winner_odds | num }}</td>
+      <td class="n">{{ poly_cell(r) }}</td>
+      <td class="n hide-sm">{{ (r.p_model * 100) | pct(1, False) if r.p_model is not none else '–' }}</td>
+      <td class="n">{{ (r.ev * 100) | pct }}</td>
+      <td class="t hide-sm">{{ r.bought | when }}</td>
+      {% if settled %}
+        <td>{% if r.status == 'void' %}<span class="badge b-void">{{ t.void }}</span>
+            {% elif r.won %}<span class="badge b-won">✓ {{ r.score }}</span>
+            {% else %}<span class="badge b-lost">✗ {{ r.score }}</span>{% endif %}</td>
+        <td class="n {{ sign(r.profit) }}">{{ r.profit | num(2, True) }}</td>
+        <td class="n {{ sign(r.clv) }}">{{ (r.clv * 100) | pct if r.clv is not none else '–' }}</td>
+        <td class="n hide-sm {{ sign(r.running) }}">{{ r.running | num(2, True) }}</td>
+      {% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endmacro %}
+
+{% macro pick_table(rows, settled=False) %}
+<div class="table-wrap"><table>
+  <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>{{ t.pick }}</th><th class="n">{{ t.winner }}</th>
+    <th class="n hide-sm">{{ t.p }}</th><th class="n">{{ t.ev }}</th><th class="hide-sm">{{ t.bought }}</th>
+    {% if settled %}<th>{{ t.result }}</th><th class="n">{{ t.pnl }}</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td class="t">{{ r.kickoff | when }}</td>
+      <td class="match">{{ r.home }} – {{ r.away }}<span class="muted">{{ r.league }}</span></td>
+      <td class="pick-cell">{{ r.pick }}</td><td class="n">{{ r.odds | num }}</td>
+      <td class="n hide-sm">{{ (r.p_model * 100) | pct(1, False) if r.p_model is not none else '–' }}</td>
+      <td class="n">{{ (r.ev * 100) | pct if r.ev is not none else '–' }}</td>
+      <td class="t hide-sm">{{ r.bought | when }}</td>
+      {% if settled %}
+        <td>{% if r.status == 'void' %}<span class="badge b-void">{{ t.void }}</span>{% elif r.won %}<span class="badge b-won">✓ {{ r.score }}</span>{% else %}<span class="badge b-lost">✗ {{ r.score }}</span>{% endif %}</td>
+        <td class="n {{ sign(r.profit) }}">{{ r.profit | num(2, True) }}</td>
+      {% endif %}</tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endmacro %}
+
+{% block content %}
+<div class="intro">
+  <div>
+    <h1>{{ t.title }}</h1>
+    <p>{{ t.subtitle }}</p>
+  </div>
+  {% if updated %}<span class="muted small">{{ t.updated }} {{ updated | when }}</span>{% endif %}
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>{{ t.compare }}</h2>
+    <div class="table-wrap"><table class="compare">
+      <thead><tr><th>{{ t.model }}</th><th class="n hide-sm">{{ t.bets }}</th><th class="n hide-sm">{{ t.settled }}</th>
+        <th class="n">{{ t.pnl }}</th><th class="n">{{ t.roi }}</th><th class="n" title="{{ t.clv_help }}">{{ t.clv }} ⓘ</th></tr></thead>
+      <tbody>
+      {% for m in overview %}
+        <tr class="{{ 'on' if m.key == model }}">
+          <td><a href="{{ url(model=m.key, ev=None) }}"><span class="dot s{{ m.slot }}"></span> {{ m.label }}</a></td>
+          <td class="n hide-sm">{{ m.bets }}</td><td class="n hide-sm">{{ m.settled }}</td>
+          <td class="n {{ sign(m.pnl) }}">{{ m.pnl | num(2, True) }}</td>
+          <td class="n {{ sign(m.roi) }}">{{ m.roi | pct }}</td>
+          <td class="n {{ sign(m.clv) }}">{{ m.clv | pct }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="muted small" style="margin:10px 0 0">{{ t.clv_help }}</p>
+  </section>
+
+  <section class="card">
+    <h2>{{ t.cum }}</h2>
+    <div class="legend">{% for s in chart %}<span><i class="dot s{{ s.slot }}"></i>{{ s.label }}</span>{% endfor %}</div>
+    <div class="chart-box" dir="ltr"><canvas id="pnl" role="img" aria-label="{{ t.cum }}; the comparison table has the same figures"></canvas></div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="tabs">
+    {% for m in overview %}<a class="tab {{ 'on' if m.key == model }}" href="{{ url(model=m.key, ev=None) }}"><i class="dot s{{ m.slot }}"></i>{{ m.label }}</a>{% endfor %}
+  </div>
+  <div class="model-head">
+    <p>{{ models[model]['description_he'] if lang == 'he' else models[model].description }}</p>
+    <label class="inline">{{ t.min_ev }}
+      <select onchange="location.href=this.value">
+        {% for v in ev_options %}<option value="{{ url(ev=v) }}" {{ 'selected' if v == min_ev }}>{{ t.all if v is none else ((v * 100) | pct(0, False)) }}</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+
+  {% set s = sel.stats %}
+  <div class="kpis">
+    <div class="kpi lead" title="{{ t.clv_help }}"><div class="k">{{ t.clv }}</div><div class="v {{ sign(s.clv) }}">{{ s.clv | pct }}</div><div class="s">{{ s.settled }} {{ t.settled | lower }}</div></div>
+    <div class="kpi"><div class="k">{{ t.pnl }}</div><div class="v {{ sign(s.pnl) }}">{{ s.pnl | num(2, True) }}</div><div class="s">units</div></div>
+    <div class="kpi"><div class="k">{{ t.roi }}</div><div class="v {{ sign(s.roi) }}">{{ s.roi | pct }}</div><div class="s">&nbsp;</div></div>
+    <div class="kpi"><div class="k">{{ t.win_rate }}</div><div class="v">{{ s.win_rate | pct(0, False) }}</div><div class="s">{{ s.won }}/{{ s.settled }}</div></div>
+    <div class="kpi"><div class="k">{{ t.avg_odds }}</div><div class="v">{{ s.avg_odds | num }}</div><div class="s">&nbsp;</div></div>
+    <div class="kpi"><div class="k">{{ t.open }}</div><div class="v">{{ s.open }}</div><div class="s">{{ sel.awaiting | length }} {{ t.awaiting | lower }}</div></div>
+  </div>
+
+  <h3>{{ t.open }} ({{ sel.open | length }})</h3>
+  {% if sel.open %}{{ bet_table(sel.open) }}{% else %}<p class="empty">{{ t.none_open }}</p>{% endif %}
+
+  {% if sel.awaiting %}
+  <h3>{{ t.awaiting }} ({{ sel.awaiting | length }})</h3>
+  {{ bet_table(sel.awaiting) }}
+  {% endif %}
+
+  <h3>{{ t.history }} ({{ sel.settled | length }})</h3>
+  {% if sel.settled %}{{ bet_table(sel.settled, True) }}{% else %}<p class="empty">{{ t.none_settled }}</p>{% endif %}
+</section>
+
+{% if picks %}
+<section class="card">
+  <details class="more">
+    <summary>{{ t.winner_picks }} — {{ picks.stats.bets }} · {{ t.pnl }} {{ picks.stats.pnl | num(2, True) }} · {{ t.roi }} {{ picks.stats.roi | pct }}</summary>
+    <p class="muted small">The model's own picks, bet at Winner's odds (first time its rule fires). Shown for comparison with the Polymarket results above.</p>
+    {% if picks.open %}<h3>{{ t.open }} ({{ picks.open | length }})</h3>{{ pick_table(picks.open) }}{% endif %}
+    {% if picks.awaiting %}<h3>{{ t.awaiting }} ({{ picks.awaiting | length }})</h3>{{ pick_table(picks.awaiting) }}{% endif %}
+    <h3>{{ t.history }} ({{ picks.settled | length }})</h3>
+    {% if picks.settled %}{{ pick_table(picks.settled, True) }}{% else %}<p class="empty">{{ t.none_settled }}</p>{% endif %}
+  </details>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(() => {
+  const series = {{ chart | tojson }};
+  const el = document.getElementById('pnl');
+  if (!window.Chart || !el) return;
+  let chart;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // Direct label at each line's end (identity is never colour alone); text uses ink, not the series colour.
+  const endLabels = {
+    id: 'endLabels',
+    afterDatasetsDraw(c) {
+      const ctx = c.ctx; ctx.save(); ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = css('--ink-2'); ctx.textBaseline = 'middle';
+      const ends = c.data.datasets.map((d, i) => {
+        const pts = c.getDatasetMeta(i).data, last = pts[pts.length - 1];
+        return last && { text: d.label.replace(' model', ''), x: last.x, y: last.y };
+      }).filter(Boolean).sort((a, b) => a.y - b.y);
+      ends.forEach((e, i) => { if (i && e.y - ends[i - 1].y < 15) e.y = ends[i - 1].y + 15; });   // no overlapping labels
+      ends.forEach(e => {
+        ctx.textAlign = e.x > c.chartArea.right - 90 ? 'right' : 'left';
+        ctx.fillText(e.text, e.x + (ctx.textAlign === 'right' ? -6 : 6), e.y - 10);
+      });
+      ctx.restore();
+    }
+  };
+  const draw = () => {
+    if (chart) chart.destroy();
+    const grid = css('--grid'), muted = css('--muted');
+    chart = new Chart(el, {
+      type: 'line',
+      data: { datasets: series.filter(s => s.points.length).map(s => ({
+        label: s.label, data: s.points, borderColor: css('--series-' + s.slot), backgroundColor: css('--series-' + s.slot),
+        borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, pointHitRadius: 12, tension: 0, stepped: 'after' })) },
+      options: {
+        maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'nearest', intersect: false },
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y >= 0 ? '+' : ''}${c.parsed.y.toFixed(2)} units` } } },
+        scales: {
+          x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM HH:mm' }, grid: { display: false },
+               border: { color: grid }, ticks: { color: muted, maxRotation: 0 } },
+          y: { grid: { color: ctx => ctx.tick.value === 0 ? css('--muted') : grid }, border: { display: false },
+               ticks: { color: muted, callback: v => (v > 0 ? '+' : '') + v } }
+        }
+      },
+      plugins: [endLabels]
+    });
+  };
+  draw();
+  document.addEventListener('themechange', draw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+})();
+</script>
+{% endblock %}

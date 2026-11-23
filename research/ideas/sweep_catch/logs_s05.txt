@@ -1,0 +1,1 @@
+avg $ locked per 1-share order set (d=0.20, gap6, all games/outcomes/sides): {'test': 276.9, 'train': 126.5, 'val': 238.7}

@@ -1,0 +1,9 @@
+== s03_marks Fri Nov 20 19:37:39 IST 2026
+marked 20181981 in grid 0.893
+taker rows: mean mv_c 0.0005094154 clv -0.003613209 res -0.0013350013
+maker rows: mean mv_c -0.0006158863 clv 0.0032052528
+== s04_skill Fri Nov 20 19:38:22 IST 2026
+            top1%     0.0022  0.0023  0.0028
+            top1-5%   0.0023  0.0031  0.0039
+            top5-20%  0.0013  0.0012  0.0029
+== s05_bets Fri Nov 20 19:39:42 IST 2026

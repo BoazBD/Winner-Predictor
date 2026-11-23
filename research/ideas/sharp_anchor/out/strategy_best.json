@@ -1,0 +1,480 @@
+{
+ "flip: anchor=bfe theta=0.02 entry=T(18:00) taker, fee on": {
+  "train": {
+   "n": 227,
+   "ret_per_usd": -0.0907,
+   "ci": [
+    -0.1035,
+    -0.0792
+   ],
+   "trades_per_month": 26.5,
+   "usd_per_month_at_100": -287.0,
+   "worst_day_usd": -267.0,
+   "hit_rate": 0.101,
+   "median_usd_traded_after_T": 1096.0,
+   "mean_drift_pts": 0.39,
+   "mean_gap_pts": 5.2
+  },
+  "val": {
+   "n": 79,
+   "ret_per_usd": -0.0789,
+   "ci": [
+    -0.0974,
+    -0.061
+   ],
+   "trades_per_month": 40.7,
+   "usd_per_month_at_100": -395.0,
+   "worst_day_usd": -75.0,
+   "hit_rate": 0.139,
+   "median_usd_traded_after_T": 630.0,
+   "mean_drift_pts": 0.58,
+   "mean_gap_pts": 6.05
+  },
+  "test": {
+   "n": 82,
+   "ret_per_usd": -0.0791,
+   "ci": [
+    -0.098,
+    -0.0607
+   ],
+   "trades_per_month": 82.0,
+   "usd_per_month_at_100": -711.0,
+   "worst_day_usd": -96.0,
+   "hit_rate": 0.122,
+   "median_usd_traded_after_T": 663.0,
+   "mean_drift_pts": 0.54,
+   "mean_gap_pts": 6.01
+  }
+ },
+ "flip: same, NO fee (pre-Apr-2026 markets / maker-like)": {
+  "train": {
+   "n": 227,
+   "ret_per_usd": -0.033,
+   "ci": [
+    -0.0446,
+    -0.0222
+   ],
+   "trades_per_month": 26.5,
+   "usd_per_month_at_100": -121.0,
+   "worst_day_usd": -166.0,
+   "hit_rate": 0.26,
+   "median_usd_traded_after_T": 1096.0,
+   "mean_drift_pts": 0.39,
+   "mean_gap_pts": 5.2
+  },
+  "val": {
+   "n": 79,
+   "ret_per_usd": -0.0217,
+   "ci": [
+    -0.04,
+    -0.004
+   ],
+   "trades_per_month": 40.7,
+   "usd_per_month_at_100": -147.0,
+   "worst_day_usd": -48.0,
+   "hit_rate": 0.266,
+   "median_usd_traded_after_T": 630.0,
+   "mean_drift_pts": 0.58,
+   "mean_gap_pts": 6.05
+  },
+  "test": {
+   "n": 82,
+   "ret_per_usd": -0.0176,
+   "ci": [
+    -0.0364,
+    0.0008
+   ],
+   "trades_per_month": 82.0,
+   "usd_per_month_at_100": -171.0,
+   "worst_day_usd": -58.0,
+   "hit_rate": 0.293,
+   "median_usd_traded_after_T": 663.0,
+   "mean_drift_pts": 0.54,
+   "mean_gap_pts": 6.01
+  }
+ },
+ "flip: same, entry T-5h (13:00 London; look-ahead risk)": {
+  "train": {
+   "n": 108,
+   "ret_per_usd": -0.0861,
+   "ci": [
+    -0.1048,
+    -0.0693
+   ],
+   "trades_per_month": 12.6,
+   "usd_per_month_at_100": -128.0,
+   "worst_day_usd": -124.0,
+   "hit_rate": 0.111,
+   "median_usd_traded_after_T": 1063.0,
+   "mean_drift_pts": 0.27,
+   "mean_gap_pts": 5.66
+  },
+  "val": {
+   "n": 39,
+   "ret_per_usd": -0.0816,
+   "ci": [
+    -0.1127,
+    -0.0532
+   ],
+   "trades_per_month": 22.8,
+   "usd_per_month_at_100": -235.0,
+   "worst_day_usd": -61.0,
+   "hit_rate": 0.179,
+   "median_usd_traded_after_T": 519.0,
+   "mean_drift_pts": 0.67,
+   "mean_gap_pts": 8.93
+  },
+  "test": {
+   "n": 43,
+   "ret_per_usd": -0.0852,
+   "ci": [
+    -0.1092,
+    -0.0601
+   ],
+   "trades_per_month": 43.0,
+   "usd_per_month_at_100": -429.0,
+   "worst_day_usd": -125.0,
+   "hit_rate": 0.07,
+   "median_usd_traded_after_T": 560.0,
+   "mean_drift_pts": 0.13,
+   "mean_gap_pts": 7.35
+  }
+ },
+ "flip: same, real printed ask/bid only": {
+  "train": {
+   "n": 45,
+   "ret_per_usd": -0.0812,
+   "ci": [
+    -0.1015,
+    -0.0634
+   ],
+   "trades_per_month": 5.7,
+   "usd_per_month_at_100": -55.0,
+   "worst_day_usd": -35.0,
+   "hit_rate": 0.022,
+   "median_usd_traded_after_T": 4325.0,
+   "mean_drift_pts": 0.4,
+   "mean_gap_pts": 3.69
+  },
+  "val": {
+   "n": 18,
+   "ret_per_usd": -0.0672,
+   "ci": [
+    -0.0999,
+    -0.0384
+   ],
+   "trades_per_month": 9.3,
+   "usd_per_month_at_100": -74.0,
+   "worst_day_usd": -29.0,
+   "hit_rate": 0.111,
+   "median_usd_traded_after_T": 1395.0,
+   "mean_drift_pts": 0.86,
+   "mean_gap_pts": 3.68
+  },
+  "test": {
+   "n": 20,
+   "ret_per_usd": -0.0468,
+   "ci": [
+    -0.0785,
+    -0.0207
+   ],
+   "trades_per_month": 20.0,
+   "usd_per_month_at_100": -93.0,
+   "worst_day_usd": -33.0,
+   "hit_rate": 0.25,
+   "median_usd_traded_after_T": 254.0,
+   "mean_drift_pts": 1.43,
+   "mean_gap_pts": 4.1
+  }
+ },
+ "flip: same, ZERO spread and fee (upper bound)": {
+  "train": {
+   "n": 227,
+   "ret_per_usd": 0.0124,
+   "ci": [
+    0.0023,
+    0.0227
+   ],
+   "trades_per_month": 26.5,
+   "usd_per_month_at_100": 27.0,
+   "worst_day_usd": -46.0,
+   "hit_rate": 0.458,
+   "median_usd_traded_after_T": 1096.0,
+   "mean_drift_pts": 0.39,
+   "mean_gap_pts": 5.2
+  },
+  "val": {
+   "n": 79,
+   "ret_per_usd": 0.0172,
+   "ci": [
+    -0.0,
+    0.0348
+   ],
+   "trades_per_month": 40.7,
+   "usd_per_month_at_100": 38.0,
+   "worst_day_usd": -28.0,
+   "hit_rate": 0.43,
+   "median_usd_traded_after_T": 630.0,
+   "mean_drift_pts": 0.58,
+   "mean_gap_pts": 6.05
+  },
+  "test": {
+   "n": 82,
+   "ret_per_usd": 0.018,
+   "ci": [
+    0.0,
+    0.0373
+   ],
+   "trades_per_month": 82.0,
+   "usd_per_month_at_100": 185.0,
+   "worst_day_usd": -29.0,
+   "hit_rate": 0.451,
+   "median_usd_traded_after_T": 663.0,
+   "mean_drift_pts": 0.54,
+   "mean_gap_pts": 6.01
+  }
+ },
+ "hold: anchor=bfe theta=0.01 entry=T(18:00) taker, fee on": {
+  "train": {
+   "n": 842,
+   "ret_per_usd": -0.0461,
+   "ci": [
+    -0.1351,
+    0.0381
+   ],
+   "trades_per_month": 98.4,
+   "usd_per_month_at_100": -814.0,
+   "worst_day_usd": -1075.0,
+   "hit_rate": 0.305,
+   "median_usd_traded_after_T": 1129.0,
+   "mean_drift_pts": 0.3,
+   "mean_gap_pts": 2.39
+  },
+  "val": {
+   "n": 234,
+   "ret_per_usd": -0.0911,
+   "ci": [
+    -0.2623,
+    0.0948
+   ],
+   "trades_per_month": 118.6,
+   "usd_per_month_at_100": -989.0,
+   "worst_day_usd": -790.0,
+   "hit_rate": 0.282,
+   "median_usd_traded_after_T": 586.0,
+   "mean_drift_pts": 0.21,
+   "mean_gap_pts": 2.93
+  },
+  "test": {
+   "n": 238,
+   "ret_per_usd": -0.0501,
+   "ci": [
+    -0.2233,
+    0.1377
+   ],
+   "trades_per_month": 172.3,
+   "usd_per_month_at_100": -25.0,
+   "worst_day_usd": -1407.0,
+   "hit_rate": 0.29,
+   "median_usd_traded_after_T": 498.0,
+   "mean_drift_pts": 0.31,
+   "mean_gap_pts": 2.96
+  }
+ },
+ "hold: same, NO fee (pre-Apr-2026 markets / maker-like)": {
+  "train": {
+   "n": 842,
+   "ret_per_usd": -0.0161,
+   "ci": [
+    -0.1124,
+    0.0775
+   ],
+   "trades_per_month": 98.4,
+   "usd_per_month_at_100": -509.0,
+   "worst_day_usd": -1023.0,
+   "hit_rate": 0.305,
+   "median_usd_traded_after_T": 1129.0,
+   "mean_drift_pts": 0.3,
+   "mean_gap_pts": 2.39
+  },
+  "val": {
+   "n": 234,
+   "ret_per_usd": -0.0614,
+   "ci": [
+    -0.2429,
+    0.1271
+   ],
+   "trades_per_month": 118.6,
+   "usd_per_month_at_100": -608.0,
+   "worst_day_usd": -754.0,
+   "hit_rate": 0.282,
+   "median_usd_traded_after_T": 586.0,
+   "mean_drift_pts": 0.21,
+   "mean_gap_pts": 2.93
+  },
+  "test": {
+   "n": 238,
+   "ret_per_usd": -0.0192,
+   "ci": [
+    -0.2026,
+    0.1682
+   ],
+   "trades_per_month": 172.3,
+   "usd_per_month_at_100": 594.0,
+   "worst_day_usd": -1397.0,
+   "hit_rate": 0.29,
+   "median_usd_traded_after_T": 498.0,
+   "mean_drift_pts": 0.31,
+   "mean_gap_pts": 2.96
+  }
+ },
+ "hold: same, entry T-5h (13:00 London; look-ahead risk)": {
+  "train": {
+   "n": 524,
+   "ret_per_usd": -0.0285,
+   "ci": [
+    -0.1437,
+    0.0889
+   ],
+   "trades_per_month": 61.3,
+   "usd_per_month_at_100": -576.0,
+   "worst_day_usd": -1237.0,
+   "hit_rate": 0.303,
+   "median_usd_traded_after_T": 830.0,
+   "mean_drift_pts": 0.29,
+   "mean_gap_pts": 1.98
+  },
+  "val": {
+   "n": 162,
+   "ret_per_usd": -0.0021,
+   "ci": [
+    -0.2293,
+    0.2387
+   ],
+   "trades_per_month": 82.1,
+   "usd_per_month_at_100": -95.0,
+   "worst_day_usd": -908.0,
+   "hit_rate": 0.302,
+   "median_usd_traded_after_T": 444.0,
+   "mean_drift_pts": 0.27,
+   "mean_gap_pts": 3.1
+  },
+  "test": {
+   "n": 118,
+   "ret_per_usd": -0.2179,
+   "ci": [
+    -0.455,
+    0.0137
+   ],
+   "trades_per_month": 99.6,
+   "usd_per_month_at_100": -2921.0,
+   "worst_day_usd": -811.0,
+   "hit_rate": 0.237,
+   "median_usd_traded_after_T": 315.0,
+   "mean_drift_pts": 0.0,
+   "mean_gap_pts": 3.48
+  }
+ },
+ "PINNACLE early, theta=0.02, exit=flip (Sep25-Jan26 only)": {
+  "train": {
+   "n": 68,
+   "ret_per_usd": -0.0667,
+   "ci": [
+    -0.0895,
+    -0.0458
+   ],
+   "trades_per_month": 17.4,
+   "usd_per_month_at_100": -167.0,
+   "worst_day_usd": -72.0,
+   "hit_rate": 0.191,
+   "median_usd_traded_after_T": 4042.0,
+   "mean_drift_pts": 0.93,
+   "mean_gap_pts": 2.94
+  }
+ },
+ "PINNACLE early, theta=0.03, exit=flip (Sep25-Jan26 only)": {
+  "train": {
+   "n": 20,
+   "ret_per_usd": -0.0613,
+   "ci": [
+    -0.1108,
+    -0.0253
+   ],
+   "trades_per_month": 5.2,
+   "usd_per_month_at_100": -41.0,
+   "worst_day_usd": -31.0,
+   "hit_rate": 0.3,
+   "median_usd_traded_after_T": 1221.0,
+   "mean_drift_pts": 1.05,
+   "mean_gap_pts": 4.45
+  }
+ },
+ "PINNACLE early, theta=0.05, exit=flip (Sep25-Jan26 only)": {
+  "train": {
+   "n": 3,
+   "ret_per_usd": -0.0524,
+   "ci": [
+    -0.0834,
+    -0.0346
+   ],
+   "trades_per_month": 3.0,
+   "usd_per_month_at_100": -22.0,
+   "worst_day_usd": -14.0,
+   "hit_rate": 0.333,
+   "median_usd_traded_after_T": 1272.0,
+   "mean_drift_pts": 1.67,
+   "mean_gap_pts": 9.54
+  }
+ },
+ "PINNACLE early, theta=0.02, exit=hold (Sep25-Jan26 only)": {
+  "train": {
+   "n": 68,
+   "ret_per_usd": -0.1517,
+   "ci": [
+    -0.4822,
+    0.1774
+   ],
+   "trades_per_month": 17.4,
+   "usd_per_month_at_100": -381.0,
+   "worst_day_usd": -300.0,
+   "hit_rate": 0.221,
+   "median_usd_traded_after_T": 4042.0,
+   "mean_drift_pts": 0.93,
+   "mean_gap_pts": 2.94
+  }
+ },
+ "PINNACLE early, theta=0.03, exit=hold (Sep25-Jan26 only)": {
+  "train": {
+   "n": 20,
+   "ret_per_usd": 0.1745,
+   "ci": [
+    -0.4815,
+    0.8767
+   ],
+   "trades_per_month": 5.2,
+   "usd_per_month_at_100": 76.0,
+   "worst_day_usd": -200.0,
+   "hit_rate": 0.35,
+   "median_usd_traded_after_T": 1221.0,
+   "mean_drift_pts": 1.05,
+   "mean_gap_pts": 4.45
+  }
+ },
+ "PINNACLE early, theta=0.05, exit=hold (Sep25-Jan26 only)": {
+  "train": {
+   "n": 3,
+   "ret_per_usd": -0.2336,
+   "ci": [
+    -1.0,
+    0.2088
+   ],
+   "trades_per_month": 3.0,
+   "usd_per_month_at_100": 57.0,
+   "worst_day_usd": -100.0,
+   "hit_rate": 0.333,
+   "median_usd_traded_after_T": 1272.0,
+   "mean_drift_pts": 1.67,
+   "mean_gap_pts": 9.54
+  }
+ }
+}

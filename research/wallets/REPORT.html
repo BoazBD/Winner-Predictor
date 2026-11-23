@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Following Polymarket Wallets</title>
+<style>
+:root{--bg:#fbfaf7;--card:#ffffff;--ink:#1d1d1b;--muted:#6b6a65;--line:#e6e3dc;--bad:#b3261e;--badbg:#fbeae8;--good:#1e6b3a;--goodbg:#e7f3eb;--accent:#2f5d8a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324;--accent:#8db6e0}}
+:root[data-theme="dark"]{--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324;--accent:#8db6e0}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0}
+main{max-width:860px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:30px;line-height:1.2;margin:0 0 6px}h2{font-size:21px;margin:40px 0 10px;padding-top:8px;border-top:1px solid var(--line)}
+.sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+.verdict{background:var(--badbg);border-left:4px solid var(--bad);padding:16px 18px;border-radius:8px;margin:18px 0}
+.verdict b{color:var(--bad)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+.tile .n{font-size:26px;font-weight:650}.tile .l{color:var(--muted);font-size:13px}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+td.num{text-align:right;font-variant-numeric:tabular-nums}.neg{color:var(--bad)}.pos{color:var(--good)}
+.bar{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:14px}.bar span.lab{width:210px;flex:none}
+.bar .track{flex:1;height:14px;background:var(--line);border-radius:4px;position:relative}
+.bar .fill{position:absolute;top:0;bottom:0;border-radius:4px}
+code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:13px}
+li{margin:4px 0}
+@media(max-width:560px){.bar span.lab{width:120px}}
+</style></head><body><main>
+<h1>Following "informed" Polymarket wallets</h1>
+<div class="sub">Research for the Winner project · 20 Nov 2026 · 16,488 soccer games (Sep 2025 – Nov 18 2026) · 48.1 million trades with the wallet behind each one</div>
+
+<div class="verdict"><b>Verdict: it doesn't work, so don't trade it.</b> Some wallets really are skilled, and they stay skilled over time. But the price move they predict is tiny, about 0.4–0.6¢ a share. By the time a follower gets a fill, that move is already gone. Getting out before kickoff costs about 1.7¢ a share, and buying instantly adds about 1¢ more. We tried 4,110 rule combinations. <b>None made money even on the data it was tuned on</b>, and every family's best rule loses on the later periods.</div>
+
+<div class="tiles">
+<div class="tile"><div class="n">4,110</div><div class="l">rule combinations tested on training data</div></div>
+<div class="tile"><div class="n neg">0</div><div class="l">of them profitable on training data (≥60 trades)</div></div>
+<div class="tile"><div class="n neg">22 / 22</div><div class="l">rule families losing on Jul–Sep (whole 95% range below zero)</div></div>
+<div class="tile"><div class="n neg">−2% to −5%</div><div class="l">typical return per $ of the best rules</div></div>
+</div>
+
+<h2>1. What we tested</h2>
+<ul>
+<li><b>Data:</b> every Polymarket trade on 16,488 soccer games, including the wallet behind it. We scored 363,892 wallets that took prices and 45,554 that placed resting orders.</li>
+<li><b>Ways of spotting an "informed" wallet:</b>
+<ul>
+<li>Its past trades predicted where the <i>price</i> went next. Scores were built month by month, each using only earlier games.</li>
+<li>It often picks the winner.</li>
+<li>It gets better prices than the price at kickoff.</li>
+<li>A machine-learning model rates each bet.</li>
+</ul></li>
+<li><b>"Insider-looking" behaviour:</b> new wallets making big bets, several wallets betting together, bets that move the price a lot, bets placed 50–80 minutes before kickoff (when lineups come out), bets that are a big share of the game's volume, and wallets that only bet on one league.</li>
+<li><b>Copying and betting against:</b> for every pattern we tried both copying the bet and betting the opposite way.</li>
+<li><b>Trading the way you asked:</b>
+<ul>
+<li>We see the bet up to an hour later, like an hourly program would. We also tried 5, 15 and 60 minutes.</li>
+<li>We buy either instantly, paying the fee, or with a limit order, which counts as filled only if a real trade went through our price.</li>
+<li>We sell 1–5¢ higher, or at the price shortly before kickoff.</li>
+<li>We never hold into the game.</li>
+</ul></li>
+<li><b>Honest testing:</b>
+<ul>
+<li>Rules were chosen on Sep 2025 – Jun 2026, checked on Jul–Sep 2026, then looked at once on Oct 1 – Nov 18 2026.</li>
+<li>The 95% ranges come from resampling games.</li>
+<li>We also checked that enough shares really traded at our price: about 60% of fills had $100 or more available, so order size is not the problem.</li>
+</ul></li>
+</ul>
+
+<h2>2. Results: best rule of each family</h2>
+<p>Return per $ with its 95% range, for the hourly program. The $/month column assumes $100 per trade.</p>
+<div class="wrap"><table>
+<tr><th>Rule</th><th>Train</th><th>Jul–Sep</th><th>Oct–Nov</th><th>$/month (Oct–Nov)</th></tr>
+<tr><td>Bet against a group of 5+ wallets</td><td class="num neg">−1.9%</td><td class="num neg">−3.0%</td><td class="num neg">−3.4% (13 trades)</td><td class="num neg">−$27</td></tr>
+<tr><td>Copy the ML model's top bets</td><td class="num neg">−2.1%</td><td class="num neg">−2.9%</td><td class="num neg">−2.6%</td><td class="num neg">−$68</td></tr>
+<tr><td>Copy wallets that win often ($5k+ bets)</td><td class="num neg">−2.3%</td><td class="num neg">−3.2%</td><td class="num neg">−2.5%</td><td class="num neg">−$75</td></tr>
+<tr><td>Copy bets of $20k or more</td><td class="num neg">−2.4%</td><td class="num neg">−3.5%</td><td class="num neg">−3.7%</td><td class="num neg">−$75</td></tr>
+<tr><td>Copy wallets whose bets move the price</td><td class="num neg">−2.5%</td><td class="num neg">−4.1%</td><td class="num neg">−3.4%</td><td class="num neg">−$355</td></tr>
+<tr><td>Copy bets placed when lineups come out</td><td class="num neg">−2.6%</td><td class="num neg">−3.8%</td><td class="num neg">−4.0%</td><td class="num neg">−$121</td></tr>
+<tr><td>Copy new wallets making big bets</td><td class="num neg">−2.8%</td><td class="num neg">−3.7%</td><td class="num neg">−3.2%</td><td class="num neg">−$89</td></tr>
+<tr><td>Copy bets that are 10%+ of game volume</td><td class="num neg">−2.8%</td><td class="num neg">−5.0%</td><td class="num neg">−4.5%</td><td class="num neg">−$685</td></tr>
+<tr><td>Copy bets that move the price 3+ steps</td><td class="num neg">−2.9%</td><td class="num neg">−4.1%</td><td class="num neg">−4.8%</td><td class="num neg">−$568</td></tr>
+<tr><td>Bet against wallets that lose often</td><td class="num neg">−3.7%</td><td class="num neg">−5.2%</td><td class="num neg">−4.9%</td><td class="num neg">−$82</td></tr>
+</table></div>
+<p style="color:var(--muted);font-size:14px">This shows 10 of the 22 families; the other 12 lose by similar amounts. Checking faster (every 5 or 15 minutes instead of hourly) loses just as much. The full tables are in <code>out/s07_finalists.csv</code> and <code>out/s07_delays.csv</code>.</p>
+
+<h2>3. Why it loses: where each cent goes</h2>
+<p>Average per share, on the training period. The best skilled wallets see the price move their way after they bet, but by the time we get a fill that move has already happened.</p>
+<div class="bar"><span class="lab">Top 1% wallets: move after <i>their</i> bet</span><div class="track"><div class="fill" style="left:50%;width:5.6%;background:var(--good)"></div></div><span class="pos">+0.56¢</span></div>
+<div class="bar"><span class="lab">Move after <i>our</i> fill (copy, limit order)</span><div class="track"><div class="fill" style="right:50%;width:2.7%;background:var(--bad)"></div></div><span class="neg">−0.27¢</span></div>
+<div class="bar"><span class="lab">Cost of selling before kickoff</span><div class="track"><div class="fill" style="right:50%;width:17.8%;background:var(--bad)"></div></div><span class="neg">−1.78¢</span></div>
+<div class="bar"><span class="lab">Extra cost of buying instantly</span><div class="track"><div class="fill" style="right:50%;width:10.5%;background:var(--bad)"></div></div><span class="neg">−1.05¢</span></div>
+<p>The costs are several times larger than anything a follower can capture. "Insider-looking" bets (new wallets, groups of wallets, bets that move the price a lot) are actually followed by the price moving back against them. Betting against them is still worth less than the cost of getting in and out.</p>
+
+<h2>4. Amazon Bedrock: which AI models your account can use</h2>
+<div class="wrap"><table>
+<tr><th>Region</th><th>Working Claude models (call them by these ids)</th></tr>
+<tr><td>il-central-1 (yours)</td><td>Only the <code>global.</code> ids work: Haiku 4.5, Sonnet 4.6, Opus 4.6, Opus 4.5. Example: <code>global.anthropic.claude-haiku-4-5-20251001-v1:0</code></td></tr>
+<tr><td>eu-central-1</td><td>The same four, as <code>eu.</code> or <code>global.</code> ids</td></tr>
+<tr><td>us-east-1</td><td>The same four, plus Sonnet 4.5 and Opus 4.1</td></tr>
+<tr><td>Blocked everywhere</td><td>The newer models (Opus 4.7–5.5, Sonnet 5/5.5, Haiku 5.5, Fable 5.x) need an access request in the AWS console</td></tr>
+</table></div>
+<p>This also explains why the team-name translation still fails. It calls Haiku 5.5 (<code>global.anthropic.claude-haiku-5-5</code>), which this account can't use yet. Switching it to Haiku 4.5 (<code>global.anthropic.claude-haiku-4-5-20251001-v1:0</code>), which works today, would fix it.</p>
+
+<h2>5. What we can do next</h2>
+<ul>
+<li><b>Recommended: don't build the hourly trading agent now.</b> No rule passed, and an AI agent can't create an edge that isn't in the data. Each hour it would only be picking among losing signals.</li>
+<li><b>Optional: a cheap "watcher".</b> An hourly program that paper-tracks the 3 least-bad rules on new games only (after 18 Nov), plus a control rule, with a site tab showing every signal and paper trade. It would start trading only if a rule shows a clearly positive result over 300+ paper trades and then holds up on the next 150. Expect it to confirm the losses. It costs a few dollars a month and needs no AI.</li>
+<li><b>Hold-out note:</b> the Oct–Nov period had already been used by earlier studies. The verdict doesn't depend on it, since everything loses on the training data too.</li>
+</ul>
+
+<h2>6. Files</h2>
+<ul>
+<li>Scripts <code>s00</code>–<code>s07</code> and <code>run_all.sh</code> in <code>research/wallets/</code></li>
+<li>Results: <code>out/s07_finalists.csv</code>, <code>out/s07_delays.csv</code>, <code>out/s07_all_train.csv</code>, <code>out/s04_persistence.csv</code>, <code>out/s05b_ml.json</code>, <code>out/bedrock_check.json</code></li>
+<li>The detailed plan for the optional watcher: <code>PLAN.md</code></li>
+</ul>
+</main></body></html>

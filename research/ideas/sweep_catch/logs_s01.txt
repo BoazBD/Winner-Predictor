@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "/Users/boazbardavid/Desktop/Winner/research/ideas/sweep_catch/s01_tape.py", line 40, in <module>
+    main()
+  File "/Users/boazbardavid/Desktop/Winner/research/ideas/sweep_catch/s01_tape.py", line 34, in main
+    print(c.sql(f"select count(*) n, count(distinct unique_id) g, avg(tlev>1::int) sweep_share "
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/boazbardavid/Desktop/Winner/winner_model/.venv/lib/python3.11/site-packages/duckdb/_relation.py", line 4346, in _connection_sql
+    return sql(self, query, alias, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/boazbardavid/Desktop/Winner/winner_model/.venv/lib/python3.11/site-packages/duckdb/_relation.py", line 3499, in sql
+    relation = _reading_source(con, text, markers, values, alias, parsed)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/boazbardavid/Desktop/Winner/winner_model/.venv/lib/python3.11/site-packages/duckdb/_relation.py", line 3421, in _reading_source
+    signature = _seam.bind(con, parsed if parsed is not None else text, capture=True, values=values)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/boazbardavid/Desktop/Winner/winner_model/.venv/lib/python3.11/site-packages/duckdb/_seam.py", line 83, in bind
+    names, types, parameters, return_type, deferred, captured, writes = con._bind(
+                                                                        ^^^^^^^^^^
+_duckdb.BinderException: Binder Error: No function matches the given name and argument types 'avg(BOOLEAN)'. You might need to add explicit type casts.
+	Candidate functions:
+	avg(x DECIMAL) -> DECIMAL
+	avg(x SMALLINT, /) -> DOUBLE
+	avg(x INTEGER, /) -> DOUBLE
+	avg(x BIGINT, /) -> DOUBLE
+	avg(x HUGEINT, /) -> DOUBLE
+	avg(x INTERVAL, /) -> INTERVAL
+	avg(x DOUBLE, /) -> DOUBLE
+	avg(x TIMESTAMP, /) -> TIMESTAMP
+	avg(x TIMESTAMP WITH TIME ZONE, /) -> TIMESTAMP WITH TIME ZONE
+	avg(x TIME, /) -> TIME
+	avg(x TIME WITH TIME ZONE, /) -> TIME WITH TIME ZONE
+

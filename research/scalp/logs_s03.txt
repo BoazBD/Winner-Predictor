@@ -1,0 +1,59 @@
+configs 42240
+configs 42240
+      fam    thr     ent     d      exit   time   price              vol     tier      sub  n_train  ret_train  lb_train  hit_train  n_val   ret_val    lb_val   hit_val
+9614   F2   0.08  bid240 -1.00  pnl_hold   >12h  25-75c  series 10k-250k      all     None      984   0.395045  0.343556   0.771341    180       NaN       NaN       NaN
+18351  F4   0.05   bid60  0.05  pnl_hold   >12h  25-75c  series 10k-250k  non-top     None      592   0.083803  0.040951   0.738176    408  0.002415 -0.049390  0.720588
+14500  F3   0.08   taker  0.05  pnl_hold  <=12h  25-75c              all      all     None      435   0.111048  0.032881   0.436782     81       NaN       NaN       NaN
+37652  F6  24.00   mid60  0.02  pnl_hold    all  15-85c              all      all  (2, -1)      277   0.082905 -0.000172   0.299639    183 -0.058523 -0.145708  0.382514
+33     F1   0.02  bid240 -1.00  pnl_kick   >12h  15-85c              all  non-top     None      191   0.006914 -0.026775   0.633508     85       NaN       NaN       NaN
+      fam    thr     ent     d      exit   time   price              vol     tier      sub  n_train  ret_train  lb_train  n_val   ret_val    lb_val
+9614   F2   0.08  bid240 -1.00  pnl_hold   >12h  25-75c  series 10k-250k      all     None      984   0.395045  0.343556    180       NaN       NaN
+9615   F2   0.08  bid240 -1.00  pnl_hold   >12h  25-75c  series 10k-250k  non-top     None      946   0.394431  0.341919    170       NaN       NaN
+9612   F2   0.08  bid240 -1.00  pnl_hold   >12h  25-75c              all      all     None     1175   0.380099  0.335329    292  0.161418  0.067463
+9613   F2   0.08  bid240 -1.00  pnl_hold   >12h  25-75c              all  non-top     None     1132   0.379155  0.333525    280  0.162163  0.067279
+9638   F2   0.08  bid240 -1.00  pnl_kick   >12h  25-75c  series 10k-250k      all     None      984   0.337856  0.316136    180       NaN       NaN
+10092  F2   0.08   bid60 -1.00  pnl_hold   >12h  25-75c              all      all     None      729   0.366775  0.314804    171  0.199791  0.070587
+10094  F2   0.08   bid60 -1.00  pnl_hold   >12h  25-75c  series 10k-250k      all     None      626   0.372613  0.314129     94       NaN       NaN
+10093  F2   0.08   bid60 -1.00  pnl_hold   >12h  25-75c              all  non-top     None      713   0.364442  0.311676    165       NaN       NaN
+10095  F2   0.08   bid60 -1.00  pnl_hold   >12h  25-75c  series 10k-250k  non-top     None      615   0.369990  0.310887     90       NaN       NaN
+9639   F2   0.08  bid240 -1.00  pnl_kick   >12h  25-75c  series 10k-250k  non-top     None      946   0.332741  0.310497    170       NaN       NaN
+18351  F4   0.05   bid60  0.05  pnl_hold   >12h  25-75c  series 10k-250k  non-top     None      592   0.083803  0.040951    408  0.002415 -0.049390
+18350  F4   0.05   bid60  0.05  pnl_hold   >12h  25-75c  series 10k-250k      all     None      603   0.082598  0.040369    411 -0.002172 -0.054240
+18358  F4   0.05   bid60  0.05  pnl_hold    all  25-75c  series 10k-250k      all     None      630   0.078846  0.036204    413 -0.004391 -0.056531
+18359  F4   0.05   bid60  0.05  pnl_hold    all  25-75c  series 10k-250k  non-top     None      618   0.078983  0.035700    410  0.000157 -0.051722
+18354  F4   0.05   bid60  0.05  pnl_hold    all  15-85c  series 10k-250k      all     None      748   0.080347  0.035551    463 -0.017139 -0.066479
+18346  F4   0.05   bid60  0.05  pnl_hold   >12h  15-85c  series 10k-250k      all     None      715   0.078897  0.034932    460 -0.015395 -0.064782
+18347  F4   0.05   bid60  0.05  pnl_hold   >12h  15-85c  series 10k-250k  non-top     None      701   0.079014  0.034294    456 -0.009218 -0.058207
+18355  F4   0.05   bid60  0.05  pnl_hold    all  15-85c  series 10k-250k  non-top     None      732   0.079470  0.033850    459 -0.011018 -0.059963
+14500  F3   0.08   taker  0.05  pnl_hold  <=12h  25-75c              all      all     None      435   0.111048  0.032881     81       NaN       NaN
+17966  F4   0.05  bid240  0.05  pnl_hold   >12h  25-75c  series 10k-250k      all     None      966   0.068996  0.030575    752 -0.016113 -0.061925
+19887  F4   0.08   bid60  0.05  pnl_hold   >12h  25-75c  series 10k-250k  non-top     None      547   0.075443  0.030432    368 -0.023196 -0.076901
+16036  F3   0.12   taker  0.05  pnl_hold  <=12h  25-75c              all      all     None      314   0.111847  0.029823     18       NaN       NaN
+14501  F3   0.08   taker  0.05  pnl_hold  <=12h  25-75c              all  non-top     None      414   0.107135  0.026646     79       NaN       NaN
+16037  F3   0.12   taker  0.05  pnl_hold  <=12h  25-75c              all  non-top     None      299   0.107932  0.024166     18       NaN       NaN
+14404  F3   0.08   taker  0.03  pnl_hold  <=12h  25-75c              all      all     None      435   0.095808  0.017886     81       NaN       NaN
+14902  F3   0.12  bid240  0.05  pnl_hold    all  25-75c  series 10k-250k      all     None      915   0.058633  0.015858    123       NaN       NaN
+14894  F3   0.12  bid240  0.05  pnl_hold   >12h  25-75c  series 10k-250k      all     None      866   0.058935  0.015327    119       NaN       NaN
+16053  F3   0.12   taker  0.05  pnl_hold    all  25-75c              all  non-top     None     2910   0.034622  0.011961    739  0.059064  0.009755
+16052  F3   0.12   taker  0.05  pnl_hold    all  25-75c              all      all     None     3031   0.034400  0.011835    746  0.065245  0.015571
+14405  F3   0.08   taker  0.03  pnl_hold  <=12h  25-75c              all  non-top     None      414   0.091923  0.011699     79       NaN       NaN
+37652  F6  24.00   mid60  0.02  pnl_hold    all  15-85c              all      all  (2, -1)      277   0.082905 -0.000172    183 -0.058523 -0.145708
+37596  F6  24.00   mid60  0.02  pnl_hold   >12h  15-85c              all      all  (2, -1)      277   0.082905 -0.000172    183 -0.058523 -0.145708
+38940  F6  24.00   mid60  0.05  pnl_hold   >12h  15-85c              all      all  (2, -1)      277   0.092595 -0.001035    183 -0.098755 -0.196786
+38996  F6  24.00   mid60  0.05  pnl_hold    all  15-85c              all      all  (2, -1)      277   0.092595 -0.001035    183 -0.098755 -0.196786
+38268  F6  24.00   mid60  0.03  pnl_hold   >12h  15-85c              all      all  (2, -1)      277   0.082322 -0.005009    183 -0.065819 -0.156100
+38324  F6  24.00   mid60  0.03  pnl_hold    all  15-85c              all      all  (2, -1)      277   0.082322 -0.005009    183 -0.065819 -0.156100
+36924  F6  24.00   mid60  0.01  pnl_hold   >12h  15-85c              all      all  (2, -1)      277   0.066249 -0.010453    183 -0.054792 -0.137598
+36980  F6  24.00   mid60  0.01  pnl_hold    all  15-85c              all      all  (2, -1)      277   0.066249 -0.010453    183 -0.054792 -0.137598
+38282  F6  24.00   mid60  0.03  pnl_hold   >12h  15-85c  series 10k-250k      all  (2, -1)      176   0.092496 -0.010870    136       NaN       NaN
+38338  F6  24.00   mid60  0.03  pnl_hold    all  15-85c  series 10k-250k      all  (2, -1)      176   0.092496 -0.010870    136       NaN       NaN
+33     F1   0.02  bid240 -1.00  pnl_kick   >12h  15-85c              all  non-top     None      191   0.006914 -0.026775     85       NaN       NaN
+37     F1   0.02  bid240 -1.00  pnl_kick   >12h  25-75c              all  non-top     None      164   0.007997 -0.030567     69       NaN       NaN
+32     F1   0.02  bid240 -1.00  pnl_kick   >12h  15-85c              all      all     None      239  -0.005936 -0.033665    106       NaN       NaN
+36     F1   0.02  bid240 -1.00  pnl_kick   >12h  25-75c              all      all     None      199  -0.003321 -0.035664     89       NaN       NaN
+3399   F1   0.03   taker -1.00  pnl_kick   >12h  25-75c  series 10k-250k  non-top     None      455  -0.012295 -0.036776    287 -0.073673 -0.092930
+3395   F1   0.03   taker -1.00  pnl_kick   >12h  15-85c  series 10k-250k  non-top     None      537  -0.018399 -0.040343    350 -0.078801 -0.098191
+3398   F1   0.03   taker -1.00  pnl_kick   >12h  25-75c  series 10k-250k      all     None      499  -0.019456 -0.042145    372 -0.076090 -0.092100
+85     F1   0.02  bid240 -1.00  pnl_t720   >12h  25-75c              all  non-top     None      164  -0.012665 -0.046145     69       NaN       NaN
+3394   F1   0.03   taker -1.00  pnl_kick   >12h  15-85c  series 10k-250k      all     None      593  -0.025999 -0.046410    458 -0.080285 -0.096340
+1830   F1   0.02   taker  0.05  pnl_hold  <=12h  25-75c  series 10k-250k      all     None     2192  -0.002278 -0.047471   1398 -0.006581 -0.064820

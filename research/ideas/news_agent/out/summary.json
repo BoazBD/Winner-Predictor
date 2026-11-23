@@ -1,0 +1,363 @@
+{
+ "llm_cost_by_stage": [
+  {
+   "stage": "judge",
+   "calls": 687,
+   "usd": 1.8071,
+   "in_tok": 302218,
+   "out_tok": 60030,
+   "usd_per_call": 0.00263
+  },
+  {
+   "stage": "screen_normal",
+   "calls": 287,
+   "usd": 0.80256,
+   "in_tok": 184502,
+   "out_tok": 123612,
+   "usd_per_call": 0.0028
+  },
+  {
+   "stage": "screen_swap",
+   "calls": 106,
+   "usd": 0.44331,
+   "in_tok": 89221,
+   "out_tok": 70817,
+   "usd_per_call": 0.00418
+  }
+ ],
+ "total_llm_usd": 3.052972,
+ "sample_games": 497,
+ "games_with_headlines": 285,
+ "headlines": 2626,
+ "material_events": 617,
+ "sonnet_signals": 199,
+ "usd_per_game_all_in": 0.004880354212611916,
+ "usd_per_month_at_250_games": 1.220088553152979,
+ "note": "hourly runs re-screen only new headlines, so cost/month ~ games/month x cost/game; ~$0.0X per hourly run",
+ "drift_cents_in_predicted_direction": {
+  "haiku home_effect | to 60": {
+   "mean_c": 0.008390410958904125,
+   "ci": [
+    -0.016536066846406416,
+    0.03634688916628342
+   ],
+   "n": 584
+  },
+  "haiku home_effect | to 180": {
+   "mean_c": 0.0762032085561498,
+   "ci": [
+    0.005568286597602642,
+    0.15335025597269636
+   ],
+   "n": 561
+  },
+  "haiku home_effect | to kick": {
+   "mean_c": 0.385123966942149,
+   "ci": [
+    -0.22871457263246392,
+    0.9186727516669381
+   ],
+   "n": 605
+  },
+  "sonnet |d|>=1.5 | to 60": {
+   "mean_c": 0.031746031746031765,
+   "ci": [
+    -0.03000376884422114,
+    0.09895962252475247
+   ],
+   "n": 189
+  },
+  "sonnet |d|>=1.5 | to 180": {
+   "mean_c": 0.03932584269662928,
+   "ci": [
+    -0.05264912280701749,
+    0.12837029698242933
+   ],
+   "n": 178
+  },
+  "sonnet |d|>=1.5 | to kick": {
+   "mean_c": 0.6231155778894473,
+   "ci": [
+    -0.028667328042327498,
+    1.3743996305418715
+   ],
+   "n": 199
+  },
+  "sonnet |d|>=1.5, anchored at publisher time | to 60": {
+   "mean_c": 0.04402515723270444,
+   "ci": [
+    -0.03575227963525841,
+    0.131158326143227
+   ],
+   "n": 159
+  },
+  "sonnet |d|>=1.5, anchored at publisher time | to 180": {
+   "mean_c": 0.032467532467532534,
+   "ci": [
+    -0.09803921568627448,
+    0.1595799517438036
+   ],
+   "n": 154
+  },
+  "sonnet |d|>=1.5, anchored at publisher time | to kick": {
+   "mean_c": 0.6524390243902439,
+   "ci": [
+    -0.08116079562708758,
+    1.5180057803468197
+   ],
+   "n": 164
+  },
+  "sonnet |d|>=3 | to 60": {
+   "mean_c": 0.142857142857143,
+   "ci": [
+    0.0,
+    0.42857142857142894
+   ],
+   "n": 7
+  },
+  "sonnet |d|>=3 | to 180": {
+   "mean_c": 0.285714285714286,
+   "ci": [
+    0.0,
+    0.8571428571428579
+   ],
+   "n": 7
+  },
+  "sonnet |d|>=3 | to kick": {
+   "mean_c": 1.2500000000000004,
+   "ci": [
+    -0.7499999999999958,
+    3.5031249999999976
+   ],
+   "n": 8
+  }
+ },
+ "trading": [
+  {
+   "signal": "sonnet |d|>=1.5",
+   "decision": "at GDELT slot (~10-15 min after publish)",
+   "trades": 193,
+   "games": 83,
+   "ret_per_dollar": -0.0611,
+   "ci_lo": -0.0833,
+   "ci_hi": -0.0383,
+   "win_share": 0.2539,
+   "trades_per_month": 76.1974,
+   "usd_per_month_at_100": -465.5633
+  },
+  {
+   "signal": "sonnet |d|>=1.5",
+   "decision": "hourly cron (next full hour)",
+   "trades": 190,
+   "games": 83,
+   "ret_per_dollar": -0.061,
+   "ci_lo": -0.0836,
+   "ci_hi": -0.0354,
+   "win_share": 0.2526,
+   "trades_per_month": 75.013,
+   "usd_per_month_at_100": -457.9154
+  },
+  {
+   "signal": "sonnet |d|>=1.5",
+   "decision": "+60 min",
+   "trades": 186,
+   "games": 83,
+   "ret_per_dollar": -0.0619,
+   "ci_lo": -0.0865,
+   "ci_hi": -0.0378,
+   "win_share": 0.2473,
+   "trades_per_month": 73.4338,
+   "usd_per_month_at_100": -454.4902
+  },
+  {
+   "signal": "sonnet |d|>=1.5",
+   "decision": "+180 min",
+   "trades": 175,
+   "games": 79,
+   "ret_per_dollar": -0.0623,
+   "ci_lo": -0.0876,
+   "ci_hi": -0.0367,
+   "win_share": 0.2571,
+   "trades_per_month": 69.0909,
+   "usd_per_month_at_100": -430.4591
+  },
+  {
+   "signal": "sonnet |d|>=3",
+   "decision": "at GDELT slot (~10-15 min after publish)",
+   "trades": 8,
+   "games": 8,
+   "ret_per_dollar": -0.046,
+   "ci_lo": -0.111,
+   "ci_hi": 0.0326,
+   "win_share": 0.25,
+   "trades_per_month": 3.1584,
+   "usd_per_month_at_100": -14.5284
+  },
+  {
+   "signal": "sonnet |d|>=3",
+   "decision": "hourly cron (next full hour)",
+   "trades": 7,
+   "games": 7,
+   "ret_per_dollar": -0.0428,
+   "ci_lo": -0.1225,
+   "ci_hi": 0.0563,
+   "win_share": 0.2857,
+   "trades_per_month": 2.7636,
+   "usd_per_month_at_100": -11.8205
+  },
+  {
+   "signal": "sonnet |d|>=3",
+   "decision": "+60 min",
+   "trades": 7,
+   "games": 7,
+   "ret_per_dollar": -0.0428,
+   "ci_lo": -0.122,
+   "ci_hi": 0.0473,
+   "win_share": 0.2857,
+   "trades_per_month": 2.7636,
+   "usd_per_month_at_100": -11.8205
+  },
+  {
+   "signal": "sonnet |d|>=3",
+   "decision": "+180 min",
+   "trades": 7,
+   "games": 7,
+   "ret_per_dollar": -0.0446,
+   "ci_lo": -0.1221,
+   "ci_hi": 0.0481,
+   "win_share": 0.2857,
+   "trades_per_month": 2.7636,
+   "usd_per_month_at_100": -12.3171
+  },
+  {
+   "signal": "haiku home_effect",
+   "decision": "at GDELT slot (~10-15 min after publish)",
+   "trades": 594,
+   "games": 125,
+   "ret_per_dollar": -0.0702,
+   "ci_lo": -0.0909,
+   "ci_hi": -0.0497,
+   "win_share": 0.202,
+   "trades_per_month": 234.5143,
+   "usd_per_month_at_100": -1647.1882
+  },
+  {
+   "signal": "haiku home_effect",
+   "decision": "hourly cron (next full hour)",
+   "trades": 585,
+   "games": 125,
+   "ret_per_dollar": -0.0704,
+   "ci_lo": -0.0927,
+   "ci_hi": -0.0491,
+   "win_share": 0.2,
+   "trades_per_month": 230.961,
+   "usd_per_month_at_100": -1626.0508
+  },
+  {
+   "signal": "haiku home_effect",
+   "decision": "+60 min",
+   "trades": 580,
+   "games": 125,
+   "ret_per_dollar": -0.0705,
+   "ci_lo": -0.0933,
+   "ci_hi": -0.0491,
+   "win_share": 0.1966,
+   "trades_per_month": 228.987,
+   "usd_per_month_at_100": -1613.6521
+  },
+  {
+   "signal": "haiku home_effect",
+   "decision": "+180 min",
+   "trades": 555,
+   "games": 121,
+   "ret_per_dollar": -0.0718,
+   "ci_lo": -0.0934,
+   "ci_hi": -0.0516,
+   "win_share": 0.2,
+   "trades_per_month": 219.1169,
+   "usd_per_month_at_100": -1573.444
+  }
+ ],
+ "months_covered": 2.5328947368421053,
+ "events_by_month": {
+  "2026-08": 66,
+  "2026-09": 190,
+  "2026-10": 300,
+  "2026-11": 61
+ },
+ "sonnet_signal_by_conf": {
+  "low": 64,
+  "medium": 135
+ },
+ "placebo": {
+  "sonnet_ret": -0.06109963000713241,
+  "random_mean": -0.07290756670187011,
+  "random_p95": -0.06364403515107454,
+  "p_value": 0.01,
+  "swap_pairs": 553,
+  "swap_both_nonzero": 455,
+  "swap_sign_flipped_share": 0.9120879120879121
+ },
+ "hindsight_check": {
+  "haiku": {
+   "cutoff": "April 2024.",
+   "claims_known": 0.0,
+   "hit_rate": 0.4666666666666667,
+   "n": 30,
+   "home_guess_share": 0.7333333333333333
+  },
+  "sonnet": {
+   "cutoff": "My training data cutoff is **January 2025**.",
+   "claims_known": 0.0,
+   "hit_rate": 0.4,
+   "n": 30,
+   "home_guess_share": 0.5666666666666667
+  },
+  "baseline_always_home_hit": 0.36666666666666664,
+  "usd": 0.017867999999999995
+ },
+ "source_stats": {
+  "files": 7130,
+  "rows_team_title": 72150,
+  "share_with_pub": 0.7332085932085932,
+  "crawl_lag_min_quantiles": {
+   "0.1": 30.0,
+   "0.25": 47.0,
+   "0.5": 107.0,
+   "0.75": 204.0,
+   "0.9": 285.0
+  },
+  "share_pub_after_seen": 0.020346500346500346,
+  "games_with_headlines": 285,
+  "headlines": 2626,
+  "per_game_median": 3.0,
+  "headlines_last_90min": 128
+ },
+ "lineup_window": {
+  "L_by_league": {
+   "\u05d0\u05d9\u05d8\u05dc\u05e7\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -47,
+   "\u05d2\u05e8\u05de\u05e0\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -61,
+   "\u05d4\u05dc\u05d9\u05d2\u05d4 \u05d4\u05d0\u05d9\u05e8\u05d5\u05e4\u05d9\u05ea": -73,
+   "\u05dc\u05d9\u05d2\u05ea \u05d4\u05d0\u05dc\u05d5\u05e4\u05d5\u05ea": -61,
+   "\u05e1\u05e4\u05e8\u05d3\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -53,
+   "\u05e4\u05e8\u05de\u05d9\u05d9\u05e8 \u05dc\u05d9\u05d2": -70,
+   "\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -48
+  },
+  "domestic": {
+   "n_games": 200,
+   "n_move_ge_2c": 37,
+   "share_games_move_ge_2c": 0.185,
+   "mean_abs_move_lineup_window_c": 1.0175,
+   "mean_abs_move_quiet_hour_c": 0.3961581920903953,
+   "pre_move_10min_before_c": 0.013513513513513525
+  },
+  "UEFA": {
+   "n_games": 81,
+   "n_move_ge_2c": 32,
+   "share_games_move_ge_2c": 0.3950617283950617,
+   "mean_abs_move_lineup_window_c": 2.0011111111111113,
+   "mean_abs_move_quiet_hour_c": 0.6994366197183096,
+   "pre_move_10min_before_c": -0.14062500000000064
+  }
+ }
+}

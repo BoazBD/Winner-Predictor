@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Six Polymarket Ideas</title>
+<style>
+:root{--bg:#fbfaf7;--card:#fff;--ink:#1d1d1b;--muted:#6b6a65;--line:#e6e3dc;--bad:#b3261e;--badbg:#fbeae8;--good:#1e6b3a;--goodbg:#e7f3eb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324}}
+:root[data-theme="dark"]{--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0}
+main{max-width:900px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:30px;line-height:1.2;margin:0 0 6px}h2{font-size:21px;margin:36px 0 10px;padding-top:8px;border-top:1px solid var(--line)}
+.sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+.box{border-radius:8px;padding:16px 18px;margin:16px 0}.good{background:var(--goodbg);border-left:4px solid var(--good)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
+.tg{background:var(--goodbg);color:var(--good)}.tb{background:var(--badbg);color:var(--bad)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}.neg{color:var(--bad)}.pos{color:var(--good)}
+code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:13px}li{margin:4px 0}
+</style></head><body><main>
+<h1>Six new Polymarket ideas: what works</h1>
+<div class="sub">Pre-kickoff soccer research · 21 Nov 2026 · each idea had its own research agent, real-trade fills, fees, and train / Jul–Sep / Oct–Nov testing</div>
+
+<div class="box good"><b>One idea works: catching panic sales (idea 2).</b> We keep buy orders sitting about 20¢ below the price, and only when that is also at least 6¢ below Winner's fair price. They fill only when someone dumps into an empty order book, and the price usually bounces back within about 5 minutes. It returned <b>+38% to +52% per $</b> in every period, but it's small: about 9 fills a month and roughly $190–400 a month. The other five ideas lose money or can't be captured.</div>
+
+<h2>Scoreboard</h2>
+<div class="wrap"><table>
+<tr><th>#</th><th>Idea</th><th>Verdict</th><th>Best result (Oct–Nov)</th><th>Why</th></tr>
+<tr><td>2</td><td><b>Catching panic sales</b>: deep buy orders, guided by Winner</td><td><span class="tag tg">Paper pilot</span></td><td class="num pos">+38% per $ [+28, +52]</td><td>Sweeps through empty order books bounce back. Needs Winner as the guide; small and lumpy, and ties up collateral.</td></tr>
+<tr><td>1</td><td>Liquidity rewards and maker rebates</td><td><span class="tag tb">No-go</span></td><td class="num neg">−$5 per game</td><td>Only Premier League markets pay rewards, and the books are crowded. Rebates start at $200k of volume a month. Fill costs exceed the rewards.</td></tr>
+<tr><td>3</td><td>Polymarket vs Kalshi</td><td><span class="tag tb">No-go</span></td><td class="num">~$0/month hourly</td><td>The two venues track each other within 0.5¢. Gaps last about a minute, and Kalshi is US-only.</td></tr>
+<tr><td>4</td><td>Pinnacle / Betfair as "truth"</td><td><span class="tag tb">No-go</span></td><td class="num neg">−7.9% per $</td><td>The sharp bookmakers move toward Polymarket, not the other way.</td></tr>
+<tr><td>5</td><td>AI news and lineup agent (Bedrock)</td><td><span class="tag tb">No-go</span></td><td class="num neg">−6.1% per $</td><td>News is already priced by the time free feeds see it. Lineups are absorbed within 15–30 minutes.</td></tr>
+<tr><td>6</td><td>Related markets (totals, both teams to score, spreads)</td><td><span class="tag tb">No-go</span></td><td class="num neg">−5.9% per $</td><td>Side markets already sit about 1¢ from fair value, and no rule held up out of sample.</td></tr>
+</table></div>
+
+<h2>The winner in detail: catching panic sales</h2>
+<div class="wrap"><table>
+<tr><th>Version</th><th>Period</th><th>Fills / month</th><th>Return per $ [95% range]</th><th>$ / month (1,000-share orders)</th><th>Money tied up</th></tr>
+<tr><td>Hourly bot, all games</td><td>Train</td><td class="num">21</td><td class="num pos">+47% [+39, +56]</td><td class="num">$747</td><td class="num">~$126k</td></tr>
+<tr><td></td><td>Jul–Sep</td><td class="num">7</td><td class="num pos">+52% [+37, +80]</td><td class="num">$435</td><td class="num">~$239k</td></tr>
+<tr><td></td><td>Oct–Nov</td><td class="num">9</td><td class="num pos">+38% [+28, +52]</td><td class="num">$389</td><td class="num">~$277k</td></tr>
+<tr><td>Last 3 hours before kickoff only</td><td>Train</td><td class="num">3.4</td><td class="num pos">+56% [+44, +74]</td><td class="num">$188</td><td class="num">$5k</td></tr>
+<tr><td></td><td>Jul–Sep</td><td class="num">3.0</td><td class="num pos">+45% [+30, +81]</td><td class="num">$266</td><td class="num">$11k</td></tr>
+<tr><td></td><td>Oct–Nov</td><td class="num">1.9</td><td class="num pos">+43% (2 games)</td><td class="num">$251</td><td class="num">$13k</td></tr>
+</table></div>
+<ul>
+<li><b>My independent check:</b>
+<ul>
+<li>Every fill has a real trade below our price at that moment.</li>
+<li>Most of the profit comes from real sales at the target price, not from holding to the game result.</li>
+<li>The price used to place each order is 2 minutes old, so there's no look-ahead.</li>
+</ul></li>
+<li><b>Catches:</b>
+<ul>
+<li>Fills are small (a median of about 25 shares), and a few big fills make most of the money.</li>
+<li>Fills are getting rarer: about 50 a month in late 2025, about 10 a month in 2026.</li>
+<li>Polymarket probably ties up the cost of every open order. That's why the "last 3 hours" version is the practical one.</li>
+<li>12–29% of fills end up held to the result because nobody buys back before kickoff.</li>
+</ul></li>
+<li><b>Running it:</b> an hourly program is enough, and no AI is needed. The rules are simple numbers, and Winner's fair price is the key filter.</li>
+</ul>
+
+<h2>Lessons from all the research so far</h2>
+<ul>
+<li><b>Polymarket's soccer prices before kickoff are about as accurate as Betfair's and Pinnacle's</b>, and more accurate than Winner's. Ideas built on "the market is slow" (news, sharp books, other venues, informed wallets, buy-then-sell rules) all fail. The market isn't slow.</li>
+<li><b>The two edges we found both come from other traders' impatience:</b> people overpaying for longshots (the live Longshot seller) and people dumping into empty order books (catching panic sales).</li>
+<li><b>An LLM agent adds nothing to the trading decisions.</b> Where it might help is monitoring, such as weekly summaries and anomaly checks.</li>
+</ul>
+
+<h2>Files</h2>
+<p>Each idea has <code>REPORT.md</code>, scripts and outputs in <code>research/ideas/&lt;idea&gt;/</code>: <code>sweep_catch</code>, <code>liquidity_rewards</code>, <code>kalshi_cross</code>, <code>sharp_anchor</code>, <code>news_agent</code>, <code>related_markets</code>.</p>
+</main></body></html>

@@ -63,4 +63,10 @@ docs/
 
 # Temporary files
 tmp/
-temp/ 
+temp/
+
+# Not part of the Flask app
+bet-insight/
+migration_script.py
+trained_models/
+Procfile

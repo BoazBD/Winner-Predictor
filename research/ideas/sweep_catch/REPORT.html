@@ -1,0 +1,287 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panic Catcher Report</title><style>
+:root{--bg:#fbfaf7;--card:#fff;--ink:#1d1d1b;--muted:#6b6a65;--line:#e6e3dc;--bad:#b3261e;--badbg:#fbeae8;--good:#1e6b3a;--goodbg:#e7f3eb}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324}}
+:root[data-theme="dark"]{--bg:#171716;--card:#201f1d;--ink:#ecebe6;--muted:#a3a19a;--line:#34322e;--bad:#f2867d;--badbg:#3a1f1c;--good:#7fcf98;--goodbg:#1b3324}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0}
+main{max-width:900px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:30px;line-height:1.2;margin:0 0 6px}h2{font-size:21px;margin:36px 0 10px;padding-top:8px;border-top:1px solid var(--line)}
+.sub{color:var(--muted);font-size:14px;margin-bottom:20px}
+.box{border-radius:8px;padding:16px 18px;margin:16px 0}.good{background:var(--goodbg);border-left:4px solid var(--good)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap}
+.tg{background:var(--goodbg);color:var(--good)}.tb{background:var(--badbg);color:var(--bad)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}.neg{color:var(--bad)}.pos{color:var(--good)}
+code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:13px}li{margin:4px 0}
+
+table{border:1px solid var(--line);border-radius:10px;background:var(--card);margin:12px 0;display:block;overflow-x:auto}
+h1{margin-top:28px} hr{border:0;border-top:2px solid var(--line);margin:40px 0}</style></head><body><main><h1>Idea 2: catching sweeps with deep resting orders: GO for a paper pilot</h1>
+<p><em>Research only. Saved from the agent's final message, 2026-11-21, with my independent spot-check added.</em></p>
+<h2>Verdict</h2>
+<p>Resting limit buys about 20¢ below the Polymarket mid return +38% to +52% per $ in every period, with 95% CIs above zero. Each order must also be at least 6¢ below Winner's fair price. We buy only when a big seller sweeps an empty order book, and the price snaps back within about 5 minutes in about 90% of fills.</p>
+<p>The edge is real per $ but small in dollars:
+- <strong>Fills:</strong> about 9 a month now (21 a month in train), with a median of about 25 shares.
+- <strong>Profit:</strong> about $400 a month at 1,000 shares per order.
+- <strong>Collateral:</strong> Polymarket very likely ties up the full cost of every open buy order. Quoting every game would lock $125k–280k, so the practical version quotes only in the last 3 hours before kickoff: about $5–13k locked for about $190–270 a month.</p>
+<h2>Rules (chosen on train)</h2>
+<ol>
+<li><strong>Market:</strong> every matched soccer 1X2 market, both sides of each outcome. Buying Yes catches dumps; buying No catches pumps.</li>
+<li><strong>When to quote:</strong> while the mid c of our token is between 0.08 and 0.92, from 72 hours before kickoff until 10 minutes before. The "last 3 hours" variant quotes only from 3 hours before kickoff.</li>
+<li><strong>Buy order:</strong> a limit buy at L = floor(c − 0.20), only if L ≤ Winner's fair price − 0.06 (gap ≥ 10¢ for the hourly bot).</li>
+<li><strong>Refresh:</strong> every 1 minute (continuous bot) or every 60 minutes (hourly bot). Both perform about the same.</li>
+<li><strong>After a fill:</strong></li>
+<li>Don't re-quote that outcome and side for 60 minutes.</li>
+<li>Post a limit sell at floor(c).</li>
+<li>If it hasn't sold 5 minutes before kickoff, sell 1¢ under the last real bid print, paying the fee. If there is no such print, the position is held to the result (12–29% of fills).</li>
+</ol>
+<h2>Results (1,000-share orders; fills only when a real print went strictly through our price)</h2>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Period</th>
+<th>Fills/month</th>
+<th>Return per $ [95% CI]</th>
+<th>$/month</th>
+<th>Capital locked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Continuous, 20¢</td>
+<td>train</td>
+<td>21.3</td>
+<td>+52% [+46, +59]</td>
+<td>$782</td>
+<td>$126k</td>
+</tr>
+<tr>
+<td></td>
+<td>val</td>
+<td>8.7</td>
+<td>+51% [+34, +86]</td>
+<td>$405</td>
+<td>$239k</td>
+</tr>
+<tr>
+<td></td>
+<td>test</td>
+<td>8.8</td>
+<td>+39% [+29, +57]</td>
+<td>$387</td>
+<td>$277k</td>
+</tr>
+<tr>
+<td>Hourly, 20¢</td>
+<td>train</td>
+<td>21.3</td>
+<td>+47% [+39, +56]</td>
+<td>$747</td>
+<td>~$126k</td>
+</tr>
+<tr>
+<td></td>
+<td>val</td>
+<td>7.0</td>
+<td>+52% [+37, +80]</td>
+<td>$435</td>
+<td>~$239k</td>
+</tr>
+<tr>
+<td></td>
+<td>test</td>
+<td>9.4</td>
+<td>+38% [+28, +52]</td>
+<td>$389</td>
+<td>~$277k</td>
+</tr>
+<tr>
+<td>Last 3h only</td>
+<td>train</td>
+<td>3.4</td>
+<td>+56% [+44, +74]</td>
+<td>$188</td>
+<td>$5.3k</td>
+</tr>
+<tr>
+<td></td>
+<td>val</td>
+<td>3.0</td>
+<td>+45% [+30, +81]</td>
+<td>$266</td>
+<td>$10.7k</td>
+</tr>
+<tr>
+<td></td>
+<td>test</td>
+<td>1.9</td>
+<td>+43% (2 games)</td>
+<td>$251</td>
+<td>$13k</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Shallow orders lose.</strong> At 2–5¢ below the mid the result is −2% to −9%.</li>
+<li><strong>The Winner filter is essential.</strong> Without it, orders are negative down to 12¢ deep.</li>
+<li><strong>Wallet history adds nothing.</strong></li>
+<li><strong>The money is concentrated.</strong> In val and test, the top 5 fills make 80–96% of the dollars. The return stays at +32% to +51% even with the best game removed.</li>
+<li><strong>Fills are getting rarer:</strong> 43–64 a month in late 2025, about 10 a month in 2026.</li>
+</ul>
+<h2>My spot-check (continuous rule, 253 fills)</h2>
+<ul>
+<li><strong>Entries:</strong> every fill has a real print strictly below our price within ±60 seconds of the fill (100%).</li>
+<li><strong>Exits:</strong> 79% have a real buy print above the exit target before kickoff, and 65% have enough volume to sell the whole position.</li>
+<li><strong>Profit source:</strong> most of the profit comes from fills that hit their target, which are real prints in both directions (train +52%, val +60%, test +44%). Fills held to the result are a small share of the dollars.</li>
+<li><strong>Look-ahead:</strong> the mid used to place each order is 2 minutes old, so the strategy only uses information it would have had.</li>
+</ul>
+<h2>Risks and open questions</h2>
+<ul>
+<li><strong>Collateral:</strong> Polymarket probably locks the full cost of open orders. To verify.</li>
+<li><strong>Competition:</strong> other bots may now quote these deep empty levels. Paper trading would show this.</li>
+<li><strong>Small samples:</strong> val and test have only 26 and 14 fills, and the dollars are lumpy.</li>
+<li><strong>Partial exits:</strong> about a third of exits might only be partly sold at the target.</li>
+<li><strong>Search size:</strong> 432k grid combinations were tried. The edge rises smoothly with depth, so it looks structural rather than overfit.</li>
+</ul>
+<h2>Live</h2>
+<ul>
+<li>An hourly Lambda is enough. Each run takes about 50–300 API calls.</li>
+<li>No LLM is needed.</li>
+<li>Start with the last-3h variant at 100–300 shares per order.</li>
+</ul>
+<h2>Files</h2>
+<ul>
+<li>Scripts <code>s01</code>–<code>s08</code>.</li>
+<li>Outputs in <code>out/</code>: <code>final_summary.csv</code>, <code>final_fills.parquet</code>, <code>collateral.csv</code> and the charts.</li>
+</ul>
+<hr />
+<h1>Production tuning (2026-11-22, <code>s10_detail.py</code>, <code>s11_eval.py</code>): the version that went live as <code>sweep_v1</code></h1>
+<p><code>s10</code> replays every candidate fill again, with more choices than the first search:
+- <strong>Depth:</strong> deeper levels up to 35¢, plus depth relative to the price and hybrids of the two.
+- <strong>Refresh cadence:</strong> 1, 5, 15, 30 and 60 minutes.
+- <strong>Winner data lag:</strong> 1, 30, 60 and 180 minutes.
+- <strong>Fill-detection delay before the sell order is placed:</strong> 0 to 60 minutes.
+- <strong>Sell targets:</strong> six options.
+- <strong>Fill size:</strong> the shares that traded through our price in the same transaction.
+- <strong>Sell size:</strong> capped by the shares real buyers bought above the target.
+- <strong>Money tied up in resting orders:</strong> tracked for every setting.</p>
+<p><code>s11</code> applies the filters, the cooldown and the one-fill-per-refresh rule afterwards. Choices were made on train, checked on validation (Jul–Sep), and the frozen rule was run once on the test period (Oct 1 – Nov 18). The test period had already been seen in the first search.</p>
+<h2>What each detail does</h2>
+<table>
+<thead>
+<tr>
+<th>Detail</th>
+<th>Finding</th>
+<th>Choice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Depth</td>
+<td>Return per $ rises steadily with depth, while $/month stays about flat. Depth relative to the price (for example 50% of c) beats a fixed 20¢.</td>
+<td>Two levels: A = min(c−15¢, 0.6c), B = min(c−20¢, 0.5c)</td>
+</tr>
+<tr>
+<td>Quoting window</td>
+<td>Most capital-efficient in the last 2–3 h (lineup news). Quoting from 72 h earns about 2× the $ but ties up 20–25× the money.</td>
+<td>3 h to 10 min before kickoff</td>
+</tr>
+<tr>
+<td>Refresh cadence</td>
+<td>1–15 min are equal; 30–60 min lose about 5 points of return on train</td>
+<td>Every 5 min</td>
+</tr>
+<tr>
+<td>Fill-detection delay</td>
+<td>Doesn't matter even at 60 min: the price returns to its pre-dump level and stays there</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Winner data lag</td>
+<td>Doesn't matter up to 3 h, so Winner's 3-hourly data is enough</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Winner gap filter</td>
+<td>Essential for shallow levels; rarely matters for the deep levels</td>
+<td>Kept at ≥ 6¢ as a safety check</td>
+</tr>
+<tr>
+<td>Sell target</td>
+<td>floor(pre-dump price) ≈ that minus 1¢ ≈ Winner fair; selling halfway back is much worse</td>
+<td>floor(c)</td>
+</tr>
+<tr>
+<td>Cooldown</td>
+<td>Barely matters</td>
+<td>60 min</td>
+</tr>
+<tr>
+<td>Sides</td>
+<td>Buying "No" (catching spikes) earns most of it; buying "Yes" was weak in validation</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>Stop quoting</td>
+<td>2 minutes before kickoff adds fills, but they end up held to the result</td>
+<td>10 min; sell leftovers at kick − 5 min</td>
+</tr>
+<tr>
+<td>Order size</td>
+<td>Fills are capped by the volume that went through our price (median about 45 shares), so profit grows much more slowly than size</td>
+<td>500 per level, recording the volume so results can be rescaled</td>
+</tr>
+</tbody>
+</table>
+<h2>The frozen rule (2 levels × 500 shares, both sides, last 3 h, 5-minute refresh)</h2>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Fills</th>
+<th>Games</th>
+<th>Fills/month</th>
+<th>Return per $ [95% CI]</th>
+<th>$/month</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train</td>
+<td>68</td>
+<td>35</td>
+<td>6.8</td>
+<td>+72% [+50, +87]</td>
+<td>$221</td>
+</tr>
+<tr>
+<td>Validation</td>
+<td>17</td>
+<td>9</td>
+<td>5.7</td>
+<td>+69% [+59, +77]</td>
+<td>$212</td>
+</tr>
+<tr>
+<td>Test (once)</td>
+<td>5</td>
+<td>2</td>
+<td>3.1</td>
+<td>+100% (2 games)</td>
+<td>$149</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Months:</strong> 13 of 14 were positive.</li>
+<li><strong>Exits:</strong> 54% of fills sold at the target and 22% were held to the result (train).</li>
+<li><strong>Money tied up:</strong> about $4–8k at these sizes.</li>
+<li><strong>Samples are small:</strong> validation and test have only 9 and 2 games, so the live paper record is the real test.</li>
+</ul>
+<h2>Production check</h2>
+<ul>
+<li>I replayed the production code (<code>lambdas/predict_winner_model/sweep.py</code>) on a past test game, using the real trade feed and price history.</li>
+<li>It reproduced the research fills: same prices, same fill sizes (30 and 500 shares) and the same +$160 exit.</li>
+</ul></main></body></html>

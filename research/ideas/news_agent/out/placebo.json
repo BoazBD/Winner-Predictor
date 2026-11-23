@@ -1,0 +1,9 @@
+{
+ "sonnet_ret": -0.06109963000713241,
+ "random_mean": -0.07290756670187011,
+ "random_p95": -0.06364403515107454,
+ "p_value": 0.01,
+ "swap_pairs": 553,
+ "swap_both_nonzero": 455,
+ "swap_sign_flipped_share": 0.9120879120879121
+}

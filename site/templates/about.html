@@ -1,136 +1,42 @@
 {% extends "base.html" %}
-
+{% block title %}{{ t.about }}{% endblock %}
 {% block content %}
-<style>
-    .feature-icon {
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        transition: all 0.3s ease;
-    }
-    
-    .feature-icon i {
-        font-size: 1.2rem;
-    }
-    
-    .d-flex:hover .feature-icon {
-        transform: scale(1.1);
-    }
-    
-    .about-card {
-        border-radius: 15px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-    
-    .about-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
-    }
-</style>
+<div class="prose">
+  <h1>How it works</h1>
+  <p>This site tests whether betting models built on Winner's odds can make money on Polymarket. Everything here is a
+    simulation: bets are recorded, not placed.</p>
 
-<div class="hero-section mb-4 py-3">
-    <div class="row align-items-center">
-        <div class="col-12 text-center">
-            <h1 class="display-5 fw-bold mb-2">{{ t.about_title if t else 'About AI Sport Better' }}</h1>
-            <p class="lead mb-0">{{ t.about_description if t else 'Advanced AI-powered sports betting predictions using machine learning.' }}</p>
-        </div>
-    </div>
+  <h2>Every 3 hours</h2>
+  <ol>
+    <li><strong>Winner odds.</strong> A scraper saves all of Winner's odds every 15 minutes. The predictor reads the last
+      three weeks of odds for every open game.</li>
+    <li><strong>Polymarket prices.</strong> It reads every upcoming soccer game on Polymarket with a home / draw / away
+      market: buy and sell prices, available money and the taker fee.</li>
+    <li><strong>Matching.</strong> Winner lists games in Hebrew, in Israel time. A Winner game is matched to the
+      Polymarket game with the same kickoff (within 12 minutes) whose team names agree, compared by sound and by
+      English name. Only matched games are used.</li>
+    <li><strong>Models.</strong> Each model estimates the chance of a home win, draw and away win.</li>
+    <li><strong>Paper bets.</strong> For every outcome, expected value = model probability × Polymarket odds − 1, where
+      the odds include Polymarket's fee (5% × p × (1 − p) per share). The first time it is above 3%, the outcome is
+      bought for 1 unit — once per model and outcome. Wide spreads, prices under 3¢ or over 97¢, and large disagreements
+      with Polymarket (likely a wrong match) are skipped.</li>
+    <li><strong>Results.</strong> When a game ends the bet is settled from Winner's results: a win pays odds − 1, a loss
+      costs 1. A bet with no result three days after kickoff (postponed game) is void.</li>
+  </ol>
+
+  <h2>The models</h2>
+  <ul>
+    {% for key, m in models.items() %}<li><strong>{{ m.label }}.</strong> {{ m.description }}</li>{% endfor %}
+  </ul>
+
+  <h2>How to read the results</h2>
+  <ul>
+    <li><strong>CLV (closing-line value)</strong> compares the Polymarket price at kickoff with what the bet cost. Prices
+      at kickoff are the market's best estimate, so bets that keep beating them have a real edge. CLV answers that
+      question after a few hundred bets; profit needs thousands.</li>
+    <li><strong>P&amp;L and ROI</strong> swing a lot by luck. A short run of wins or losses means little.</li>
+    <li>The first three models get their probabilities from Winner's own odds, and Polymarket's prices are usually
+      sharper, so their bets are expected to lose slowly unless the data shows otherwise.</li>
+  </ul>
 </div>
-
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="card shadow-sm about-card">
-            <div class="card-body p-4">
-                <h4 class="mb-4 text-primary">Our Prediction System</h4>
-                
-                <p class="lead">
-                    Our specialized sports betting prediction system uses machine learning algorithms to analyze odds movements in bookmakers and identify profitable betting opportunities.
-                </p>
-                
-                <h5 class="mt-4 text-primary">How It Works</h5>
-                <p>
-                    The system focuses exclusively on analyzing odds movement patterns:
-                </p>
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="feature-icon bg-primary bg-opacity-10 p-3 rounded-circle me-3">
-                                <i class="bi bi-graph-up text-primary"></i>
-                            </div>
-                            <div>
-                                <strong>Odds Movement Tracking</strong>
-                                <p class="mb-0 small text-muted">Monitoring how odds shift over time</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="feature-icon bg-success bg-opacity-10 p-3 rounded-circle me-3">
-                                <i class="bi bi-cash-coin text-success"></i>
-                            </div>
-                            <div>
-                                <strong>Betting Patterns</strong>
-                                <p class="mb-0 small text-muted">Analyzing how public betting affects odds</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="feature-icon bg-warning bg-opacity-10 p-3 rounded-circle me-3">
-                                <i class="bi bi-calendar-check text-warning"></i>
-                            </div>
-                            <div>
-                                <strong>Significant Shifts</strong>
-                                <p class="mb-0 small text-muted">Detecting when odds change too much</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="feature-icon bg-danger bg-opacity-10 p-3 rounded-circle me-3">
-                                <i class="bi bi-calculator text-danger"></i>
-                            </div>
-                            <div>
-                                <strong>Expected Value</strong>
-                                <p class="mb-0 small text-muted">Calculating profitability of betting opportunities</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <h5 class="mt-4 text-primary">Our Approach</h5>
-                <p>
-                    Unlike traditional prediction systems that analyze team performance, players, or match conditions, our system focuses exclusively on odds movements. We don't track team form, player statistics, or location factors - only how the odds change in response to betting patterns. Our machine learning models are trained on years of historical odds data, allowing them to identify patterns and anomalies that humans might miss. This unique approach allows us to identify scenarios where odds have shifted too significantly, potentially creating profitable betting opportunities.
-                </p>
-
-                <h5 class="mt-4 text-primary">Our Track Record</h5>
-                <p>
-                    With a proven track record of success, our system has consistently delivered accurate predictions across various leagues and competitions. We maintain transparency by showing our prediction accuracy and continuously improving our algorithms based on performance data.
-                </p>
-
-                <div class="alert alert-info mt-4">
-                    <div class="d-flex">
-                        <div class="me-3">
-                            <i class="bi bi-info-circle-fill fs-4"></i>
-                        </div>
-                        <div>
-                            <strong>Important Notice</strong>
-                            <p class="mb-0">Please note that all predictions are for informational purposes only. Always gamble responsibly and make your own informed decisions.</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-4 text-center">
-                    <a href="/" class="btn btn-primary">
-                        <i class="bi bi-house-door me-2"></i>{{ t.home if t else 'Back to Home' }}
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %} 
+{% endblock %}

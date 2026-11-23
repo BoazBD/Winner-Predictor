@@ -1,0 +1,50 @@
+configs 78720
+      fam    thr      ent     d      exit   time   price              vol tier      book     sub  n_train  ret_train  lb_train  hit_train  n_val   ret_val    lb_val   hit_val
+26956  F2   0.08    taker -1.00  pnl_kick   >12h  25-75c  series 10k-250k  all       all    None     4167   0.273712  0.249600   0.579554   1612  0.119138  0.088002  0.492556
+66886  F6  24.00    mid60  0.05  pnl_hold    all  15-85c  series 10k-250k  all  coherent  (1, 1)      175   0.370242  0.086184   0.005714     33 -0.422535 -0.867800  0.030303
+35528  F3   0.08    taker  0.05  pnl_hold  <=12h  25-75c              all  all       all    None      429   0.124789  0.038853   0.223776     80 -0.176379 -0.422916  0.137500
+46664  F4   0.05    taker  0.02  pnl_hold  <=12h  25-75c              all  all       all    None      334   0.127392  0.037736   0.191617     41  0.095637 -0.129800  0.292683
+9440   F1   0.03  taker_v  0.05  pnl_hold    all  15-85c              all  all       all    None     1147   0.042707 -0.015087   0.060157    564 -0.082765 -0.168059  0.074468
+      fam    thr      ent     d      exit   time   price              vol     tier      book     sub  n_train  ret_train  lb_train  hit_train  n_val   ret_val    lb_val
+26956  F2   0.08    taker -1.00  pnl_kick   >12h  25-75c  series 10k-250k      all       all    None     4167   0.273712  0.249600   0.579554   1612  0.119138  0.088002
+26958  F2   0.08    taker -1.00  pnl_kick   >12h  25-75c  series 10k-250k  non-top       all    None     4041   0.270331  0.245476   0.572878   1486  0.135920  0.104161
+26908  F2   0.08    taker -1.00  pnl_hold   >12h  25-75c  series 10k-250k      all       all    None     4167   0.298809  0.237415   0.579554   1612  0.120107  0.021330
+26910  F2   0.08    taker -1.00  pnl_hold   >12h  25-75c  series 10k-250k  non-top       all    None     4041   0.295223  0.231997   0.572878   1486  0.142981  0.045329
+26952  F2   0.08    taker -1.00  pnl_kick   >12h  25-75c              all      all       all    None     5491   0.240130  0.218865   0.575123   2249  0.100898  0.075503
+26904  F2   0.08    taker -1.00  pnl_hold   >12h  25-75c              all      all       all    None     5491   0.268438  0.216547   0.575123   2249  0.114177  0.030025
+26954  F2   0.08    taker -1.00  pnl_kick   >12h  25-75c              all  non-top       all    None     5334   0.236616  0.214771   0.567679   2115  0.112019  0.086021
+26906  F2   0.08    taker -1.00  pnl_hold   >12h  25-75c              all  non-top       all    None     5334   0.265197  0.211849   0.567679   2115  0.125842  0.042072
+66886  F6  24.00    mid60  0.05  pnl_hold    all  15-85c  series 10k-250k      all  coherent  (1, 1)      175   0.370242  0.086184   0.005714     33 -0.422535 -0.867800
+66774  F6  24.00    mid60  0.05  pnl_hold   >12h  15-85c  series 10k-250k      all  coherent  (1, 1)      175   0.370242  0.086184   0.005714     33 -0.422535 -0.867800
+66767  F6  24.00    mid60  0.05  pnl_hold   >12h  15-85c  series 10k-250k      all       all  (1, 1)      179   0.357377  0.078748   0.011173     36 -0.416191 -0.833988
+66879  F6  24.00    mid60  0.05  pnl_hold    all  15-85c  series 10k-250k      all       all  (1, 1)      179   0.357377  0.078748   0.011173     36 -0.416191 -0.833988
+62854  F6  24.00    mid60  0.01  pnl_hold    all  15-85c  series 10k-250k      all  coherent  (1, 1)      175   0.297870  0.071972   0.400000     33 -0.209481 -0.643681
+62742  F6  24.00    mid60  0.01  pnl_hold   >12h  15-85c  series 10k-250k      all  coherent  (1, 1)      175   0.297870  0.071972   0.400000     33 -0.209481 -0.643681
+62847  F6  24.00    mid60  0.01  pnl_hold    all  15-85c  series 10k-250k      all       all  (1, 1)      179   0.291437  0.069952   0.402235     36 -0.191480 -0.597385
+62735  F6  24.00    mid60  0.01  pnl_hold   >12h  15-85c  series 10k-250k      all       all  (1, 1)      179   0.291437  0.069952   0.402235     36 -0.191480 -0.597385
+35528  F3   0.08    taker  0.05  pnl_hold  <=12h  25-75c              all      all       all    None      429   0.124789  0.038853   0.223776     80 -0.176379 -0.422916
+46664  F4   0.05    taker  0.02  pnl_hold  <=12h  25-75c              all      all       all    None      334   0.127392  0.037736   0.191617     41  0.095637 -0.129800
+39368  F3   0.12    taker  0.05  pnl_hold  <=12h  25-75c              all      all       all    None      309   0.126558  0.037283   0.262136     18       NaN       NaN
+39370  F3   0.12    taker  0.05  pnl_hold  <=12h  25-75c              all  non-top       all    None      299   0.127424  0.036707   0.264214     18       NaN       NaN
+35336  F3   0.08    taker  0.03  pnl_hold  <=12h  25-75c              all      all       all    None      429   0.121891  0.036338   0.244755     80 -0.199772 -0.433511
+35530  F3   0.08    taker  0.05  pnl_hold  <=12h  25-75c              all  non-top       all    None      414   0.124232  0.036265   0.224638     78 -0.215886 -0.456068
+35338  F3   0.08    taker  0.03  pnl_hold  <=12h  25-75c              all  non-top       all    None      414   0.121591  0.034030   0.246377     78 -0.239878 -0.466076
+39176  F3   0.12    taker  0.03  pnl_hold  <=12h  25-75c              all      all       all    None      309   0.117738  0.029938   0.275081     18       NaN       NaN
+39178  F3   0.12    taker  0.03  pnl_hold  <=12h  25-75c              all  non-top       all    None      299   0.118655  0.029500   0.277592     18       NaN       NaN
+46666  F4   0.05    taker  0.02  pnl_hold  <=12h  25-75c              all  non-top       all    None      324   0.114441  0.023958   0.185185     41  0.095637 -0.129800
+47048  F4   0.05    taker  0.05  pnl_hold  <=12h  25-75c              all      all       all    None      334   0.116374  0.023616   0.125749     41  0.112013 -0.112870
+46856  F4   0.05    taker  0.03  pnl_hold  <=12h  25-75c              all      all       all    None      334   0.112901  0.022152   0.161677     41  0.101095 -0.124115
+47040  F4   0.05    taker  0.05  pnl_hold  <=12h  15-85c              all      all       all    None      443   0.103372  0.017757   0.146727     47  0.128815 -0.083899
+50504  F4   0.08    taker  0.02  pnl_hold  <=12h  25-75c              all      all       all    None      268   0.104244  0.010332   0.190299     30       NaN       NaN
+46858  F4   0.05    taker  0.03  pnl_hold  <=12h  25-75c              all  non-top       all    None      324   0.100691  0.009374   0.160494     41  0.101095 -0.124115
+47050  F4   0.05    taker  0.05  pnl_hold  <=12h  25-75c              all  non-top       all    None      324   0.102662  0.009266   0.126543     41  0.112013 -0.112870
+9440   F1   0.03  taker_v  0.05  pnl_hold    all  15-85c              all      all       all    None     1147   0.042707 -0.015087   0.060157    564 -0.082765 -0.168059
+9441   F1   0.03  taker_v  0.05  pnl_hold    all  15-85c              all      all  coherent    None     1128   0.040318 -0.018069   0.054078    550 -0.081968 -0.168882
+9418   F1   0.03  taker_v  0.05  pnl_hold  <=12h  25-75c              all  non-top       all    None      516   0.059500 -0.025191   0.052326    330 -0.125361 -0.235426
+9419   F1   0.03  taker_v  0.05  pnl_hold  <=12h  25-75c              all  non-top  coherent    None      509   0.059186 -0.025936   0.051081    323 -0.125870 -0.237540
+9248   F1   0.03  taker_v  0.03  pnl_hold    all  15-85c              all      all       all    None     1147   0.029041 -0.026169   0.140366    564 -0.080541 -0.162361
+9408   F1   0.03  taker_v  0.05  pnl_hold  <=12h  15-85c              all      all       all    None     1025   0.035416 -0.026721   0.035122    506 -0.091196 -0.180496
+9411   F1   0.03  taker_v  0.05  pnl_hold  <=12h  15-85c              all  non-top  coherent    None      608   0.055778 -0.027711   0.044408    378 -0.124839 -0.228025
+9448   F1   0.03  taker_v  0.05  pnl_hold    all  25-75c              all      all       all    None      970   0.032441 -0.027768   0.060825    485 -0.079933 -0.170638
+configs with train & val: 42732  Spearman(train ret, val ret) = 0.529
+share of configs positive on val among train-lb>0: 0.373 n = 209

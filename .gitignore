@@ -9,3 +9,29 @@ bets.csv
 trained_models/
 venv/
 lambdas/service-account.json
+# credentials (never commit)
+**/service-account.json
+# research: keep code + reports, not data / caches / environments
+research/**/data/
+research/**/cache/
+research/**/.pylib/
+research/**/.venv/
+research/**/raw.json
+research/**/*.parquet
+research/**/*.npz
+research/**/*.csv
+research/**/prompts_cache/
+# lambda build context: files copied in by sync_model_files.sh + trained model binary
+lambdas/predict_winner_model/model_full.pkl
+lambdas/predict_winner_model/lib.py
+lambdas/predict_winner_model/build_segments.py
+lambdas/predict_winner_model/build_cand2.py
+lambdas/predict_winner_model/model.py
+lambdas/predict_winner_model/odds_history.py
+lambdas/predict_winner_model/team_translations.py
+lambdas/predict_winner_model/winner_slack_model/
+lambdas/predict_winner_model/oddsflow/
+**/__pycache__/
+*.pyc
+research/**/logs/
+research/**/*.log

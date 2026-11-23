@@ -1,0 +1,1 @@
+rules enumerated 432000; with >=150 train fills in >=100 games: 148500

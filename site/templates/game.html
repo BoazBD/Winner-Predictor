@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ g.home ~ ' – ' ~ g.away if g else t.games }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('games', lang=lang) }}">← {{ t.games }}</a></p>
+{% if not g %}
+  <div class="card"><p class="empty">Game {{ game_id }} is not open any more (games leave this list at kickoff).</p></div>
+{% else %}
+<div class="intro">
+  <div>
+    <h1>{{ g.home }} – {{ g.away }}</h1>
+    <p>{{ g.league }} · {{ t.kickoff }} {{ g.kickoff | when('%a %d %b %Y, %H:%M') }} · <span class="muted">ID {{ g.id }}</span></p>
+  </div>
+</div>
+<section class="card">
+  <h2>Every prediction run ({{ g.history | length }})</h2>
+  <p class="muted small">Winner's odds and the value model's probability and EV at each 3-hourly run, newest first.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Run</th><th class="n">Odds 1 · X · 2</th><th class="n">{{ t.p }} 1 · X · 2</th><th class="n">{{ t.ev }} 1 · X · 2</th></tr></thead>
+    <tbody>
+    {% for h in g.history %}
+      {% set flagged = h.flagged_sides or [] %}
+      <tr>
+        <td class="t">{{ h.ts[:16] | replace('T', ' ') }}</td>
+        <td><div class="cell3">{% for k in ('home', 'draw', 'away') %}<span>{{ (h.odds or {}).get(k) | num }}</span>{% endfor %}</div></td>
+        <td><div class="cell3">{% for k in ('home_win', 'draw', 'away_win') %}{% set p = h.get(k ~ '_prob') %}<span>{{ (p * 100) | pct(0, False) if p is not none else '–' }}</span>{% endfor %}</div></td>
+        <td><div class="cell3">{% for k in ('home_win', 'draw', 'away_win') %}{% set e = h.get(k ~ '_ev') %}<span class="{{ 'hit' if loop.index0 in flagged }}">{{ (e * 100) | pct(1) if e is not none else '–' }}</span>{% endfor %}</div></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endif %}
+{% endblock %}

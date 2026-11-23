@@ -1,0 +1,38 @@
+   feature                  bin  wfilter     n  games    ret  never_back     x5
+0    skill         anti-skilled   gap<6c    53     17 -0.023       0.415  0.082
+1    skill              neutral   gap<6c   709    166 -0.073       0.382  0.047
+2    skill   skilled(move>0.5c)   gap<6c   240     64 -0.205       0.454  0.030
+3    skill  unscored(<20 games)   gap<6c  2080    354 -0.216       0.394  0.053
+4    skill         anti-skilled  gap>=6c    34     12  0.269       0.029  0.085
+5    skill              neutral  gap>=6c   420    115  0.236       0.079  0.116
+6    skill   skilled(move>0.5c)  gap>=6c   112     22  0.497       0.134  0.098
+7    skill  unscored(<20 games)  gap>=6c   791    210  0.271       0.087  0.103
+8      age                  <1d   gap<6c   643    116 -0.364       0.341  0.068
+9      age                 1-7d   gap<6c   360     88 -0.315       0.475  0.015
+10     age                7-30d   gap<6c   611    147 -0.102       0.357  0.051
+11     age                 >30d   gap<6c  1468    303 -0.100       0.418  0.050
+12     age                  <1d  gap>=6c   158     46  0.364       0.063  0.124
+13     age                 1-7d  gap>=6c   118     39  0.239       0.008  0.114
+14     age                7-30d  gap>=6c   309     96  0.273       0.097  0.099
+15     age                 >30d  gap>=6c   772    185  0.255       0.100  0.103
+16    size                 <$10   gap<6c  2027    374 -0.130       0.364  0.063
+17    size              $10-100   gap<6c   882    202 -0.278       0.475  0.023
+18    size              $100-1k   gap<6c   173     51 -0.309       0.376  0.027
+19    size                 <$10  gap>=6c   522    148  0.254       0.123  0.099
+20    size              $10-100  gap>=6c   331    105  0.212       0.051  0.103
+21    size              $100-1k  gap>=6c   353     84  0.331       0.091  0.110
+22    size                 >$1k  gap>=6c   151     43  0.310       0.033  0.125
+23  levels                    1   gap<6c  2493    424 -0.211       0.394  0.058
+24  levels                  2-3   gap<6c   490    135 -0.095       0.433  0.014
+25  levels                   4+   gap<6c    99     32  0.111       0.283  0.029
+26  levels                    1  gap>=6c   571    156  0.259       0.110  0.105
+27  levels                  2-3  gap>=6c   291     94  0.250       0.110  0.083
+28  levels                   4+  gap>=6c   495    115  0.290       0.046  0.120
+
+within gap>=6c: who are the losers? share of losing fills by skill bin vs all fills
+                       all  losers
+skill                             
+unscored(<20 games)  0.583   0.617
+neutral              0.310   0.308
+skilled(move>0.5c)   0.083   0.060
+anti-skilled         0.025   0.015

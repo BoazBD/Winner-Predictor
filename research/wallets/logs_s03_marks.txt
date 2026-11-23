@@ -1,0 +1,4 @@
+rows 20337444 with grid game 0.992
+marked 20181981 in grid 0.893
+taker rows: mean mv_c 0.0005094154 clv -0.003613209 res -0.0013350013
+maker rows: mean mv_c -0.0006158863 clv 0.0032052528

@@ -1,0 +1,564 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Winner vs Polymarket</title><style>body{font:16px/1.6 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;max-width:980px;margin:40px auto;padding:0 20px;color:#1a1a1a;background:#fafaf8}
+h1{font-size:2rem;line-height:1.2}h2{margin-top:2.2em;border-bottom:1px solid #ddd;padding-bottom:.3em}
+table{border-collapse:collapse;margin:1em 0;font-size:.9rem;display:block;overflow-x:auto}
+th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f0efea}tr:nth-child(even) td{background:#fff}
+code{background:#eee;padding:1px 5px;border-radius:4px;font-size:.88em}
+figure{margin:1.5em 0;text-align:center}img{max-width:100%;border:1px solid #ddd;border-radius:8px;background:#fff}
+figcaption{color:#777;font-size:.8rem}</style></head><body><h1>Who moves first on big soccer odds moves: Winner or Polymarket?</h1>
+<p><em>Data: 16,660 matched pre-match games, October 2024 to 18 November 2026, nearly all from September 2025 on. Written 20 November 2026.</em></p>
+<h2>Verdict</h2>
+<p><strong>Polymarket leads and Winner lags.</strong> When Winner's odds make a big move, Polymarket has usually moved already:
+- In <strong>47%</strong> of Winner's ≥3-point moves, Polymarket had already made half of the move before Winner did.
+- In another <strong>17%</strong>, both moved inside the same 15-minute Winner scrape, so the order can't be told apart.
+- Winner was clearly first in only <strong>23%</strong>. That is no more than chance: a random, unrelated Polymarket series gives 26%.</p>
+<p>The cross-correlation of 15-minute price changes agrees. Polymarket's change in the previous 15 minutes predicts Winner's change now about 4 times as strongly as the reverse (0.064 vs 0.016).</p>
+<p><strong>The "Winner moved, Polymarket hasn't yet" trade is real but too small to pay the costs.</strong> After such a signal, Polymarket still drifts our way by <strong>+0.6 to +0.85 probability points</strong> on average by kickoff. But the taker fee plus half the spread costs about 2 cents per share. The net return is about <strong>−2% per $ staked</strong>, whether you check every 15 minutes, every hour or every 3 hours. In the fee era (April–November 2026), every combination of check frequency and threshold is negative, and 7 of the 9 confidence intervals are entirely below zero. <strong>Checking more often does not help.</strong></p>
+<p><strong>The earlier "11 of 12" finding, retested at scale.</strong> When Winner really did move first, Polymarket reaches half of Winner's move within 6 hours in <strong>55%</strong> of cases, against 17% by chance. Most of that (35%) happens within 15 minutes.</p>
+<h2>1. Data</h2>
+<ul>
+<li><strong>Polymarket:</strong> 25,918 closed soccer 1X2 events. Busy days were re-queried in 3-hour windows because the API stops paging at about 2,000 events.</li>
+<li><strong>Matching:</strong> the live matcher, unchanged, matched 17,232 (67%). 16,763 have price history on both venues.</li>
+<li><strong>Usable sample:</strong> 16,660 games, after dropping any game where the two venues are more than 15 points apart at kickoff. That is 2,780 top-league games, 72 Israeli and 13,808 other. 11,370 games have at least one major move.</li>
+<li><strong>Coverage:</strong> a few English Premier League games in September–October 2024, then MLS in June–August 2025. Broad coverage starts in <strong>September 2025</strong> (545 games), then 1,000–2,000 a month to May 2026 and 3,000–4,000 a month since August 2026 (<code>out/fig_coverage.png</code>).</li>
+<li><strong>Winner series:</strong> margin-free probability per outcome, (1/odds) ÷ Σ(1/odds). A change is known only at the snapshot where it appears. Median scrape interval 15.0 minutes; 99th percentile 15.2.</li>
+<li><strong>Polymarket series:</strong> the 1-minute <code>prices-history</code> value for each "Yes" token (equals the order-book midpoint). A centred 5-minute median is used for detecting and timing moves; the trading simulation uses the raw midpoint.</li>
+<li><strong>Window:</strong> the 72 hours before kickoff, nothing after kickoff. Kickoff is the earlier of Winner's time + 1 minute and Polymarket's start time.</li>
+</ul>
+<h2>2. Definitions</h2>
+<ul>
+<li><strong>Major move:</strong> one outcome's probability rises (or falls) by at least X points within a trailing 3-hour window, X = 3, 5 or 8.</li>
+<li><strong>Detection time</strong> is the first minute the threshold is crossed (for Winner, the snapshot where it shows).</li>
+<li><strong>Base</strong> is the low (or high) of the window; the move size M is measured from it.</li>
+<li>At most one event per venue per game per 6 hours, keeping the outcome with the largest move.</li>
+<li>The move must still be at least half intact 30 minutes later (dropped 3,304 short-lived events).</li>
+<li><strong>Half-move time:</strong> for each venue, the first minute its price has moved at least M/2 from its own value at the base time, in the move's direction.</li>
+<li><strong>Who moved first:</strong> Winner's true change time lies between the previous snapshot and the one where it shows.</li>
+<li><strong>Polymarket first:</strong> Polymarket's half-move time is at or before Winner's earliest possible time (includes Polymarket having moved half in the 6 hours before the base).</li>
+<li><strong>Winner first:</strong> Polymarket's half-move time is after Winner's latest possible time.</li>
+<li><strong>Same 15-minute window:</strong> Polymarket's half-move time falls inside Winner's scrape interval.</li>
+<li><strong>Never:</strong> the other venue does not reach half before kickoff.</li>
+<li><strong>Chance baseline:</strong> the other venue's series taken from a random different game, lined up by minutes to kickoff.</li>
+<li><strong>Random-time placebo:</strong> the same move shape placed at a random minute of the same game.</li>
+<li><strong>Confidence intervals:</strong> 95% bootstrap, resampling games.</li>
+</ul>
+<h2>3. Event study (<code>out/fig_who_first.png</code>, <code>out/fig_event_paths.png</code>, <code>out/fig_lead_hist.png</code>)</h2>
+<figure><img src="out/fig_who_first.png"><figcaption>fig_who_first.png</figcaption></figure>
+
+<figure><img src="out/fig_event_paths.png"><figcaption>fig_event_paths.png</figcaption></figure>
+
+<figure><img src="out/fig_lead_hist.png"><figcaption>fig_lead_hist.png</figcaption></figure>
+
+<table>
+<thead>
+<tr>
+<th>Major move on</th>
+<th>Size</th>
+<th>Moves (games)</th>
+<th>Winner first</th>
+<th>Same 15-min window</th>
+<th>Polymarket first</th>
+<th>Other venue never followed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Winner</td>
+<td>3+</td>
+<td>6,946 (5,772)</td>
+<td>22.7% [21.8, 23.5]</td>
+<td>17.4% [16.6, 18.3]</td>
+<td><strong>47.5% [46.2, 48.7]</strong></td>
+<td>12.5% [11.6, 13.3]</td>
+</tr>
+<tr>
+<td>Winner</td>
+<td>5+</td>
+<td>1,864 (1,732)</td>
+<td>22.8% [21.0, 24.7]</td>
+<td>24.2% [22.4, 26.2]</td>
+<td>42.0% [40.0, 44.0]</td>
+<td>11.1% [9.9, 12.4]</td>
+</tr>
+<tr>
+<td>Winner</td>
+<td>8+</td>
+<td>301 (298)</td>
+<td>18.6% [14.6, 22.7]</td>
+<td>31.6% [26.4, 36.6]</td>
+<td>42.2% [37.0, 47.4]</td>
+<td>7.6% [4.7, 10.6]</td>
+</tr>
+<tr>
+<td>Polymarket</td>
+<td>3+</td>
+<td>19,746 (10,773)</td>
+<td>7.8% [7.4, 8.1]</td>
+<td>15.5% [15.0, 16.1]</td>
+<td>37.4% [36.7, 38.2]</td>
+<td>39.3% [38.6, 40.1]</td>
+</tr>
+<tr>
+<td>Polymarket</td>
+<td>5+</td>
+<td>8,320 (5,282)</td>
+<td>3.1% [2.7, 3.5]</td>
+<td>14.4% [13.6, 15.3]</td>
+<td>31.7% [30.5, 32.8]</td>
+<td>50.8% [49.3, 52.1]</td>
+</tr>
+<tr>
+<td>Polymarket</td>
+<td>8+</td>
+<td>3,875 (2,435)</td>
+<td>0.8% [0.5, 1.1]</td>
+<td>7.5% [6.5, 8.4]</td>
+<td>17.8% [16.5, 19.1]</td>
+<td>73.9% [72.6, 75.4]</td>
+</tr>
+</tbody>
+</table>
+<p>Chance baseline (other venue from a random unrelated game):</p>
+<table>
+<thead>
+<tr>
+<th>Major move on</th>
+<th>Size</th>
+<th>Winner first</th>
+<th>Same window</th>
+<th>Polymarket first</th>
+<th>Never</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Winner</td>
+<td>3+</td>
+<td>26%</td>
+<td>1%</td>
+<td>10%</td>
+<td>63%</td>
+</tr>
+<tr>
+<td>Winner</td>
+<td>5+</td>
+<td>17%</td>
+<td>0%</td>
+<td>5%</td>
+<td>77%</td>
+</tr>
+<tr>
+<td>Polymarket</td>
+<td>3+</td>
+<td>7%</td>
+<td>1%</td>
+<td>18%</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>Polymarket</td>
+<td>5+</td>
+<td>3%</td>
+<td>1%</td>
+<td>8%</td>
+<td>89%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>On Winner's big moves,</strong> "Polymarket first" and "same window" are far above chance; "Winner first" is not. In 66% of Winner's big moves, Winner moved toward the level Polymarket was already showing (<code>out/gap_closing.csv</code>): most are catch-up moves.</li>
+<li><strong>On Polymarket's big moves,</strong> Polymarket has about 3× as many ≥3-point moves as Winner, many of them thin-book midpoint noise. Polymarket jumps of 12+ points are almost never followed by Winner (98% never).</li>
+<li><strong>Average path:</strong> when a Winner move becomes visible, Polymarket has on average already done 49% of it and adds nothing over the next 6 hours (49% → 50%). When Polymarket moves, Winner has done about 15% at detection and ends near 35–40%. Placebos stay at about 0.</li>
+</ul>
+<p>Conditional follow (the other venue had <em>not</em> moved half by the time the mover did):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Moves</th>
+<th>≤15 min</th>
+<th>≤1 h</th>
+<th>≤3 h</th>
+<th>≤6 h</th>
+<th>By kickoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Winner ≥3 first → Polymarket follows</td>
+<td>2,443 (35% of Winner's moves)</td>
+<td>35%</td>
+<td>42%</td>
+<td>50%</td>
+<td>55%</td>
+<td>64%</td>
+</tr>
+<tr>
+<td>Chance</td>
+<td></td>
+<td>4%</td>
+<td>7%</td>
+<td>12%</td>
+<td>17%</td>
+<td>29%</td>
+</tr>
+<tr>
+<td>Polymarket ≥3 first → Winner follows</td>
+<td>15,150 (77% of Polymarket's moves)</td>
+<td>15%</td>
+<td>28%</td>
+<td>33%</td>
+<td>35%</td>
+<td>49%</td>
+</tr>
+<tr>
+<td>Chance</td>
+<td></td>
+<td>1%</td>
+<td>3%</td>
+<td>5%</td>
+<td>7%</td>
+<td>19%</td>
+</tr>
+</tbody>
+</table>
+<p>Lead times in minutes (Winner time at latest / middle / earliest point of its scrape interval):</p>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>n</th>
+<th>Median gap (latest / mid / earliest)</th>
+<th>Middle 50% (mid)</th>
+<th>Within ±15 min</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Winner ≥3: Polymarket minus Winner</td>
+<td>3,232</td>
+<td>−1.5 / <strong>+6</strong> / +14.5 (mid CI 6–8)</td>
+<td>−4 to +57</td>
+<td>52%</td>
+</tr>
+<tr>
+<td>Winner ≥5: Polymarket minus Winner</td>
+<td>1,042</td>
+<td>−4.5 / +3 / +10.5</td>
+<td>−5 to +31</td>
+<td>60%</td>
+</tr>
+<tr>
+<td>Polymarket ≥3: Winner minus Polymarket</td>
+<td>10,940</td>
+<td>+12.5 / <strong>+20</strong> / +27.5</td>
+<td>+5 to +164</td>
+<td>42%</td>
+</tr>
+</tbody>
+</table>
+<h2>4. Cross-correlation and regressions (<code>out/fig_xcorr.png</code>, <code>out/xcorr.csv</code>)</h2>
+<figure><img src="out/fig_xcorr.png"><figcaption>fig_xcorr.png</figcaption></figure>
+
+<p>15,546 games, 3.96 M 15-minute intervals.</p>
+<table>
+<thead>
+<tr>
+<th>Lag</th>
+<th>Correlation of 15-min changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Polymarket 30 min earlier vs Winner now</td>
+<td>0.017</td>
+</tr>
+<tr>
+<td><strong>Polymarket 15 min earlier vs Winner now</strong></td>
+<td><strong>0.064 [0.061, 0.068]</strong></td>
+</tr>
+<tr>
+<td>Same interval</td>
+<td>0.102</td>
+</tr>
+<tr>
+<td>Winner now vs Polymarket 15 min later</td>
+<td>0.016 [0.015, 0.018]</td>
+</tr>
+<tr>
+<td>Winner now vs Polymarket 30 min later</td>
+<td>0.007</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Summed over lags 1–8: 0.10 Polymarket-leads, 0.03 Winner-leads.</li>
+<li>1-point Winner move → Polymarket +0.47 same interval, +0.15 [0.14, 0.17] over the next 6 h.</li>
+<li>1-point Polymarket move → Winner +0.02 same interval, +0.025 over 6 h (diluted by Polymarket noise).</li>
+<li>Gap-closing regression: Polymarket closes most temporary gaps (Winner's share 3–4% overall, 22–23% in &gt;$250k games) — mostly midpoint wandering and returning.</li>
+</ul>
+<h2>5. Breakdowns (Winner ≥3-point moves; more in <code>out/tables.md</code>)</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Winner first</th>
+<th>Same window</th>
+<th>Polymarket first</th>
+<th>Never followed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Top leagues (1,163)</td>
+<td>28%</td>
+<td>12%</td>
+<td>31%</td>
+<td><strong>29%</strong></td>
+</tr>
+<tr>
+<td>Other leagues (5,768)</td>
+<td>22%</td>
+<td>19%</td>
+<td>51%</td>
+<td>9%</td>
+</tr>
+<tr>
+<td>Polymarket volume &gt; $250k (1,306)</td>
+<td>27%</td>
+<td>12%</td>
+<td>36%</td>
+<td>25%</td>
+</tr>
+<tr>
+<td>Volume &lt; $10k (1,268)</td>
+<td>17%</td>
+<td>20%</td>
+<td>55%</td>
+<td>8%</td>
+</tr>
+<tr>
+<td>24–72 h before kickoff</td>
+<td>31%</td>
+<td>8%</td>
+<td>51%</td>
+<td>10%</td>
+</tr>
+<tr>
+<td>6–12 h</td>
+<td>31%</td>
+<td>16%</td>
+<td>42%</td>
+<td>11%</td>
+</tr>
+<tr>
+<td>1–3 h</td>
+<td>23%</td>
+<td>19%</td>
+<td>39%</td>
+<td>20%</td>
+</tr>
+<tr>
+<td><strong>Last hour (2,209)</strong></td>
+<td>12%</td>
+<td>23%</td>
+<td><strong>54%</strong></td>
+<td>12%</td>
+</tr>
+<tr>
+<td>Favourite &gt; 50%</td>
+<td>26%</td>
+<td>16%</td>
+<td>41%</td>
+<td>17%</td>
+</tr>
+<tr>
+<td>25–50%</td>
+<td>20%</td>
+<td>19%</td>
+<td>53%</td>
+<td>8%</td>
+</tr>
+<tr>
+<td>Longshot &lt; 25% (76)</td>
+<td>33%</td>
+<td>8%</td>
+<td>25%</td>
+<td>34%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Hour of day (Israel): Winner first more often 07–10h (29–34%) than 19–21h (13–18%).</li>
+<li>Day of week: flat, 20–27% "Winner first".</li>
+</ul>
+<h2>6. Trading translation (<code>out/fig_trading.png</code>, <code>out/trading*.csv</code>)</h2>
+<figure><img src="out/fig_trading.png"><figcaption>fig_trading.png</figcaption></figure>
+
+<p><strong>Rule.</strong> At each check time: if an outcome's Winner probability moved ≥X points over the last 6 hours and Polymarket moved less than half that in the same direction, buy on Polymarket ("Yes" if up, "No" if down). One bet per game, outcome, direction and check frequency.</p>
+<p><strong>Costs.</strong> Entry = midpoint one minute after the check + half spread + fee 0.05·p·(1−p). Half-spread 0.5c for ≥$10k volume, 1.5c below (from a live snapshot of 1,818 markets).</p>
+<p><strong>Valuation.</strong> At the Polymarket kickoff midpoint; realised settlement shown as a check.</p>
+<table>
+<thead>
+<tr>
+<th>Check every</th>
+<th>Winner move ≥</th>
+<th>Bets (games)</th>
+<th>Polymarket moves our way, points</th>
+<th>Return per $</th>
+<th>No fee</th>
+<th>No fee, no spread</th>
+<th>Realised</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15 min</td>
+<td>2</td>
+<td>10,916 (6,232)</td>
+<td>+0.50 [0.40, 0.59]</td>
+<td>−2.5% [−2.7, −2.2]</td>
+<td>−0.4%</td>
+<td>+1.2%</td>
+<td>−2.6% [−4.6, −0.6]</td>
+</tr>
+<tr>
+<td>15 min</td>
+<td>3</td>
+<td>3,859 (2,662)</td>
+<td>+0.59 [0.38, 0.79]</td>
+<td><strong>−2.1%</strong> [−2.6, −1.6]</td>
+<td>+0.1%</td>
+<td>+1.6%</td>
+<td>−1.0% [−4.7, 2.6]</td>
+</tr>
+<tr>
+<td>15 min</td>
+<td>5</td>
+<td>713 (588)</td>
+<td>+1.08 [0.52, 1.61]</td>
+<td>−0.9% [−2.2, 0.3]</td>
+<td>+1.3%</td>
+<td>+2.9%</td>
+<td>−3.4% [−10.8, 3.4]</td>
+</tr>
+<tr>
+<td>1 h</td>
+<td>2</td>
+<td>7,579 (4,648)</td>
+<td>+0.62 [0.48, 0.74]</td>
+<td>−2.1% [−2.5, −1.8]</td>
+<td>0.0%</td>
+<td>+1.5%</td>
+<td>−3.1% [−5.4, −0.4]</td>
+</tr>
+<tr>
+<td>1 h</td>
+<td>3</td>
+<td>2,674 (1,934)</td>
+<td>+0.68 [0.43, 0.92]</td>
+<td><strong>−1.8%</strong> [−2.3, −1.2]</td>
+<td>+0.3%</td>
+<td>+1.8%</td>
+<td>−1.2% [−5.2, 3.0]</td>
+</tr>
+<tr>
+<td>1 h</td>
+<td>5</td>
+<td>489 (411)</td>
+<td>+0.83 [0.16, 1.44]</td>
+<td>−1.3% [−2.8, 0.2]</td>
+<td>+0.9%</td>
+<td>+2.5%</td>
+<td>−6.2% [−14.2, 2.4]</td>
+</tr>
+<tr>
+<td>3 h</td>
+<td>2</td>
+<td>4,926 (3,216)</td>
+<td>+0.62 [0.45, 0.77]</td>
+<td>−2.0% [−2.4, −1.6]</td>
+<td>0.0%</td>
+<td>+1.5%</td>
+<td>−1.5% [−4.2, 1.3]</td>
+</tr>
+<tr>
+<td>3 h</td>
+<td>3</td>
+<td>1,740 (1,299)</td>
+<td>+0.85 [0.60, 1.15]</td>
+<td><strong>−1.4%</strong> [−2.1, −0.7]</td>
+<td>+0.7%</td>
+<td>+2.2%</td>
+<td>+1.7% [−3.2, 6.7]</td>
+</tr>
+<tr>
+<td>3 h</td>
+<td>5</td>
+<td>309 (267)</td>
+<td>+0.99 [0.38, 1.75]</td>
+<td>−0.9% [−2.4, 1.1]</td>
+<td>+1.3%</td>
+<td>+2.9%</td>
+<td>−5.4% [−17.6, 6.7]</td>
+</tr>
+</tbody>
+</table>
+<p>Fee era only (April–November 2026), Winner move ≥3:</p>
+<table>
+<thead>
+<tr>
+<th>Check every</th>
+<th>Return per $</th>
+<th>Bets with gap &gt; 4 points</th>
+<th>Their return per $</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15 min</td>
+<td>−2.7% [−3.3, −2.2]</td>
+<td>392</td>
+<td>−1.5% [−3.8, 0.3]</td>
+</tr>
+<tr>
+<td>1 h</td>
+<td>−2.4% [−3.0, −1.7]</td>
+<td>243</td>
+<td>−0.6% [−3.5, 3.0]</td>
+</tr>
+<tr>
+<td>3 h</td>
+<td>−2.2% [−3.0, −1.3]</td>
+<td>150</td>
+<td>+0.8% [−3.6, 5.7]</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Gross edge (0.5–0.85 pt drift, median 0) is smaller than costs (~1.5–2.5c per share).</li>
+<li>Drift is larger &gt;12 h before kickoff (+1.2 to +1.9 pts, return −0.9% to +0.6%), in $10k–$250k markets (~+1 pt) and non-top leagues (+0.75 to +1.25 vs +0.1 to +0.2 top leagues). It is zero or negative when Polymarket is already past Winner's new level.</li>
+<li>The &gt;4-point gap subset is +3.9% to +7.6% on the whole sample, driven by Sept 2025 (+46%) and Dec 2025 (+17%); most months since Jan 2026 are negative.</li>
+</ul>
+<h2>7. Robustness</h2>
+<ul>
+<li>Shuffled-pair placebos fall to the chance table; random-time placebo paths are flat.</li>
+<li>By month (<code>out/fig_monthly.png</code>): Nov 2025–Nov 2026, "Polymarket first" is 38–45% of all ≥3-point moves every month, "Winner first" 7–15%; "same window" grew from ~7% to ~20%. The trade (1 h checks, 3 pts) is negative in 12 of 15 months.</li>
+<li>Headline numbers rest on ≥1,000 events in ≥1,000 games; the 8-point rows and gap &gt; 4 subset are smaller.</li>
+</ul>
+<h2>8. Caveats</h2>
+<ol>
+<li>Polymarket prices are midpoints, noisy in thin books (this works against finding a Polymarket lead on Winner-triggered moves, and we still find one).</li>
+<li>Spreads are modelled from one live snapshot.</li>
+<li>Winner timing is only known to within 15 minutes.</li>
+<li>Valuing at the kickoff price assumes it is fair; settlement results are noisy (±4–15%).</li>
+<li>Covers the 67% of events the matcher matches; Israeli leagues almost absent; pre-Sept 2025 too thin.</li>
+<li>Window, cooldown and half-move rule are judgment calls; 3/5/8-point results agree in direction.</li>
+</ol>
+<h2>9. Recommendations</h2>
+<ol>
+<li><strong>Stop treating a Winner move as a leading signal for Polymarket.</strong> Don't scale the taker strategy; don't build 15-minute checks.</li>
+<li><strong>If kept:</strong> bet only &gt;12 h before kickoff; non-top leagues with $10k–$250k volume; skip when Polymarket is already at/past Winner's new level; post limit orders; forward-test the &gt;4-point gap variant on kickoffs after 2026-11-07.</li>
+<li><strong>Use the lead the other way:</strong> feed Polymarket's recent move into bet decisions and skip bets where it moved against us; treat Winner catch-up moves as no signal; if ever betting on Winner, stale Winner odds after a Polymarket move are the exploitable case (still not halfway 6 h later in ~65% of cases).</li>
+</ol>
+<h2>Reproduce</h2>
+<p>Python <code>winner_model/.venv</code>; matplotlib in <code>research/lead_lag/.pylib</code>. Run <code>s00_spreads.py</code> … <code>s08_tables.py</code> in order (step 4 downloads ~23 GB of minute prices into <code>cache/prices/</code>).</p><figure><img src="out/fig_coverage.png"><figcaption>fig_coverage.png</figcaption></figure><figure><img src="out/fig_monthly.png"><figcaption>fig_monthly.png</figcaption></figure></body></html>

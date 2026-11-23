@@ -1,0 +1,26 @@
+base       val   fills     5 roi  -6.94% ci [nan nan] hit 0.20 c/sh -5.15 fills/mo 2
+month  2026-07  2026-08  2026-09
+n         1.00     3.00     1.00
+roi%     -2.96   -11.84     1.27
+side  draw_no  team_no  team_yes
+n        1.00      1.0      3.00
+roi%    -2.68    -12.8     -6.17
+hk    (3, 6]  (12, 24]  (24, 48]
+n       1.00       2.0      2.00
+roi%  -24.32      -8.0     -0.96
+base       test  fills     0 roi    nan% ci [nan nan] hit nan c/sh nan fills/mo 0
+Empty DataFrame
+Columns: []
+Index: [n, roi%]
+Empty DataFrame
+Columns: []
+Index: [n, roi%]
+Empty DataFrame
+Columns: []
+Index: [n, roi%]
+staleW3h   val   fills     4 roi -19.14% ci [nan nan] hit 0.25 c/sh -12.10 fills/mo 2
+staleW3h   test  fills     1 roi  -2.88% ci [nan nan] hit 0.00 c/sh -2.57 fills/mo 1
+delay      val   fills     0 roi    nan% ci [nan nan] hit nan c/sh nan fills/mo 0
+delay      test  fills     1 roi  -2.88% ci [nan nan] hit 0.00 c/sh -2.57 fills/mo 1
+q200       val   fills     0 roi    nan% ci [nan nan] hit nan c/sh nan fills/mo 0
+q200       test  fills     0 roi    nan% ci [nan nan] hit nan c/sh nan fills/mo 0

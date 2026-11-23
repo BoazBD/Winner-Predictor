@@ -1,0 +1,124 @@
+{
+ "matched_games": 10912,
+ "games_downloaded": 3009,
+ "games_with_quote_and_prints": 2726,
+ "prints_with_quote": 1063930,
+ "arb": [
+  {
+   "th": 0.0,
+   "events": 349,
+   "games": 171,
+   "games_share": 0.06272927366104182,
+   "capital": 543324.2741252796,
+   "pnl": 4100.964166720368,
+   "ret_on_cap": 0.007547912659199114,
+   "pnl_after5": 334.62002179587535,
+   "pnl_after15": 98.69081651101067,
+   "pnl_after60": 9.508317091121894,
+   "events_dur_ge15": 47,
+   "median_event_cap": 63.85952,
+   "median_dur_min": 0.0,
+   "median_lock_d": 0.899537037037037,
+   "annualised_simple": 5.111443271451586,
+   "pnl_per_month_scaled": 854.6455893896637,
+   "pnl_ci": [
+    1483.7442974713854,
+    8181.254035941322
+   ]
+  },
+  {
+   "th": 0.005,
+   "events": 133,
+   "games": 79,
+   "games_share": 0.028980190755685985,
+   "capital": 160931.6764849872,
+   "pnl": 3649.5381340127947,
+   "ret_on_cap": 0.02267756238998261,
+   "pnl_after5": 182.79530505386816,
+   "pnl_after15": 62.652055909317944,
+   "pnl_after60": 0.0,
+   "events_dur_ge15": 10,
+   "median_event_cap": 57.78312,
+   "median_dur_min": 0.0,
+   "median_lock_d": 1.3757407407407407,
+   "annualised_simple": 12.672299075058936,
+   "pnl_per_month_scaled": 760.567891535078,
+   "pnl_ci": [
+    1088.7166717785603,
+    7620.165065409101
+   ]
+  },
+  {
+   "th": 0.01,
+   "events": 89,
+   "games": 62,
+   "games_share": 0.022743947175348497,
+   "capital": 132942.1143010008,
+   "pnl": 3429.0039429991957,
+   "ret_on_cap": 0.025793210533987886,
+   "pnl_after5": 179.57317807688068,
+   "pnl_after15": 60.651521318717954,
+   "pnl_after60": 0.0,
+   "events_dur_ge15": 9,
+   "median_event_cap": 57.105459863368,
+   "median_dur_min": 0.0,
+   "median_lock_d": 1.248923611111111,
+   "annualised_simple": 14.465961414028055,
+   "pnl_per_month_scaled": 714.6083156897421,
+   "pnl_ci": [
+    912.4988987380124,
+    7660.341899950285
+   ]
+  },
+  {
+   "th": 0.02,
+   "events": 50,
+   "games": 33,
+   "games_share": 0.01210564930300807,
+   "capital": 109565.78176722769,
+   "pnl": 3169.243973772286,
+   "ret_on_cap": 0.028925490446509473,
+   "pnl_after5": 78.12709206795095,
+   "pnl_after15": 57.04692199953794,
+   "pnl_after60": 0.0,
+   "events_dur_ge15": 5,
+   "median_event_cap": 38.79314,
+   "median_dur_min": 0.04166666666666667,
+   "median_lock_d": 1.6040277777777776,
+   "annualised_simple": 17.927966282244963,
+   "pnl_per_month_scaled": 660.4740431200519,
+   "pnl_ci": [
+    666.9777903283907,
+    7093.522092346694
+   ]
+  }
+ ],
+ "gap_quantiles_cents": {
+  "0.5": 0.5,
+  "0.9": 1.5,
+  "0.99": 3.0
+ },
+ "cost_quantiles": {
+  "0.001": 0.9901549999999999,
+  "0.01": 1.0067998,
+  "0.05": 1.0154,
+  "0.5": 1.0339770000000001
+ },
+ "by_split_prints_edge_gt0": {
+  "test": {
+   "prints": 95161,
+   "arb": 0.006136967875495214,
+   "games": 621
+  },
+  "train": {
+   "prints": 837645,
+   "arb": 0.0035826633000853583,
+   "games": 1428
+  },
+  "val": {
+   "prints": 131124,
+   "arb": 0.005483359262987706,
+   "games": 677
+  }
+ }
+}

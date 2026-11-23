@@ -1,0 +1,128 @@
+{
+ "live": {
+  "snapshots": 2,
+  "event_books": 1512,
+  "sum_ask_lt_1": 3,
+  "yes_arb_after_fee": 0,
+  "sum_bid_gt_1": 13,
+  "no_arb_after_fee": 0,
+  "median_sum_ask": 1.04,
+  "p1_sum_ask": 1.00911,
+  "best_yes_cost": 1.01091,
+  "best_no_cost": 2.00635055
+ },
+ "mid": {
+  "games": 16763,
+  "coherent_minutes": 67466349,
+  "yes_arb_minutes": 60461,
+  "no_arb_minutes": 240849,
+  "games_with_yes_arb": 1065,
+  "games_with_no_arb": 1513
+ },
+ "prints": {
+  "events_with_all3": 14622,
+  "events_with_cheap_triple": 313,
+  "examples": [
+   {
+    "event_id": "100189",
+    "cost": 0.978,
+    "min_usd": 0.85
+   },
+   {
+    "event_id": "1010318",
+    "cost": 0.9946,
+    "min_usd": 0.75
+   },
+   {
+    "event_id": "1016057",
+    "cost": 0.9998,
+    "min_usd": 1.0
+   },
+   {
+    "event_id": "1022672",
+    "cost": 0.9062,
+    "min_usd": 2.75
+   },
+   {
+    "event_id": "1054484",
+    "cost": 0.9999,
+    "min_usd": 15.16
+   },
+   {
+    "event_id": "1064934",
+    "cost": 0.9981,
+    "min_usd": 1.08
+   },
+   {
+    "event_id": "1068452",
+    "cost": 0.9978,
+    "min_usd": 1.28
+   },
+   {
+    "event_id": "1096946",
+    "cost": 0.9946,
+    "min_usd": 1.05
+   },
+   {
+    "event_id": "1109403",
+    "cost": 0.981,
+    "min_usd": 3.02
+   },
+   {
+    "event_id": "1115490",
+    "cost": 0.998,
+    "min_usd": 1.65
+   },
+   {
+    "event_id": "1115985",
+    "cost": 0.9988,
+    "min_usd": 0.4
+   },
+   {
+    "event_id": "1120973",
+    "cost": 0.9817,
+    "min_usd": 1.3
+   },
+   {
+    "event_id": "1126694",
+    "cost": 0.9975,
+    "min_usd": 9.29
+   },
+   {
+    "event_id": "1130746",
+    "cost": 0.9335,
+    "min_usd": 1.62
+   },
+   {
+    "event_id": "1132136",
+    "cost": 0.9811,
+    "min_usd": 5.2
+   },
+   {
+    "event_id": "1136836",
+    "cost": 0.9791,
+    "min_usd": 0.8
+   },
+   {
+    "event_id": "1139253",
+    "cost": 0.9924,
+    "min_usd": 0.06
+   },
+   {
+    "event_id": "1144495",
+    "cost": 0.997,
+    "min_usd": 1.21
+   },
+   {
+    "event_id": "1144633",
+    "cost": 0.9754,
+    "min_usd": 1.07
+   },
+   {
+    "event_id": "1176147",
+    "cost": 0.9951,
+    "min_usd": 0.39
+   }
+  ]
+ }
+}

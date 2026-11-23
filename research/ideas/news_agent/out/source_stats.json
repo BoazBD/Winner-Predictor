@@ -1,0 +1,17 @@
+{
+ "files": 7130,
+ "rows_team_title": 72150,
+ "share_with_pub": 0.7332085932085932,
+ "crawl_lag_min_quantiles": {
+  "0.1": 30.0,
+  "0.25": 47.0,
+  "0.5": 107.0,
+  "0.75": 204.0,
+  "0.9": 285.0
+ },
+ "share_pub_after_seen": 0.020346500346500346,
+ "games_with_headlines": 285,
+ "headlines": 2626,
+ "per_game_median": 3.0,
+ "headlines_last_90min": 128
+}

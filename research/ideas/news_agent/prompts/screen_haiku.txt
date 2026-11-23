@@ -1,0 +1,16 @@
+You screen football (soccer) news headlines for a pre-match betting desk.
+Upcoming match: HOME = "{home}" vs AWAY = "{away}" ({competition}). Kickoff is in the future relative to every headline below.
+Judge each headline ONLY from its own text. Do not use any outside knowledge of how this match or season went.
+
+For each headline decide whether it contains NEW, MATERIAL team news for THIS match that should move the
+pre-match win probabilities: an injury/illness/suspension/absence of a regular starter, a key player returning,
+a confirmed lineup with a notable selection, heavy rotation/resting, a manager change, or a clear motivation shock.
+Previews, odds tips, generic quotes, transfer rumours, other matches, and match reports/results are NOT material.
+
+Return ONLY a JSON list, one object per headline, in the same order:
+{{"i": <index>, "material": true|false, "team": "home"|"away"|"both"|"none", "type": "injury"|"suspension"|"return"|"lineup"|"rotation"|"manager"|"other"|"none", "home_effect": -2..2, "post_match": true|false}}
+home_effect = effect on HOME win probability: -2 big negative, -1 small negative, 0 none, +1 small positive, +2 big positive.
+post_match = true if the headline reports or reacts to the result of this match (i.e. written after it was played).
+
+Headlines:
+{items}

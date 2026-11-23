@@ -1,0 +1,5 @@
+games 14971 trades 5225427
+orders 7513125 games 14954
+x 0 fill 0.031 {1: np.float64(-2.444), 2: np.float64(-2.546), 3: np.float64(-2.595), 5: np.float64(-2.639)}
+x 1 fill 0.01 {1: np.float64(-2.71), 2: np.float64(-2.784), 3: np.float64(-2.824), 5: np.float64(-2.877)}
+x 2 fill 0.004 {1: np.float64(-3.036), 2: np.float64(-3.055), 3: np.float64(-3.074), 5: np.float64(-3.103)}

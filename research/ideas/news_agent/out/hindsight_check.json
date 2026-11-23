@@ -1,0 +1,18 @@
+{
+ "haiku": {
+  "cutoff": "April 2024.",
+  "claims_known": 0.0,
+  "hit_rate": 0.4666666666666667,
+  "n": 30,
+  "home_guess_share": 0.7333333333333333
+ },
+ "sonnet": {
+  "cutoff": "My training data cutoff is **January 2025**.",
+  "claims_known": 0.0,
+  "hit_rate": 0.4,
+  "n": 30,
+  "home_guess_share": 0.5666666666666667
+ },
+ "baseline_always_home_hit": 0.36666666666666664,
+ "usd": 0.017867999999999995
+}

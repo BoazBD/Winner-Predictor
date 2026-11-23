@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}{{ t.sweep }}{% endblock %}
+
+{% macro sign(x) %}{{ 'pos' if x and x > 0 else ('neg' if x and x < 0 else '') }}{% endmacro %}
+{% macro cents(x) %}{{ ((x * 100) | round(1)) if x is not none else '–' }}¢{% endmacro %}
+
+{% block content %}
+<div class="intro">
+  <div>
+    <h1>{{ t.sweep }}: catching panic sales</h1>
+    <p>A separate system from the models on the dashboard. In the last 3 hours before kickoff it keeps two cheap buy orders far
+      below the price of every outcome, on both "Yes" and "No". They fill only when someone dumps into an empty order book, and
+      the price usually bounces back within minutes. It then sells at the price from before the dump, or sells whatever is left
+      5 minutes before kickoff. Each order is 500 shares, and a fill counts only when a real Polymarket trade went below our
+      price. It runs every 5 minutes. Simulation only, with no real money.</p>
+  </div>
+  <span class="muted small">{% if last_run %}Last run {{ last_run | when }}{% endif %}</span>
+</div>
+
+<p class="note">The backtest on 16k games (real trades, Sep 2025 – Nov 2026) expects about 5–7 fills a month, about +70% per $ spent on fills
+  and about $150–220 a month at this size. Fills are rare and lumpy, so judge it over months, not days.</p>
+
+<div class="kpis">
+  <div class="kpi lead"><div class="k">P&amp;L</div><div class="v {{ sign(stats.pnl) }}">{{ '+' if stats.pnl > 0 else ('−' if stats.pnl < 0 else '') }}${{ (stats.pnl | abs) | num(2) }}</div><div class="s">{{ stats.closed }} closed</div></div>
+  <div class="kpi"><div class="k">Return per $</div><div class="v {{ sign(stats.ret) }}">{{ stats.ret | pct }}</div><div class="s">${{ stats.staked | num(0) }} spent</div></div>
+  <div class="kpi"><div class="k">Fills</div><div class="v">{{ stats.fills }}</div><div class="s">{{ stats.target }} sold at target</div></div>
+  <div class="kpi"><div class="k">Holding</div><div class="v">{{ stats.open + stats.held }}</div><div class="s">{{ stats.held }} held to result</div></div>
+  <div class="kpi"><div class="k">Orders now</div><div class="v">{{ status.orders or 0 }}</div><div class="s">{{ status.games_quoted or 0 }} games</div></div>
+  <div class="kpi"><div class="k">Money in orders</div><div class="v">${{ (status.locked_usd or 0) | num(0) }}</div><div class="s">right now</div></div>
+</div>
+
+{% if points %}
+<section class="card">
+  <h2>Cumulative P&amp;L ($)</h2>
+  <div class="chart-box" dir="ltr"><canvas id="pnl" role="img" aria-label="Cumulative P&L in dollars; the closed trades table has the same figures"></canvas></div>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Holding ({{ open | length }})</h2>
+  {% if open %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Bought</th><th class="n">Before dump</th><th class="n">Paid</th>
+      <th class="n">Shares</th><th class="n">Sell at</th><th class="n">Sold</th><th class="hide-sm">Filled</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for r in open %}
+      <tr>
+        <td class="t">{{ r.kickoff | when }}</td>
+        <td class="match">{{ r.home }} – {{ r.away }}{% if r.url %}<span class="muted"><a href="{{ r.url }}" target="_blank" rel="noopener">{{ t.poly }} ↗</a></span>{% endif %}</td>
+        <td class="pick-cell">{{ r.token }}</td>
+        <td class="n">{{ cents(r.c) }}</td><td class="n">{{ cents(r.L) }}</td><td class="n">{{ r.q | num(0) }}</td>
+        <td class="n">{{ cents(r.T) }}</td><td class="n">{{ r.q_exit | num(0) }}</td>
+        <td class="t hide-sm">{{ r.filled | when }}</td>
+        <td>{% if r.status == 'held' %}<span class="badge b-wait">Held to result</span>{% else %}<span class="badge b-open">Selling</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="empty">Nothing bought right now.</p>{% endif %}
+
+  <h3>Closed ({{ closed | length }})</h3>
+  {% if closed %}
+  <div class="table-wrap"><table>
+    <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Bought</th><th class="n">Before dump</th><th class="n">Paid</th>
+      <th class="n">Shares</th><th class="n">Sell at</th><th>How</th><th class="n">P&amp;L $</th><th class="n">Return</th><th class="n hide-sm">{{ t.running }}</th></tr></thead>
+    <tbody>
+    {% for r in closed %}
+      <tr>
+        <td class="t">{{ r.kickoff | when }}</td>
+        <td class="match">{{ r.home }} – {{ r.away }}<span class="muted">filled {{ r.filled | when }}{% if r.mins %} · {{ r.mins | round | int }} min before kickoff{% endif %}</span></td>
+        <td class="pick-cell">{{ r.token }}</td>
+        <td class="n">{{ cents(r.c) }}</td><td class="n">{{ cents(r.L) }}</td><td class="n">{{ r.q | num(0) }}</td>
+        <td class="n">{{ cents(r.T) }}</td>
+        <td>{% if r.how == 'target' %}<span class="badge b-won">Sold at target</span>
+            {% elif r.how == 'held to result' %}<span class="badge b-wait">Held to result</span>
+            {% else %}<span class="badge b-void">Sold before kickoff{% if r.liq %} at {{ cents(r.liq) }}{% endif %}</span>{% endif %}</td>
+        <td class="n {{ sign(r.pnl) }}">{{ r.pnl | num(2, True) }}</td>
+        <td class="n {{ sign(r.ret) }}">{{ r.ret | pct(0) }}</td>
+        <td class="n hide-sm {{ sign(r.running) }}">{{ r.running | num(2, True) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="empty">No closed trades yet.</p>{% endif %}
+</section>
+
+<section class="card">
+  <details class="more">
+    <summary>Orders resting now ({{ live | length }}) · games kicking off in the next 3 hours</summary>
+    {% if live %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Buy</th><th class="n">Price now</th><th class="n">Our bid</th><th class="n">Level</th></tr></thead>
+      <tbody>
+      {% for o in live %}
+        <tr><td class="t">{{ o.kickoff | when }}</td><td class="match">{{ o.home }} – {{ o.away }}</td><td>{{ o.token }}</td>
+          <td class="n">{{ cents(o.c) }}</td><td class="n">{{ cents(o.L) }}</td><td class="n">{{ o.level }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="empty">No games in the window right now.</p>{% endif %}
+  </details>
+  <details class="more">
+    <summary>The rules</summary>
+    <ul class="small">
+      <li><b>Which games:</b> every Winner game matched to Polymarket, from 3 hours to 10 minutes before kickoff, for each
+        outcome on both sides. Buying "Yes" catches dumps and buying "No" catches spikes. The price must be 8–92¢.</li>
+      <li><b>Two bids:</b> level A at the lower of (price − 15¢) and 60% of the price; level B at the lower of (price − 20¢)
+        and half the price. Each is 500 shares.</li>
+      <li><b>Winner check:</b> we bid only if Winner's fair price for that side is at least 6¢ above our bid, so a fill means
+        the dump pushed the price away from fair value.</li>
+      <li><b>Selling:</b> a sell order at the price from before the dump, which counts only for shares real buyers bought above it.
+        Whatever is left 5 minutes before kickoff is sold 1¢ under the last real sale (fee paid). If there was no such sale,
+        it is held to the result.</li>
+      <li><b>Cooldown:</b> 60 minutes after a fill before the same bid is placed again.</li>
+    </ul>
+  </details>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if points %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+(() => {
+  const points = {{ points | tojson }};
+  const el = document.getElementById('pnl');
+  if (!window.Chart || !el) return;
+  let chart;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const draw = () => {
+    if (chart) chart.destroy();
+    const grid = css('--grid'), muted = css('--muted');
+    chart = new Chart(el, {
+      type: 'line',
+      data: { datasets: [{ label: 'P&L', data: points, borderColor: css('--series-1'), backgroundColor: css('--series-1'),
+        borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, pointHitRadius: 12, tension: 0, stepped: 'after' }] },
+      options: {
+        maintainAspectRatio: false, animation: false, interaction: { mode: 'nearest', intersect: false },
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: c => `${c.parsed.y >= 0 ? '+' : ''}$${c.parsed.y.toFixed(2)}` } } },
+        scales: {
+          x: { type: 'time', time: { unit: 'day', tooltipFormat: 'dd MMM HH:mm' }, grid: { display: false },
+               border: { color: grid }, ticks: { color: muted, maxRotation: 0 } },
+          y: { grid: { color: ctx => ctx.tick.value === 0 ? muted : grid }, border: { display: false },
+               ticks: { color: muted, callback: v => (v > 0 ? '+$' : v < 0 ? '−$' : '$') + Math.abs(v) } }
+        }
+      }
+    });
+  };
+  draw();
+  document.addEventListener('themechange', draw);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+})();
+</script>
+{% endif %}
+{% endblock %}

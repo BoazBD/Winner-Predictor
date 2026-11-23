@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" font-family="sans-serif" font-size="11">
+<rect width="640" height="300" fill="#fcfcfb"/>
+<text x="60" y="20" font-size="14" fill="#0b0b0b">Lead/lag (train, H=60 min): Poly round-trip P&L by Kalshi gap</text>
+<text x="10" y="34" fill="#52514e">cents/share</text>
+<line x1="60" x2="620" y1="40.0" y2="40.0" stroke="#c3c2b7"/>
+<rect x="62.0" y="40.0" width="66.0" height="186.6" rx="2" fill="#2a78d6"/>
+<text x="95.0" y="238.6" text-anchor="middle" fill="#0b0b0b">-3.1</text>
+<text x="95.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 95.0 256)">(-1.0, -0.03]</text>
+<rect x="132.0" y="40.0" width="66.0" height="187.1" rx="2" fill="#2a78d6"/>
+<text x="165.0" y="239.1" text-anchor="middle" fill="#0b0b0b">-3.1</text>
+<text x="165.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 165.0 256)">(-0.03, -0.01]</text>
+<rect x="202.0" y="40.0" width="66.0" height="170.6" rx="2" fill="#2a78d6"/>
+<text x="235.0" y="222.6" text-anchor="middle" fill="#0b0b0b">-2.8</text>
+<text x="235.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 235.0 256)">(-0.01, 0.0]</text>
+<rect x="272.0" y="40.0" width="66.0" height="171.3" rx="2" fill="#2a78d6"/>
+<text x="305.0" y="223.3" text-anchor="middle" fill="#0b0b0b">-2.9</text>
+<text x="305.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 305.0 256)">(0.0, 0.01]</text>
+<rect x="342.0" y="40.0" width="66.0" height="172.3" rx="2" fill="#2a78d6"/>
+<text x="375.0" y="224.3" text-anchor="middle" fill="#0b0b0b">-2.9</text>
+<text x="375.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 375.0 256)">(0.01, 0.02]</text>
+<rect x="412.0" y="40.0" width="66.0" height="200.0" rx="2" fill="#2a78d6"/>
+<text x="445.0" y="252.0" text-anchor="middle" fill="#0b0b0b">-3.3</text>
+<text x="445.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 445.0 256)">(0.02, 0.03]</text>
+<rect x="482.0" y="40.0" width="66.0" height="161.8" rx="2" fill="#2a78d6"/>
+<text x="515.0" y="213.8" text-anchor="middle" fill="#0b0b0b">-2.7</text>
+<text x="515.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 515.0 256)">(0.03, 0.05]</text>
+<rect x="552.0" y="40.0" width="66.0" height="86.9" rx="2" fill="#2a78d6"/>
+<text x="585.0" y="138.9" text-anchor="middle" fill="#0b0b0b">-1.4</text>
+<text x="585.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 585.0 256)">(0.05, 1.0]</text>
+</svg>

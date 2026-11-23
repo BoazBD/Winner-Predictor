@@ -1,0 +1,79 @@
+orders 7513125 {'train': 3945295, 'val': 2224298, 'test': 1343532}
+baseline (no model) ROI: {'train_x0_d1': -3.17, 'train_x0_d2': -3.69, 'train_x0_d3': -3.99, 'train_x0_d5': -4.28, 'train_x1_d1': -3.34, 'train_x1_d2': -3.68, 'train_x1_d3': -4.0, 'train_x1_d5': -4.42, 'train_x2_d1': -4.57, 'train_x2_d2': -4.64, 'train_x2_d3': -4.77, 'train_x2_d5': -5.12, 'val_x0_d1': -4.61, 'val_x0_d2': -4.79, 'val_x0_d3': -4.86, 'val_x0_d5': -4.96, 'val_x1_d1': -5.51, 'val_x1_d2': -5.68, 'val_x1_d3': -5.77, 'val_x1_d5': -5.82, 'val_x2_d1': -6.01, 'val_x2_d2': -6.03, 'val_x2_d3': -6.12, 'val_x2_d5': -6.11, 'test_x0_d1': -4.95, 'test_x0_d2': -5.07, 'test_x0_d3': -5.13, 'test_x0_d5': -5.24, 'test_x1_d1': -5.93, 'test_x1_d2': -6.0, 'test_x1_d3': -6.01, 'test_x1_d5': -6.1, 'test_x2_d1': -6.22, 'test_x2_d2': -6.25, 'test_x2_d3': -6.25, 'test_x2_d5': -6.22}
+tune x0 d1 thr0.0: fills 1025 roi -1.30% ci [-1.66 -0.96] c/sh -0.66
+tune x0 d1 thr0.05: fills 228 roi -1.03% ci [-1.94 -0.4 ] c/sh -0.55
+tune x0 d1 thr0.1: fills 93 roi -0.88% ci [-1.93  0.15] c/sh -0.47
+tune x0 d1 thr0.2: fills 20 roi -2.83% ci [-5.92 -0.26] c/sh -1.77
+tune x0 d1 thr0.3: fills 10 roi -4.02% ci [-8.74 -0.72] c/sh -2.49
+tune x0 d1 thr0.5: fills 2 roi 1.42% ci [nan nan] c/sh 1.00
+tune x0 d2 thr0.0: fills 729 roi -2.16% ci [-2.68 -1.69] c/sh -1.14
+tune x0 d2 thr0.05: fills 159 roi -1.77% ci [-2.88 -0.64] c/sh -1.03
+tune x0 d2 thr0.1: fills 74 roi -1.83% ci [-3.34 -0.36] c/sh -1.09
+tune x0 d2 thr0.2: fills 23 roi -2.50% ci [-5.24  0.64] c/sh -1.41
+tune x0 d2 thr0.3: fills 11 roi -4.22% ci [-10.03  -0.24] c/sh -2.62
+tune x0 d2 thr0.5: fills 0 roi nan% ci [nan nan] c/sh nan
+tune x0 d3 thr0.0: fills 516 roi -1.80% ci [-2.32 -1.28] c/sh -0.92
+tune x0 d3 thr0.05: fills 123 roi -1.24% ci [-2.52 -0.09] c/sh -0.71
+tune x0 d3 thr0.1: fills 63 roi -2.41% ci [-4.18 -0.76] c/sh -1.33
+tune x0 d3 thr0.2: fills 25 roi -3.35% ci [-6.89 -0.43] c/sh -1.80
+tune x0 d3 thr0.3: fills 10 roi -4.19% ci [-10.37   0.45] c/sh -2.86
+tune x0 d3 thr0.5: fills 2 roi -9.62% ci [nan nan] c/sh -5.10
+tune x0 d5 thr0.0: fills 427 roi -2.06% ci [-2.72 -1.44] c/sh -1.07
+tune x0 d5 thr0.05: fills 83 roi -1.62% ci [-3.2  -0.11] c/sh -0.95
+tune x0 d5 thr0.1: fills 37 roi -2.16% ci [-4.84 -0.04] c/sh -1.38
+tune x0 d5 thr0.2: fills 14 roi -3.64% ci [-8.18  0.39] c/sh -2.56
+tune x0 d5 thr0.3: fills 7 roi -3.34% ci [-7.28  0.9 ] c/sh -2.64
+tune x0 d5 thr0.5: fills 1 roi -15.30% ci [nan nan] c/sh -11.17
+tune x1 d1 thr0.0: fills 581 roi -0.97% ci [-1.44 -0.49] c/sh -0.51
+tune x1 d1 thr0.05: fills 99 roi -2.23% ci [-3.87 -0.77] c/sh -1.16
+tune x1 d1 thr0.1: fills 51 roi -2.95% ci [-5.03 -0.81] c/sh -1.69
+tune x1 d1 thr0.2: fills 14 roi -2.02% ci [-5.95  1.54] c/sh -1.26
+tune x1 d1 thr0.3: fills 8 roi -3.99% ci [-10.06   0.66] c/sh -2.66
+tune x1 d1 thr0.5: fills 5 roi -3.60% ci [nan nan] c/sh -2.22
+tune x1 d2 thr0.0: fills 590 roi -1.54% ci [-2.19 -1.  ] c/sh -0.78
+tune x1 d2 thr0.05: fills 148 roi -1.58% ci [-2.78 -0.32] c/sh -0.82
+tune x1 d2 thr0.1: fills 76 roi -0.81% ci [-2.4   0.94] c/sh -0.42
+tune x1 d2 thr0.2: fills 23 roi -3.48% ci [-7.17  0.42] c/sh -1.96
+tune x1 d2 thr0.3: fills 10 roi -5.55% ci [-12.53  -0.37] c/sh -3.31
+tune x1 d2 thr0.5: fills 4 roi -7.35% ci [nan nan] c/sh -4.59
+tune x1 d3 thr0.0: fills 436 roi -1.86% ci [-2.59 -1.17] c/sh -0.99
+tune x1 d3 thr0.05: fills 130 roi -1.94% ci [-3.38 -0.69] c/sh -1.06
+tune x1 d3 thr0.1: fills 51 roi -1.74% ci [-4.21  0.54] c/sh -0.95
+tune x1 d3 thr0.2: fills 19 roi -2.53% ci [-6.86  1.96] c/sh -1.53
+tune x1 d3 thr0.3: fills 11 roi -2.14% ci [-7.76  2.67] c/sh -1.33
+tune x1 d3 thr0.5: fills 6 roi -7.15% ci [-15.86   0.1 ] c/sh -4.05
+tune x1 d5 thr0.0: fills 310 roi -1.90% ci [-2.87 -1.  ] c/sh -0.94
+tune x1 d5 thr0.05: fills 85 roi -2.27% ci [-4.38 -0.25] c/sh -1.22
+tune x1 d5 thr0.1: fills 35 roi -2.13% ci [-4.9   1.38] c/sh -1.34
+tune x1 d5 thr0.2: fills 17 roi -4.40% ci [-8.93 -0.69] c/sh -3.01
+tune x1 d5 thr0.3: fills 7 roi -5.13% ci [-12.69   1.21] c/sh -3.21
+tune x1 d5 thr0.5: fills 5 roi -9.41% ci [nan nan] c/sh -5.82
+tune x2 d1 thr0.0: fills 267 roi -1.35% ci [-2.23 -0.62] c/sh -0.69
+tune x2 d1 thr0.05: fills 45 roi -2.97% ci [-5.31 -0.72] c/sh -1.72
+tune x2 d1 thr0.1: fills 24 roi -1.45% ci [-3.96  0.88] c/sh -0.83
+tune x2 d1 thr0.2: fills 8 roi -0.98% ci [-6.74  2.24] c/sh -0.52
+tune x2 d1 thr0.3: fills 4 roi -3.71% ci [nan nan] c/sh -2.05
+tune x2 d1 thr0.5: fills 0 roi nan% ci [nan nan] c/sh nan
+tune x2 d2 thr0.0: fills 387 roi -1.69% ci [-2.52 -0.92] c/sh -0.90
+tune x2 d2 thr0.05: fills 73 roi -0.90% ci [-3.05  0.86] c/sh -0.50
+tune x2 d2 thr0.1: fills 31 roi -1.16% ci [-4.14  1.8 ] c/sh -0.63
+tune x2 d2 thr0.2: fills 12 roi 1.62% ci [-3.25  4.66] c/sh 0.90
+tune x2 d2 thr0.3: fills 3 roi 3.24% ci [nan nan] c/sh 2.00
+tune x2 d2 thr0.5: fills 0 roi nan% ci [nan nan] c/sh nan
+tune x2 d3 thr0.0: fills 379 roi -1.47% ci [-2.43 -0.59] c/sh -0.73
+tune x2 d3 thr0.05: fills 88 roi -0.14% ci [-1.81  1.66] c/sh -0.07
+tune x2 d3 thr0.1: fills 52 roi -0.46% ci [-3.09  2.24] c/sh -0.25
+tune x2 d3 thr0.2: fills 17 roi -1.95% ci [-7.26  2.03] c/sh -1.09
+tune x2 d3 thr0.3: fills 7 roi -4.07% ci [-12.37   2.63] c/sh -2.56
+tune x2 d3 thr0.5: fills 1 roi -10.03% ci [nan nan] c/sh -3.01
+tune x2 d5 thr0.0: fills 264 roi -1.41% ci [-2.53 -0.44] c/sh -0.73
+tune x2 d5 thr0.05: fills 79 roi -1.25% ci [-3.49  1.  ] c/sh -0.67
+tune x2 d5 thr0.1: fills 52 roi -0.91% ci [-4.01  2.1 ] c/sh -0.49
+tune x2 d5 thr0.2: fills 15 roi -2.50% ci [-7.36  2.12] c/sh -1.62
+tune x2 d5 thr0.3: fills 8 roi -5.56% ci [-13.01   0.74] c/sh -3.60
+tune x2 d5 thr0.5: fills 0 roi nan% ci [nan nan] c/sh nan
+BEST on tune: {'orders': 92479, 'fills': 581, 'fill_rate': 0.00628250738005385, 'hit': 0.6987951807228916, 'c_per_share': -0.5067868342512912, 'roi': -0.009716313051082372, 'games': 419, 'ci': [-0.014374403357640918, -0.00493477467986252], 'fills_per_month': 200.7090909090909, 'usd_per_month_100': -271.8117962805129, 'x': 1, 'd': 1, 'thr': 0.0, 'score': -0.014374403357640918}
+val x1 d1 thr0.0: fills 462 roi -1.89% ci [-2.56 -1.27] hit 0.64 c/sh -0.97 $/mo -340
+val x1 d1 thr0.1: fills 28 roi -6.03% ci [-11.06  -2.09] hit 0.57 c/sh -3.53 $/mo -70
+val x1 d1 thr0.3: fills 8 roi -10.15% ci [-23.1   -1.81] hit 0.38 c/sh -7.12 $/mo -44
+test x1 d1 thr0.0: fills 211 roi -1.85% ci [-2.66 -1.11] hit 0.57 c/sh -1.02 $/mo -388

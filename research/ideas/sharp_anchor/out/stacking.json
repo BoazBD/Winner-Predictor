@@ -1,0 +1,68 @@
+[
+ {
+  "sample": "close",
+  "venues": [
+   "poly_close",
+   "bfe_close",
+   "winner_close"
+  ],
+  "weights": {
+   "poly_close": 0.948,
+   "bfe_close": 0.207,
+   "winner_close": -0.086,
+   "draw_bias": 0.031
+  },
+  "n_train": 4252,
+  "n_eval": 3265,
+  "ll_stack_eval": 0.9864591328287879,
+  "ll_single_eval": {
+   "poly_close": 0.9870181851440842,
+   "bfe_close": 0.9862323457741488,
+   "winner_close": 0.9915983572943626
+  }
+ },
+ {
+  "sample": "at T",
+  "venues": [
+   "poly_T",
+   "bfe_T",
+   "winner_T"
+  ],
+  "weights": {
+   "poly_T": 0.505,
+   "bfe_T": 0.364,
+   "winner_T": 0.353,
+   "draw_bias": 0.101
+  },
+  "n_train": 2727,
+  "n_eval": 1426,
+  "ll_stack_eval": 0.9913201296451238,
+  "ll_single_eval": {
+   "poly_T": 0.9897200763654539,
+   "bfe_T": 0.9945165739626305,
+   "winner_T": 0.9939707064616099
+  }
+ },
+ {
+  "sample": "close, Pinnacle era (in-sample)",
+  "venues": [
+   "poly_close",
+   "pin_close",
+   "bfe_close"
+  ],
+  "weights": {
+   "poly_close": 2.21,
+   "pin_close": -0.0,
+   "bfe_close": -1.076,
+   "draw_bias": 0.082
+  },
+  "n_train": 1327,
+  "n_eval": 0,
+  "ll_stack_eval": NaN,
+  "ll_single_eval": {
+   "poly_close": NaN,
+   "pin_close": NaN,
+   "bfe_close": NaN
+  }
+ }
+]

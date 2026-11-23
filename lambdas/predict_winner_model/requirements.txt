@@ -1,0 +1,14 @@
+# pinned to the versions the model was trained/pickled with (winner_model/.venv)
+pandas==3.1.1
+numpy==2.4.6
+pyarrow==26.0.1
+duckdb==2.0.0
+lightgbm==4.7.0
+scikit-learn==1.9.1
+awswrangler==3.18.0
+google-cloud-firestore==2.34.1
+requests==2.34.2
+anthropic[bedrock]==2.8.0
+joblib==1.6.0
+# zoneinfo database for the Israel-time -> UTC conversion (not guaranteed in the Lambda base image)
+tzdata==2026.6

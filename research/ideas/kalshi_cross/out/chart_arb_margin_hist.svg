@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" font-family="sans-serif" font-size="11">
+<rect width="640" height="300" fill="#fcfcfb"/>
+<text x="60" y="20" font-size="14" fill="#0b0b0b">Hedged cost: profit per $1 payoff (1 - cost), % of prints</text>
+<text x="10" y="34" fill="#52514e">% prints</text>
+<line x1="60" x2="620" y1="240.0" y2="240.0" stroke="#c3c2b7"/>
+<rect x="62.0" y="220.7" width="58.2" height="19.3" rx="2" fill="#2a78d6"/>
+<text x="91.1" y="216.7" text-anchor="middle" fill="#0b0b0b">5.26</text>
+<text x="91.1" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 91.1 256)">(-1.0, -0.05]</text>
+<rect x="124.2" y="40.0" width="58.2" height="200.0" rx="2" fill="#2a78d6"/>
+<text x="153.3" y="36.0" text-anchor="middle" fill="#0b0b0b">54.43</text>
+<text x="153.3" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 153.3 256)">(-0.05, -0.03]</text>
+<rect x="186.4" y="133.9" width="58.2" height="106.1" rx="2" fill="#2a78d6"/>
+<text x="215.6" y="129.9" text-anchor="middle" fill="#0b0b0b">28.89</text>
+<text x="215.6" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 215.6 256)">(-0.03, -0.02]</text>
+<rect x="248.7" y="206.9" width="58.2" height="33.1" rx="2" fill="#2a78d6"/>
+<text x="277.8" y="202.9" text-anchor="middle" fill="#0b0b0b">9.01</text>
+<text x="277.8" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 277.8 256)">(-0.02, -0.01]</text>
+<rect x="310.9" y="233.6" width="58.2" height="6.4" rx="2" fill="#2a78d6"/>
+<text x="340.0" y="229.6" text-anchor="middle" fill="#0b0b0b">1.73</text>
+<text x="340.0" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 340.0 256)">(-0.01, -0.005]</text>
+<rect x="373.1" y="239.0" width="58.2" height="1.0" rx="2" fill="#2a78d6"/>
+<text x="402.2" y="235.0" text-anchor="middle" fill="#0b0b0b">0.28</text>
+<text x="402.2" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 402.2 256)">(-0.005, 0.0]</text>
+<rect x="435.3" y="239.0" width="58.2" height="1.0" rx="2" fill="#2a78d6"/>
+<text x="464.4" y="235.0" text-anchor="middle" fill="#0b0b0b">0.28</text>
+<text x="464.4" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 464.4 256)">(0.0, 0.005]</text>
+<rect x="497.6" y="239.9" width="58.2" height="1.0" rx="2" fill="#2a78d6"/>
+<text x="526.7" y="235.9" text-anchor="middle" fill="#0b0b0b">0.03</text>
+<text x="526.7" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 526.7 256)">(0.005, 0.01]</text>
+<rect x="559.8" y="239.7" width="58.2" height="1.0" rx="2" fill="#2a78d6"/>
+<text x="588.9" y="235.7" text-anchor="middle" fill="#0b0b0b">0.09</text>
+<text x="588.9" y="256" text-anchor="middle" fill="#52514e" transform="rotate(30 588.9 256)">(0.01, 1.0]</text>
+</svg>

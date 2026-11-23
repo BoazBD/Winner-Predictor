@@ -1,0 +1,27 @@
+{
+ "L_by_league": {
+  "\u05d0\u05d9\u05d8\u05dc\u05e7\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -47,
+  "\u05d2\u05e8\u05de\u05e0\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -61,
+  "\u05d4\u05dc\u05d9\u05d2\u05d4 \u05d4\u05d0\u05d9\u05e8\u05d5\u05e4\u05d9\u05ea": -73,
+  "\u05dc\u05d9\u05d2\u05ea \u05d4\u05d0\u05dc\u05d5\u05e4\u05d5\u05ea": -61,
+  "\u05e1\u05e4\u05e8\u05d3\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -53,
+  "\u05e4\u05e8\u05de\u05d9\u05d9\u05e8 \u05dc\u05d9\u05d2": -70,
+  "\u05e6\u05e8\u05e4\u05ea\u05d9\u05ea \u05e8\u05d0\u05e9\u05d5\u05e0\u05d4": -48
+ },
+ "domestic": {
+  "n_games": 200,
+  "n_move_ge_2c": 37,
+  "share_games_move_ge_2c": 0.185,
+  "mean_abs_move_lineup_window_c": 1.0175,
+  "mean_abs_move_quiet_hour_c": 0.3961581920903953,
+  "pre_move_10min_before_c": 0.013513513513513525
+ },
+ "UEFA": {
+  "n_games": 81,
+  "n_move_ge_2c": 32,
+  "share_games_move_ge_2c": 0.3950617283950617,
+  "mean_abs_move_lineup_window_c": 2.0011111111111113,
+  "mean_abs_move_quiet_hour_c": 0.6994366197183096,
+  "pre_move_10min_before_c": -0.14062500000000064
+ }
+}
