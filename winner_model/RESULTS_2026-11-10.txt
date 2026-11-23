@@ -1,0 +1,75 @@
+WINNER BETTING MODEL - RESULTS (2026-11-10)
+===========================================
+
+Data: all_processed_winner_081126.parquet (52.5M rows, 321k markets) and
+      processed_winner_081126.parquet (big leagues; subset of the first).
+Bets: 1 unit the first time an outcome crosses the EV threshold, once per (market, outcome),
+      only at prices actually present in that snapshot.
+
+HEADLINE
+--------
+The model roughly breaks even; it does not show a demonstrated profit.
+Untouched test (kickoff 2026-03-01 .. 2026-11-07), run once, policy fixed in advance
+(see PREREGISTRATION.md):
+
+  Policy                                   Walk-forward Jan25-Feb26        Untouched test Mar-Nov26
+  ---------------------------------------  ------------------------------  ------------------------------
+  PRIMARY: predicted EV > -3%              +0.5% / 555 bets (-2.8..+3.7)   -0.6% / 317 bets (-4.8..+3.1)
+  Stricter: predicted EV > -2%             +3.8% / 266 bets                -1.8% / 160 bets
+  Level only (no line-move model), > -4%   -2.1% / 542 bets                -3.0% / 312 bets
+  User rule (p>=0.70, ovr<=1.16, >=10 chg) not run                         -1.6% / 188 bets
+  Flat, every outcome at close             not run                         -22.0% / 167,650 bets
+  (intervals are 90% bootstrap CIs)
+
+Best estimate of true ROI of the primary policy: about -2% to 0%.
+  - both periods pooled: +0.1% over 872 bets
+  - model's own estimate against the calibrated closing line: -2.4% (more trustworthy than realised)
+Volume: ~9 bets/week, average odds 1.17, all soccer 1X2 favourites, mostly top leagues.
+Ranking by EV did NOT hold in the test (stricter threshold was better in dev, worse in test).
+
+Primary policy on the untouched test, breakdown:
+  by tier : 90% payout 158 bets -2.0% | 85% payout 55 bets -1.9% | 80% payout 104 bets +2.2%
+  by odds : <=1.10 112 bets -0.6% | 1.10-1.20 72 bets -2.9% | 1.20-1.30 85 bets +0.4% | 1.30-1.50 48 bets +1.3%
+
+WHAT THE MODEL DOES (model.py)
+------------------------------
+1. Payout tiers. Winner prices 1X2 at exactly 90% / 85% / 80% payout by league
+   (overround 1.111 / 1.176 / 1.25). Only the 90% tier is close enough to fair to matter.
+2. Rounding. Prices are on a 0.05 grid; (overround - tier value) reveals whether the favourite's
+   price was rounded up or down. Worth +-2-5% on short favourites.
+3. Favourite-longshot correction. Odds-ratio de-margining + pooled logistic calibration on all
+   122k soccer matches: 90%-tier favourites are about -4% to -6% before rounding.
+4. Line moves. LightGBM predicts (calibrated closing value - current value). Works out of sample
+   (predicted +4% -> realised +4.6%) but the big predicted moves are on outcomes that start
+   around -22%; on favourites it adds 1-2%.
+   EV = level EV at current price + predicted drift.
+
+OTHER FINDINGS
+--------------
+- Flat ROI at close (dev period): soccer 1X2 -19..-24%, handicap -19..-25%, basketball spread -17%,
+  tennis -19%. By odds, soccer 1X2: <=1.2 about -7%, 2-3 about -20%, >5 about -46%.
+- Rounded-up favourites at odds <=1.10 (all tiers, close): +1.9% (n=103); rounded-down: -8 to -10%.
+- Oracle: ~3% of minor-league 1X2 outcomes are at some point priced >3% above their calibrated
+  closing value; betting those returns +10.9% +-2.2% over 3,615 bets. Median such price lasts 1 hour.
+  Nothing in Winner's own data identifies them in advance: 1X2 and handicap markets move together
+  82% of the time with no lead/lag, and the model never expects better than about -3% in volume.
+- Margin formula: none of multiplicative / power / odds-ratio / additive / Shin fits exactly;
+  odds-ratio is best calibrated in the mid range.
+
+CONCLUSION
+----------
+Agree with the "feed + fixed margin" belief. Beating the margin needs the direction of the next
+line move, i.e. timestamped sharp-bookmaker odds (Pinnacle / Betfair); lineup/news timing second.
+
+NOT DONE
+--------
+- Basketball / baseball / American-football spreads dropped after baseline (-16..-20% flat, prices barely move).
+- Tennis and soccer handicaps are scored but never came near the threshold.
+- No neural sequence models. No subagents.
+
+FILES (winner_model/)
+---------------------
+build_segments.py  raw snapshots -> price segments          model.py        pipeline
+build_cand2.py     segments -> candidate/feature table       final_test.py   reproduces the test
+train_full.py      fits deployment model on ALL data         predict_live.py scores the latest snapshot
+data/model_full.pkl  deployment model, trained through 2026-11-07 (next clean test = games after that date)

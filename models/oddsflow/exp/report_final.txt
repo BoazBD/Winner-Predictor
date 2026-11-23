@@ -1,0 +1,73 @@
+=== FINAL  kickoff 2026-03-01 .. 2026-11-07  (36 weeks, 30751 matches) ===
+LOG-LOSS (3-way, mean -log p of the result)
+  all decision points (per-match weight)         model 0.9843  market 0.9900  diff -0.0057  (n=30751)
+  last snapshot only                             model 0.9847  market 0.9912  diff -0.0065  (n=30751)
+    tier 0 (90% payout), all points              model 0.9578  market 0.9593  diff -0.0016  (n=1360)
+    tier 1 (85% payout), all points              model 0.9252  market 0.9322  diff -0.0070  (n=730)
+    tier 2 (80% payout), all points              model 0.9870  market 0.9929  diff -0.0059  (n=28718)
+REFERENCES
+  flat: every outcome at close n= 92253 ROI=-22.72% CI90=[-23.0,-22.4] avg_odds=2.84 bets/wk=2572.8 win%=33.3
+    flat, tier 0             n=  4074 ROI=-12.07% CI90=[-14.1,-10.0] avg_odds=3.57 bets/wk=113.6 win%=33.3
+    flat, tier 1             n=  2178 ROI=-18.63% CI90=[-21.3,-15.9] avg_odds=3.39 bets/wk= 60.7 win%=33.3
+    flat, tier 2             n= 86001 ROI=-23.33% CI90=[-23.6,-23.1] avg_odds=2.79 bets/wk=2398.4 win%=33.3
+    flat, favourites         n= 30751 ROI=-14.25% CI90=[-15.1,-13.5] avg_odds=1.72 bets/wk=857.6 win%=52.3
+  rounding-slack rule        n=   271 ROI= +0.68% CI90=[ -4.9, +6.0] avg_odds=1.32 bets/wk=  7.6 win%=76.4
+  value model (winner_model/): dev walk-forward +0.5% / 555 bets; its test Mar-Nov 2026 -0.6% / 317 bets (quoted)
+POLICY  EV > -0.010
+  all bets                   n=   207 ROI= -0.53% CI90=[ -6.8, +5.6] avg_odds=1.28 bets/wk=  5.8 win%=78.3
+   closing line: beat 66% / equal 22% / worse 12%, mean price advantage +4.18%, calibrated EV at closing probability +0.25%, predicted EV -0.14%
+   tiers: tier0 203, tier1 4, tier2 0; outcomes: home 154, draw 1, away 52; median hours to kickoff 121.7
+   by period:
+     2026Q1                     n=    20 ROI= -6.25% CI90=[-26.0,+13.0] avg_odds=1.27 bets/wk=  0.6 win%=75.0 closeEV=-2.13%
+     2026Q2                     n=    78 ROI=-11.92% CI90=[-23.3, -0.3] avg_odds=1.30 bets/wk=  2.2 win%=67.9 closeEV=-0.54%
+     2026Q3                     n=    52 ROI=+10.96% CI90=[ +0.9,+19.8] avg_odds=1.26 bets/wk=  1.5 win%=88.5 closeEV=+2.75%
+     2026Q4                     n=    57 ROI= +6.58% CI90=[ -3.9,+16.1] avg_odds=1.26 bets/wk=  1.6 win%=84.2 closeEV=-0.02%
+   by band:
+     (1.0, 1.1]                 n=    20 ROI= -7.25% CI90=[-23.2, +4.3] avg_odds=1.09 bets/wk=  0.6 win%=85.0 closeEV=+0.78%
+     (1.1, 1.2]                 n=    49 ROI= -0.82% CI90=[-12.6, +9.0] avg_odds=1.18 bets/wk=  1.4 win%=83.7 closeEV=+1.36%
+     (1.2, 1.3]                 n=    70 ROI= -1.86% CI90=[-12.7, +8.9] avg_odds=1.27 bets/wk=  2.0 win%=77.1 closeEV=+1.18%
+     (1.3, 1.45]                n=    66 ROI= +0.53% CI90=[-12.0,+12.9] avg_odds=1.38 bets/wk=  1.8 win%=72.7 closeEV=-1.81%
+     (1.45, 1.7]                n=     1 ROI=+50.00% CI90=[ +nan, +nan] avg_odds=1.50 bets/wk=  0.0 win%=100.0 closeEV=-1.15%
+     (1.7, 2.5]                 n=     1 ROI=+120.00% CI90=[ +nan, +nan] avg_odds=2.20 bets/wk=  0.0 win%=100.0 closeEV=+10.29%
+   by evb:
+     (-0.01, 0.0]               n=   139 ROI= +7.59% CI90=[ +0.6,+14.4] avg_odds=1.30 bets/wk=  3.9 win%=83.5 closeEV=-0.71%
+     (0.0, 0.005]               n=    27 ROI=-17.59% CI90=[-36.5, +0.6] avg_odds=1.24 bets/wk=  0.8 win%=66.7 closeEV=+1.89%
+     (0.005, 0.01]              n=    18 ROI=-17.50% CI90=[-39.7, +4.4] avg_odds=1.24 bets/wk=  0.5 win%=66.7 closeEV=+4.19%
+     (0.01, 0.02]               n=    18 ROI=-13.33% CI90=[-34.4, +6.7] avg_odds=1.20 bets/wk=  0.5 win%=72.2 closeEV=+1.01%
+     (0.02, 1.0]                n=     5 ROI=-27.00% CI90=[-75.0,+21.0] avg_odds=1.24 bets/wk=  0.1 win%=60.0 closeEV=+1.56%
+POLICY  EV > +0.000
+  all bets                   n=   140 ROI= -4.93% CI90=[-12.1, +2.3] avg_odds=1.24 bets/wk=  3.9 win%=77.1
+   closing line: beat 67% / equal 24% / worse 10%, mean price advantage +4.36%, calibrated EV at closing probability +1.37%, predicted EV +0.67%
+   tiers: tier0 140, tier1 0, tier2 0; outcomes: home 106, draw 0, away 34; median hours to kickoff 109.2
+   by period:
+     2026Q1                     n=    16 ROI=-14.06% CI90=[-38.4, +9.4] avg_odds=1.27 bets/wk=  0.4 win%=68.8 closeEV=-2.07%
+     2026Q2                     n=    47 ROI=-21.60% CI90=[-35.5, -7.7] avg_odds=1.24 bets/wk=  1.3 win%=63.8 closeEV=+1.06%
+     2026Q3                     n=    38 ROI=+13.82% CI90=[ +4.3,+22.1] avg_odds=1.23 bets/wk=  1.1 win%=92.1 closeEV=+3.26%
+     2026Q4                     n=    39 ROI= +0.64% CI90=[-12.2,+12.7] avg_odds=1.23 bets/wk=  1.1 win%=82.1 closeEV=+1.39%
+   by band:
+     (1.0, 1.1]                 n=    17 ROI= -9.71% CI90=[-28.8, +3.5] avg_odds=1.10 bets/wk=  0.5 win%=82.4 closeEV=+2.55%
+     (1.1, 1.2]                 n=    36 ROI= -1.81% CI90=[-15.0, +8.5] avg_odds=1.18 bets/wk=  1.0 win%=83.3 closeEV=+2.02%
+     (1.2, 1.3]                 n=    66 ROI= -3.94% CI90=[-15.2, +6.4] avg_odds=1.27 bets/wk=  1.8 win%=75.8 closeEV=+1.64%
+     (1.3, 1.45]                n=    21 ROI= -9.52% CI90=[-35.2,+10.2] avg_odds=1.36 bets/wk=  0.6 win%=66.7 closeEV=-1.30%
+   by evb:
+     (0.0, 0.005]               n=    70 ROI= -5.00% CI90=[-15.3, +5.1] avg_odds=1.24 bets/wk=  2.0 win%=77.1 closeEV=+0.73%
+     (0.005, 0.01]              n=    33 ROI= -6.36% CI90=[-22.1, +8.5] avg_odds=1.24 bets/wk=  0.9 win%=75.8 closeEV=+2.36%
+     (0.01, 0.02]               n=    32 ROI= +0.16% CI90=[-14.7,+13.6] avg_odds=1.23 bets/wk=  0.9 win%=81.2 closeEV=+1.67%
+     (0.02, 1.0]                n=     5 ROI=-27.00% CI90=[-75.0,+21.0] avg_odds=1.24 bets/wk=  0.1 win%=60.0 closeEV=+1.56%
+POLICY  EV > +0.010
+  all bets                   n=    84 ROI= -1.55% CI90=[-10.5, +6.7] avg_odds=1.22 bets/wk=  2.3 win%=81.0
+   closing line: beat 70% / equal 25% / worse 5%, mean price advantage +4.60%, calibrated EV at closing probability +2.33%, predicted EV +1.42%
+   tiers: tier0 84, tier1 0, tier2 0; outcomes: home 66, draw 0, away 18; median hours to kickoff 101.0
+   by period:
+     2026Q1                     n=    10 ROI= +1.50% CI90=[-25.5,+27.0] avg_odds=1.27 bets/wk=  0.3 win%=80.0 closeEV=-1.68%
+     2026Q2                     n=    30 ROI=-20.00% CI90=[-36.7, -3.5] avg_odds=1.21 bets/wk=  0.8 win%=66.7 closeEV=+1.98%
+     2026Q3                     n=    23 ROI=+12.61% CI90=[ -0.2,+23.5] avg_odds=1.23 bets/wk=  0.6 win%=91.3 closeEV=+4.22%
+     2026Q4                     n=    21 ROI= +7.86% CI90=[ -5.5,+19.5] avg_odds=1.20 bets/wk=  0.6 win%=90.5 closeEV=+2.83%
+   by band:
+     (1.0, 1.1]                 n=    14 ROI= -5.71% CI90=[-21.4,+10.0] avg_odds=1.10 bets/wk=  0.4 win%=85.7 closeEV=+2.92%
+     (1.1, 1.2]                 n=    26 ROI= -5.19% CI90=[-19.9, +8.7] avg_odds=1.17 bets/wk=  0.7 win%=80.8 closeEV=+2.22%
+     (1.2, 1.3]                 n=    39 ROI= -2.31% CI90=[-15.6,+11.0] avg_odds=1.27 bets/wk=  1.1 win%=76.9 closeEV=+2.50%
+     (1.3, 1.45]                n=     5 ROI=+35.00% CI90=[+35.0,+35.0] avg_odds=1.35 bets/wk=  0.1 win%=100.0 closeEV=+0.41%
+   by evb:
+     (0.01, 0.02]               n=    77 ROI= -0.39% CI90=[ -9.8, +8.2] avg_odds=1.22 bets/wk=  2.1 win%=81.8 closeEV=+2.38%
+     (0.02, 1.0]                n=     7 ROI=-14.29% CI90=[-49.3,+20.0] avg_odds=1.22 bets/wk=  0.2 win%=71.4 closeEV=+1.89%

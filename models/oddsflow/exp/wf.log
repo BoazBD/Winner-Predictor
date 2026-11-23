@@ -1,0 +1,56 @@
+2024-10-01 2024448 652239 49
+2025-01-01 2676687 570147 59
+2025-04-01 3246834 640368 62
+2025-07-01 3887202 669687 64
+2025-10-01 4556889 572949 69
+2026-01-01 5129838 293910 67
+own_m           0.129
+own_l           0.123
+fav_o           0.094
+own_o           0.081
+kick_hod        0.047
+a_l             0.043
+b_l             0.042
+ttk_h           0.037
+open_h          0.033
+b_sl            0.024
+own_sl          0.024
+kick_dow        0.022
+ovr             0.019
+a_sl            0.018
+outcome         0.018
+own_rr          0.015
+chg_rate        0.014
+snap_hod        0.014
+prev_quiet_h    0.014
+absmove_sum     0.013
+b_dopen         0.012
+own_lastd       0.011
+dov             0.011
+a_dopen         0.010
+own_dopen       0.010
+ttk_h           0.146
+tier            0.109
+own_l           0.070
+ovr             0.062
+own_m           0.055
+a_lastd         0.045
+own_o           0.043
+outcome         0.036
+b_l             0.035
+a_l             0.034
+own_lastd       0.034
+kick_hod        0.030
+fav_o           0.026
+own_dtw         0.026
+own_d12h        0.024
+open_h          0.020
+kick_dow        0.018
+rank            0.017
+own_prevd       0.015
+snap_hod        0.014
+own_d1h         0.012
+prev_quiet_h    0.012
+own_frommax     0.010
+own_d24h        0.008
+own_d3h         0.008

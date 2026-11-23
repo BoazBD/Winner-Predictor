@@ -35,3 +35,9 @@ lambdas/predict_winner_model/oddsflow/
 *.pyc
 research/**/logs/
 research/**/*.log
+
+# model folders: code + small trained models in git; data, work dirs and environments not
+winner_model/data/
+winner_model/.venv/
+models/**/work/
+models/**/.venv/
