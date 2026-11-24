@@ -36,9 +36,18 @@ It went live on 2026-11-22.
 | Test (Oct 1 – Nov 18) | 3.1 | +100% (2 games) | $149 |
 
 - **Exits:** 37% of fills sell fully at target; 14% sell partly at target and the rest before kickoff; 34% are all sold before kickoff (still about +57%); **14% hold some shares through the game** (about 4% of the money, about −$75 in total).
-- **Money in resting orders:** about $4–8k on average, more on busy weekends.
+- **Money in resting orders:** about $4–8k on average but **$62–88k at peak moments** (`s12_budget.py`). Polymarket locks the full cost of every resting buy, so the $/month above assume that much is available.
 - **Fills are rare and lumpy** (top fills make most of the $). Judge after 2–3 months; zero fills in a day is normal.
 - **Clean live test:** the hold-out is kickoffs after 2026-11-18. All earlier data has been used for research.
+
+## The $1,000 version (shadow book "sm", added 2026-11-23)
+The owner plans to start real trading with about $1,000, so every paper order also carries a second size, `sm`.
+- **Rule** (`small_shares()` in `sweep.py`): $800 (`SWEEP_SM_BUDGET`) for resting orders and $200 kept free. Cells of (side, whole hours to kickoff) get 100 shares per order in this order until the money runs out: No 0–1 h, No 1–2 h, Yes 0–1 h, Yes 1–2 h, No 2–3 h, Yes 2–3 h. The cell where it runs out is scaled down; under 5 shares means no order.
+- **Why this order:** profit per locked $ (% a month, train / validation) is 23 / 11 for No 0–1 h, 11 / 6 for No 1–2 h, 10 / 0 for Yes 0–1 h, and about 1 or less beyond 3 h.
+- **Positions** record `sm_order`, `q_sm` = min(`sm_order`, `through_shares`), `stake_sm` and `pnl_sm`. Its target sales are min(`q_sm`, `q_exit`); the rest gets the same liquidation price or result as the main book.
+- **Backtest:** about $49 / $32 / $3 a month in train / validation / test, at about +60% per $ on fills. Test is weak because its few fills came at busy moments, when $800 is spread thin.
+- **Bankroll scaling** ($/month, train / validation): $1.5k → 94 / 39; $3k → 163 / 61; $6k → 194 / 135; $15k → 210 / 179.
+- **Tested and dropped:** adding No orders 3–12 h before kickoff as filler (+$8 a month in train, +$1 in validation).
 
 ## Architecture
 - **`predict_winner_model` Lambda** (il-central-1, every 3 h at :05 UTC; `lambda_function.py`): `write_sweep_universe()` writes Firestore `meta/sweep_universe`.
@@ -48,7 +57,7 @@ It went live on 2026-11-22.
   - It skips new orders if the universe is more than 6.5 h old.
   - **Firestore it writes:**
     - `meta/sweep_state`: `orders` of the last run and `cool` (cooldowns).
-    - `meta/sweep_status`: last run summary, the resting orders now and the `locked_usd`; read by the site.
+    - `meta/sweep_status`: last run summary, the resting orders now (each with its `sm` shares), the `locked_usd` and `sm` (budget, orders and $ locked in the $1,000 version); read by the site.
     - `sweep_positions/{uid}_{o}_{s}_{lvl}_{fill_ts}`: one document per fill. Fields include `c, L, T, q, through_shares, q_exit, status` (`open` / `held` / `closed`), `how` (`target`, `liquidated`, `target+liquidated`, `held to result`), `pnl`, `stake`, `fill_ts` and `kick_ts`.
 - **Site** (Flask on Cloud Run, `site/`): route `/sweep`, tab "Panic catcher" (Hebrew "תופס פאניקה"), template `templates/sweep.html`.
   - Data: `db.get_sweep()` through `cache.py`, refreshed about every 30 min.
@@ -73,6 +82,7 @@ It went live on 2026-11-22.
 ## Research trail
 - **Reports:** `research/ideas/sweep_catch/REPORT.md` (and `.html`).
   - Original POC: `s01`–`s08`.
+  - Bankroll review: `s12_budget.py` (money locked per 5-minute slot; allocation policies under a fixed budget).
   - Production tuning: `s10_detail.py` (replay of all candidates, with many settings) and `s11_eval.py` (rule evaluator; `fills(spec)`, `table()`).
   - The final fills are in `out/s11_final_fills.parquet`.
 - **Worked example of a real panic sale and exit:** `research/ideas/sweep_catch/example/panic_example.html` (Pereira vs América de Cali, 2026-11-14).

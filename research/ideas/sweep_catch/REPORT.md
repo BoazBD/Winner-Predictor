@@ -108,3 +108,32 @@ The edge is real per $ but small in dollars:
 ## Production check
 - I replayed the production code (`lambdas/predict_winner_model/sweep.py`) on a past test game, using the real trade feed and price history.
 - It reproduced the research fills: same prices, same fill sizes (30 and 500 shares) and the same +$160 exit.
+
+---
+
+# Review under a fixed bankroll (2026-11-23, `s12_budget.py`)
+
+Polymarket locks the full cost of every resting buy order. `s12` rebuilds, for every 5-minute slot, the total cost of all orders the bot would rest (by hours to kickoff, side and level), then replays the fills under a bankroll cap.
+
+## Findings
+- **The paper size needs far more money than first estimated.** At 2 × 500 shares the orders cost about $4–8k on average, but **$62–88k at the busiest moments** (weekend afternoons). The paper results ($150–220 a month) assume that money is always available.
+- **Where the profit per locked $ is** (50-share orders, % a month on the money locked, train / validation):
+  - "No" side, last hour: 23% / 11%.
+  - "No" side, 1–2 h: 11% / 6%.
+  - "Yes" side, last hour: 10% / 0%.
+  - Beyond 3 h: about 1% or less. 12–24 h was 5–7% on train but about 0 in validation.
+- **Best use of a small bankroll:** fill the budget in priority order: No 0–1 h, No 1–2 h, Yes 0–1 h, Yes 1–2 h, No 2–3 h, Yes 2–3 h, then No 3–12 h as filler. Each order gets a fixed size until the money runs out. Different orderings of the first cells give about the same result.
+
+| Bankroll for orders | Shares per order | $/month train | $/month Jul–Sep | $/month Oct–Nov |
+|---|---|---|---|---|
+| $300 | 50 | 29 | 14 | 1 |
+| $500 | 50 | 42 | 21 | 2 |
+| $800 | 100 | 57 | 33 | 3 |
+| $1,500 | 400 | 94 | 39 | 6 |
+| $3,000 | 400 | 163 | 61 | 12 |
+| $6,000 | 400 | 194 | 135 | 21 |
+| $15,000 | 400 | 210 | 179 | 51 |
+
+- **Return per $ spent on fills stays at about +60–65%** at every bankroll. The bankroll limits how many of the sweeps we can be present for, and how much of each we take.
+- **Oct–Nov is weak under a cap.** Its few fills came at busy moments, when a small bankroll is spread thin. The sample is tiny (1.6 months).
+- **Without the Winner filter** (same rule, last 3 h): +64% / +68% / +42% per $ against +70% / +68% / +100% with it. The deep bids mostly work without Winner, so games and sports that Winner doesn't list are a possible extension. That is untested: we have no data for them yet.

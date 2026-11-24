@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ t.sweep }}{% endblock %}
+{% block title %}{{ SEO[lang].sweep[0] }}{% endblock %}
+{% block description %}{{ SEO[lang].sweep[1] }}{% endblock %}
 
 {% macro sign(x) %}{{ 'pos' if x and x > 0 else ('neg' if x and x < 0 else '') }}{% endmacro %}
 {% macro cents(x) %}{{ ((x * 100) | round(1)) if x is not none else '–' }}¢{% endmacro %}
@@ -18,7 +19,9 @@
 </div>
 
 <p class="note">The backtest on 16k games (real trades, Sep 2025 – Nov 2026) expects about 5–7 fills a month, about +70% per $ spent on fills
-  and about $150–220 a month at this size. Fills are rare and lumpy, so judge it over months, not days.</p>
+  and about $150–220 a month at this size. Fills are rare and lumpy, so judge it over months, not days. This size needs
+  $60–90k free at the busiest moments, because Polymarket locks the full cost of every waiting order; the
+  "$1,000 version" below shows the same trades at a size a small account can afford.</p>
 
 <div class="kpis">
   <div class="kpi lead"><div class="k">P&amp;L</div><div class="v {{ sign(stats.pnl) }}">{{ '+' if stats.pnl > 0 else ('−' if stats.pnl < 0 else '') }}${{ (stats.pnl | abs) | num(2) }}</div><div class="s">{{ stats.closed }} closed</div></div>
@@ -29,9 +32,28 @@
   <div class="kpi"><div class="k">Money in orders</div><div class="v">${{ (status.locked_usd or 0) | num(0) }}</div><div class="s">right now</div></div>
 </div>
 
+<section class="card">
+  <h2>The $1,000 version</h2>
+  <p class="small muted">The same orders, sized for a $1,000 account: ${{ (small.budget or 800) | num(0) }} for waiting orders
+    and the rest kept free. The money goes first to "No" orders on games about to start, then to "Yes" orders, then to
+    games 2–3 hours away, {{ (small.shares_per_order or 100) | num(0) }} shares per order, until it runs out. The backtest
+    expects about $30–50 a month.</p>
+  <div class="kpis">
+    <div class="kpi lead"><div class="k">P&amp;L</div><div class="v {{ sign(small.pnl) }}">{{ '+' if small.pnl > 0 else ('−' if small.pnl < 0 else '') }}${{ (small.pnl | abs) | num(2) }}</div><div class="s">{{ small.closed }} closed</div></div>
+    <div class="kpi"><div class="k">Return per $</div><div class="v {{ sign(small.ret) }}">{{ small.ret | pct }}</div><div class="s">${{ small.staked | num(0) }} spent</div></div>
+    <div class="kpi"><div class="k">Fills</div><div class="v">{{ small.fills }}</div><div class="s">of {{ stats.fills }} at full size</div></div>
+    <div class="kpi"><div class="k">Orders now</div><div class="v">{{ small.orders or 0 }}</div><div class="s">{{ small.games or 0 }} games</div></div>
+    <div class="kpi"><div class="k">Money in orders</div><div class="v">${{ (small.locked_usd or 0) | num(0) }}</div><div class="s">of ${{ (small.budget or 800) | num(0) }}</div></div>
+  </div>
+  {% if points_sm %}
+  <h3>Cumulative P&amp;L of the $1,000 version ($)</h3>
+  <div class="chart-box" dir="ltr"><canvas id="pnl-sm" role="img" aria-label="Cumulative P&L in dollars of the $1,000 version; the closed trades table has the same figures"></canvas></div>
+  {% endif %}
+</section>
+
 {% if points %}
 <section class="card">
-  <h2>Cumulative P&amp;L ($)</h2>
+  <h2>Cumulative P&amp;L at full size ($)</h2>
   <div class="chart-box" dir="ltr"><canvas id="pnl" role="img" aria-label="Cumulative P&L in dollars; the closed trades table has the same figures"></canvas></div>
 </section>
 {% endif %}
@@ -62,7 +84,8 @@
   {% if closed %}
   <div class="table-wrap"><table>
     <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Bought</th><th class="n">Before dump</th><th class="n">Paid</th>
-      <th class="n">Shares</th><th class="n">Sell at</th><th>How</th><th class="n">P&amp;L $</th><th class="n">Return</th><th class="n hide-sm">{{ t.running }}</th></tr></thead>
+      <th class="n">Shares</th><th class="n">Sell at</th><th>How</th><th class="n">P&amp;L $</th><th class="n">Return</th><th class="n hide-sm">{{ t.running }}</th>
+      <th class="n">$1,000 version: shares</th><th class="n">P&amp;L $</th></tr></thead>
     <tbody>
     {% for r in closed %}
       <tr>
@@ -77,6 +100,8 @@
         <td class="n {{ sign(r.pnl) }}">{{ r.pnl | num(2, True) }}</td>
         <td class="n {{ sign(r.ret) }}">{{ r.ret | pct(0) }}</td>
         <td class="n hide-sm {{ sign(r.running) }}">{{ r.running | num(2, True) }}</td>
+        <td class="n">{{ r.q_sm | num(0) }}</td>
+        <td class="n {{ sign(r.pnl_sm) }}">{% if r.q_sm %}{{ r.pnl_sm | num(2, True) }}{% else %}–{% endif %}</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -89,11 +114,11 @@
     <summary>Orders resting now ({{ live | length }}) · games kicking off in the next 3 hours</summary>
     {% if live %}
     <div class="table-wrap"><table>
-      <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Buy</th><th class="n">Price now</th><th class="n">Our bid</th><th class="n">Level</th></tr></thead>
+      <thead><tr><th>{{ t.kickoff }}</th><th>{{ t.match }}</th><th>Buy</th><th class="n">Price now</th><th class="n">Our bid</th><th class="n">Level</th><th class="n">Shares in the $1,000 version</th></tr></thead>
       <tbody>
       {% for o in live %}
         <tr><td class="t">{{ o.kickoff | when }}</td><td class="match">{{ o.home }} – {{ o.away }}</td><td>{{ o.token }}</td>
-          <td class="n">{{ cents(o.c) }}</td><td class="n">{{ cents(o.L) }}</td><td class="n">{{ o.level }}</td></tr>
+          <td class="n">{{ cents(o.c) }}</td><td class="n">{{ cents(o.L) }}</td><td class="n">{{ o.level }}</td><td class="n">{{ o.sm | num(0) }}</td></tr>
       {% endfor %}
       </tbody>
     </table></div>
@@ -118,17 +143,18 @@
 {% endblock %}
 
 {% block scripts %}
-{% if points %}
+{% if points or points_sm %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
 (() => {
-  const points = {{ points | tojson }};
-  const el = document.getElementById('pnl');
-  if (!window.Chart || !el) return;
-  let chart;
+  if (!window.Chart) return;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const draw = () => {
+  const make = (id, points) => {
+    const el = document.getElementById(id);
+    if (!el || !points.length) return;
+    let chart;
+    const draw = () => {
     if (chart) chart.destroy();
     const grid = css('--grid'), muted = css('--muted');
     chart = new Chart(el, {
@@ -148,9 +174,12 @@
       }
     });
   };
-  draw();
-  document.addEventListener('themechange', draw);
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+    draw();
+    document.addEventListener('themechange', draw);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  };
+  make('pnl', {{ points | tojson }});
+  make('pnl-sm', {{ points_sm | tojson }});
 })();
 </script>
 {% endif %}

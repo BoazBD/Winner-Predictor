@@ -15,7 +15,10 @@ Every 5 minutes (its own Lambda, same image as predict_winner_model, handler swe
      only if Winner's fair probability of that token is >= L + 6c (the sweep pushed the price AWAY from fair).
      After a fill the same (game, outcome, side, level) is not quoted for 60 minutes.
 Backtest (16k games, real trades, Sep 2025 - Nov 2026, 1,000 shares per outcome-side): +72% / +69% / +100% per $
-in train / validation / test, ~6 fills a month, ~$150-220 a month, ~$4-8k of resting orders.
+in train / validation / test, ~6 fills a month, ~$150-220 a month, ~$4-8k of resting orders on average but
+$62-88k at peak moments (s12). Every order therefore also carries a second size, "sm": what a $1,000 bankroll would
+rest there ($800 budget, 100 shares per order, "No" side and nearest kickoff first); positions record q_sm / pnl_sm.
+Backtest of that book: ~$49 / $32 / $3 a month in train / validation / test.
 
 Firestore: meta/sweep_universe (written by predict_winner_model every 3 h: matched games, tokens, Winner fair),
 meta/sweep_state (orders of the last run + cooldowns), meta/sweep_status (last run summary, for the site),
@@ -36,6 +39,12 @@ BAND = (0.08, 0.92)
 LEVELS = {"A": (0.15, 0.40), "B": (0.20, 0.50)}  # L = floor(min(c - dm, c * (1 - f)))
 GAP, LMIN, COOL_MIN = 0.06, 0.02, 60
 SHARES = float(os.environ.get("SWEEP_SHARES", "500"))          # per order (level); 2 levels = 1,000 per outcome-side
+# Shadow book "sm": the same orders sized for a small real bankroll (research s12). Polymarket locks the full cost of
+# every resting buy, so SM_BUDGET $ is spread SM_SHARES per order over (side, whole hours to kickoff) cells in this
+# order until it runs out (the cell where it runs out is scaled down; under SM_MIN shares = no order).
+SM_BUDGET = float(os.environ.get("SWEEP_SM_BUDGET", "800"))    # of a $1,000 bankroll; the rest holds filled positions
+SM_SHARES, SM_MIN = 100.0, 5.0
+SM_PRIORITY = [(-1, 0), (-1, 1), (1, 0), (1, 1), (-1, 2), (1, 2)]   # "No" first, nearest kickoff first
 MAX_ORDER_AGE_MIN = 20       # an order missed by a failed run is checked for at most this long
 UNIVERSE_MAX_AGE_H = 6.5
 TOL = 5e-5
@@ -119,6 +128,32 @@ def ours(m, s):
     return px, bid_hit, ~bid_hit
 
 
+def small_shares(orders, now_ts):
+    """Sets o["sm"] = shares of each order in the small-bankroll book (see SM_BUDGET). Returns $ locked."""
+    cell = lambda o: (o["s"], min(int((o["kick_ts"] - now_ts) // 3600), 2))
+    need = {}
+    for o in orders:
+        need[cell(o)] = need.get(cell(o), 0.0) + o["L"] * SM_SHARES
+    left, sh = SM_BUDGET, {}
+    for k in SM_PRIORITY:
+        n = need.get(k, 0.0)
+        frac = min(left / n, 1.0) if n > 0 else 0.0
+        sh[k] = SM_SHARES * frac
+        left -= n * frac
+    for o in orders:
+        v = sh.get(cell(o), 0.0)
+        o["sm"] = round(v, 2) if v >= SM_MIN else 0.0
+    return round(sum(o["L"] * o["sm"] for o in orders), 2)
+
+
+def pnl_small(p, rest_value):
+    """P&L of the small book's share of a position; `rest_value` = net $ per share of what was not sold at target.
+    Its target sales = min(its shares, the main book's): never more than real buyers took."""
+    q = p.get("q_sm") or 0.0
+    qx = min(q, p["q_exit"])
+    return round(qx * (p["T"] - p["L"]) + (q - qx) * (rest_value - p["L"]), 4)
+
+
 def _db():
     from google.cloud import firestore
     if not hasattr(_db, "c"):
@@ -178,6 +213,7 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
         tx = m.tx.iloc[i]
         through = float(m["size"][(m.tx == tx) & hit].sum())
         q = min(SHARES, through)
+        q_sm = min(o.get("sm") or 0.0, through)
         g = games.get(o["uid"], {})
         key = f'{o["uid"]}_{o["o"]}_{o["s"]}_{o["lvl"]}'
         cool[key] = int(m.ts.iloc[i]) + COOL_MIN * 60
@@ -190,6 +226,7 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
                    kick_ts=o["kick_ts"], c=o["c"], L=o["L"], T=o["T"], wf=o["wf"], placed_ts=o["placed_ts"],
                    fill_ts=int(m.ts.iloc[i]), fill_tx=tx, sweep_low=float(px[(m.tx == tx)].min()),
                    through_shares=round(through, 2), q=round(q, 4), stake=round(q * o["L"], 4),
+                   sm_order=o.get("sm") or 0.0, q_sm=round(q_sm, 4), stake_sm=round(q_sm * o["L"], 4),
                    q_exit=0.0, checked_ts=int(m.ts.iloc[i]), status="open",
                    mins_to_kick=round((o["kick_ts"] - int(m.ts.iloc[i])) / 60, 1),
                    filled_at=pd.Timestamp(int(m.ts.iloc[i]), unit="s").strftime("%Y-%m-%d %H:%M"),
@@ -219,7 +256,8 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
         if take > 0:
             p["exit_last_ts"] = upto
         if p["q_exit"] >= p["q"] - 1e-9:
-            p.update(status="closed", how="target", pnl=round(p["q"] * (p["T"] - p["L"]), 4), closed_at=now.isoformat())
+            p.update(status="closed", how="target", pnl=round(p["q"] * (p["T"] - p["L"]), 4),
+                     pnl_sm=pnl_small(p, p["T"]), closed_at=now.isoformat())
             res["exits"] += 1
         elif now_ts >= stop:
             rest = p["q"] - p["q_exit"]
@@ -228,7 +266,8 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
                 vb = max(float(px[w].iloc[-1]) - 0.01, 0.001)
                 pnl = p["q_exit"] * (p["T"] - p["L"]) + rest * (vb - fee(vb, p.get("fee_rate", 0.05)) - p["L"])
                 p.update(status="closed", how="target+liquidated" if p["q_exit"] > 0 else "liquidated",
-                         liq_price=round(vb, 4), pnl=round(pnl, 4), closed_at=now.isoformat())
+                         liq_price=round(vb, 4), pnl=round(pnl, 4),
+                         pnl_sm=pnl_small(p, vb - fee(vb, p.get("fee_rate", 0.05))), closed_at=now.isoformat())
                 res["liquidated"] += 1
             else:
                 p.update(status="held"); res["held"] += 1
@@ -246,7 +285,8 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
             won = op[0] if p["side"] > 0 else op[1]
             rest = p["q"] - p["q_exit"]
             p = dict(p, status="closed", how="held to result", won=bool(won),
-                     pnl=round(p["q_exit"] * (p["T"] - p["L"]) + rest * (won - p["L"]), 4), closed_at=now.isoformat())
+                     pnl=round(p["q_exit"] * (p["T"] - p["L"]) + rest * (won - p["L"]), 4),
+                     pnl_sm=pnl_small(p, won), closed_at=now.isoformat())
             updates[pid] = p; res["settled"] += 1
         except Exception as e:
             log.warning("settle %s failed: %s", pid, e)
@@ -280,10 +320,12 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
     elif age_h > UNIVERSE_MAX_AGE_H:
         res["skipped"] = f"universe is {age_h:.1f} h old"
     res["orders"] = len(orders)
+    locked_sm = small_shares(orders, now_ts)
 
     if dry:
         res["new_positions"] = [d for _, d in new_pos]
         res["sample_orders"] = orders[:10]
+        res["sm"] = dict(locked_usd=locked_sm, orders=sum(1 for o in orders if o["sm"] > 0))
         return res
     batch = db.batch()
     for pid, p in updates.items():
@@ -295,7 +337,9 @@ def run(now=None, dry=False, time_left=lambda: 1e9):
         last_run=now.isoformat(), universe_updated=uni.get("updated"), games_in_window=len(todo),
         games_quoted=res["games_quoted"], orders=len(orders), locked_usd=round(sum(o["L"] * SHARES for o in orders), 2),
         shares_per_order=SHARES, result=res,
-        live=[dict(uid=o["uid"], o=o["o"], s=o["s"], lvl=o["lvl"], c=o["c"], L=o["L"], kick_ts=o["kick_ts"],
+        sm=dict(budget=SM_BUDGET, shares_per_order=SM_SHARES, locked_usd=locked_sm,
+                orders=sum(1 for o in orders if o["sm"] > 0), games=len({o["uid"] for o in orders if o["sm"] > 0})),
+        live=[dict(uid=o["uid"], o=o["o"], s=o["s"], lvl=o["lvl"], c=o["c"], L=o["L"], sm=o["sm"], kick_ts=o["kick_ts"],
                    title=games[o["uid"]].get("poly_title"), home=games[o["uid"]].get("home"), away=games[o["uid"]].get("away"))
               for o in live[:300]]))
     return res
