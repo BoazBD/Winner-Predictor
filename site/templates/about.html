@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ t.about }}{% endblock %}
+{% block title %}{{ SEO[lang].about[0] }}{% endblock %}
+{% block description %}{{ SEO[lang].about[1] }}{% endblock %}
 {% block content %}
 <div class="prose">
   <h1>How it works</h1>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ t.games }}{% endblock %}
+{% block title %}{{ SEO[lang].games[0] }}{% endblock %}
+{% block description %}{{ SEO[lang].games[1] }}{% endblock %}
 {% block content %}
 <div class="intro">
   <div>
@@ -31,7 +32,7 @@
     {% for r in rows %}
       <tr>
         <td class="t">{{ r.kickoff | when }}</td>
-        <td class="match"><a href="{{ url_for('games', game_id=r.id, lang=lang) }}">{{ r.home }} – {{ r.away }}</a><span class="muted">{{ r.league }}</span></td>
+        <td class="match"><a href="{{ url_for('game', game_id=r.id, lang=lang if lang == 'he' else None) }}">{{ r.home }} – {{ r.away }}</a><span class="muted">{{ r.league }}</span></td>
         <td><div class="cell3">{% for o in r.odds %}<span>{{ o | num }}</span>{% endfor %}</div></td>
         <td class="hide-sm"><div class="cell3">{% for p in r.prob %}<span>{{ (p * 100) | pct(0, False) if p is not none else '–' }}</span>{% endfor %}</div></td>
         <td><div class="cell3">{% for e in r.ev %}<span class="{{ 'hit' if r.picked[loop.index0] }}">{{ (e * 100) | pct(0) if e is not none else '–' }}</span>{% endfor %}</div></td>

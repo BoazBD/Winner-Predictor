@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% block title %}{{ SEO[lang].dashboard[0] }}{% endblock %}
+{% block description %}{{ SEO[lang].dashboard[1] }}{% endblock %}
 
 {% macro sign(x) %}{{ 'pos' if x and x > 0 else ('neg' if x and x < 0 else '') }}{% endmacro %}
 

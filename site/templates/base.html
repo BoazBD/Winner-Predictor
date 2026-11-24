@@ -3,8 +3,33 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% set links = seo_links() %}
   <title>{% block title %}{{ t.title }}{% endblock %} · AI Sport Better</title>
-  <meta name="description" content="Paper trading of Winner betting models on Polymarket.">
+  <meta name="description" content="{% block description %}{{ SEO[lang].dashboard[1] }}{% endblock %}">
+  {% block robots %}<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">{% endblock %}
+  <link rel="canonical" href="{{ links.canonical }}">
+  <link rel="alternate" hreflang="en" href="{{ links.en }}">
+  <link rel="alternate" hreflang="he" href="{{ links.he }}">
+  <link rel="alternate" hreflang="x-default" href="{{ links.en }}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AI Sport Better">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:description" content="{{ self.description() }}">
+  <meta property="og:url" content="{{ links.canonical }}">
+  <meta property="og:image" content="{{ SITE_URL }}{{ url_for('static', filename='images/logo-hero.png') }}">
+  <meta property="og:locale" content="{{ 'he_IL' if lang == 'he' else 'en_US' }}">
+  <meta property="og:locale:alternate" content="{{ 'en_US' if lang == 'he' else 'he_IL' }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ self.title() }}">
+  <meta name="twitter:description" content="{{ self.description() }}">
+  <meta name="twitter:image" content="{{ SITE_URL }}{{ url_for('static', filename='images/logo-hero.png') }}">
+  <script type="application/ld+json">{{ {'@context': 'https://schema.org', '@graph': [
+    {'@type': 'WebSite', 'name': 'AI Sport Better', 'url': SITE_URL + '/', 'inLanguage': ['en', 'he'],
+     'description': SEO.en.dashboard[1]},
+    {'@type': 'Organization', 'name': 'AI Sport Better', 'url': SITE_URL + '/',
+     'logo': SITE_URL + url_for('static', filename='images/logo.png'),
+     'sameAs': ['https://www.linkedin.com/in/boaz-bar-david/']}]} | tojson }}</script>
+  {% block jsonld %}{% endblock %}
   <link rel="icon" href="{{ url_for('static', filename='images/favicon-32x32.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/apple-touch-icon.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">

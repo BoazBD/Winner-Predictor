@@ -6,7 +6,7 @@ from datetime import datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, Response, redirect, render_template, request, url_for
 
 from cache import get_cache, load
 
@@ -46,6 +46,40 @@ MODELS = {
                        "בשריקת הפתיחה. \"לא X\" זוכה אלא אם X קורה."),
 }
 EV_OPTIONS = [None, 0.03, 0.04, 0.05, 0.07, 0.10, 0.15]
+# Public address, for canonical links, the sitemap and social previews (set SITE_URL when a custom domain is added).
+SITE_URL = os.environ.get('SITE_URL', 'https://winner-site-dypbatdkoq-uc.a.run.app').rstrip('/')
+ISRAEL_TZ = ZoneInfo('Asia/Jerusalem')
+
+# Search-result title and description of each page (the game page builds its own from the teams).
+SEO = {
+    'en': dict(
+        dashboard=('AI soccer betting models tested live on Polymarket',
+                   'Five AI models built on Winner (Israel) odds, paper-traded against Polymarket soccer prices: live '
+                   'bets, profit and loss, ROI and closing-line value for every model, updated every 3 hours.'),
+        games=("Today's soccer games: Winner odds and AI predictions",
+               'Every open soccer game on both Winner and Polymarket, with Winner odds, AI win / draw / loss '
+               'probabilities and expected value. Updated every 3 hours.'),
+        sweep=('Panic catcher: buying panic sales on Polymarket soccer',
+               'A live paper-trading bot that rests deep buy orders before kickoff and catches panic sales on '
+               'Polymarket soccer markets: every fill, exit and P&L.'),
+        about=('How the AI betting models work',
+               'How the site works: Winner odds, Polymarket prices, game matching, the five models and how paper '
+               'bets are placed and settled.')),
+    'he': dict(
+        dashboard=('מודלים של AI להימורי כדורגל מול פולימרקט',
+                   'חמישה מודלים של AI שמבוססים על יחסי Winner, במסחר מדומה מול מחירי כדורגל בפולימרקט: הימורים חיים, '
+                   'רווח והפסד, תשואה ו-CLV לכל מודל, מתעדכן כל 3 שעות.'),
+        games=('משחקי הכדורגל של היום: יחסי Winner ותחזיות AI',
+               'כל משחקי הכדורגל הפתוחים ב-Winner ובפולימרקט, עם יחסי Winner, הסתברויות ניצחון / תיקו / הפסד של '
+               'המודל ותוחלת רווח. מתעדכן כל 3 שעות.'),
+        sweep=('תופס פאניקה: קנייה במכירות פאניקה בפולימרקט',
+               'בוט מסחר מדומה שמציב פקודות קנייה עמוקות לפני המשחק ותופס מכירות פאניקה בשווקי הכדורגל של '
+               'פולימרקט: כל מילוי, מכירה ורווח.'),
+        about=('איך מודלי ההימורים עובדים',
+               'איך האתר עובד: יחסי Winner, מחירי פולימרקט, התאמת משחקים, חמשת המודלים ואיך הימורים מדומים '
+               'נרשמים ומוכרעים.')),
+}
+
 HEBREW = re.compile('[֐-׿]')
 OUTCOMES = {'Home Win': 0, 'Draw': 1, 'Away Win': 2}
 
@@ -159,7 +193,7 @@ def _min_ev():
 def dashboard():
     cache = get_cache()
     if not cache.ready:
-        return render_template('loading.html')
+        return _loading()
     lang, min_ev = _lang(), _min_ev()
     model = request.args.get('model') or request.args.get('model_type')
     model = model if model in MODELS else 'value_v1'
@@ -183,33 +217,70 @@ def dashboard():
                            updated=last, page='dashboard')
 
 
+def _view(g, lang, names):
+    return dict(id=g.get('id'), kickoff=g['match_time'], league_key=g.get('league'),
+                league=_name(g.get('league'), g.get('english_league'), lang, names),
+                home=_name(g.get('home_team'), g.get('english_home_team'), lang, names),
+                away=_name(g.get('away_team'), g.get('english_away_team'), lang, names),
+                odds=[(g.get('odds') or {}).get(k) for k in ('home', 'draw', 'away')],
+                prob=[g.get(f'{k}_prob') for k in ('home_win', 'draw', 'away_win')],
+                ev=[g.get(f'{k}_ev') for k in ('home_win', 'draw', 'away_win')],
+                picked=[s in (g.get('flagged_sides') or []) for s in (0, 1, 2)],
+                history=sorted(g.get('history') or [], key=lambda h: h.get('ts', ''), reverse=True))
+
+
+def _loading():
+    """Data not loaded yet (cold start): 503 + Retry-After so search engines come back instead of indexing it."""
+    return render_template('loading.html'), 503, {'Retry-After': '30'}
+
+
+@app.route('/game/<game_id>')
+def game(game_id):
+    cache = get_cache()
+    if not cache.ready:
+        return _loading()
+    lang, names = _lang(), cache.get('team_names', {})
+    from db import get_prediction
+    items = cache.get('all_predictions', [])
+    g = get_prediction(game_id) if any(p.get('id') == game_id for p in items) else None   # history: one read
+    g = _view(g, lang, names) if g else None
+    if g:
+        date = g['kickoff'].strftime('%d %b %Y')
+        if lang == 'he':
+            seo = (f"{g['home']} נגד {g['away']}: תחזית ויחסים, {date}",
+                   f"תחזית AI ל{g['home']} נגד {g['away']} ({g['league']}, {date}): יחסי Winner, הסתברויות ניצחון / "
+                   f"תיקו / הפסד ותוחלת רווח, מתעדכן כל 3 שעות.")
+        else:
+            seo = (f"{g['home']} vs {g['away']} prediction and odds, {date}",
+                   f"AI prediction for {g['home']} vs {g['away']} ({g['league']}, {date}): Winner odds, model win / "
+                   f"draw / loss probabilities and expected value, updated every 3 hours.")
+        start = g['kickoff'].replace(tzinfo=ISRAEL_TZ).isoformat()
+        event = {'@context': 'https://schema.org', '@type': 'SportsEvent', 'name': f"{g['home']} vs {g['away']}",
+                 'sport': 'Soccer', 'startDate': start, 'eventStatus': 'https://schema.org/EventScheduled',
+                 'homeTeam': {'@type': 'SportsTeam', 'name': g['home']},
+                 'awayTeam': {'@type': 'SportsTeam', 'name': g['away']},
+                 'superEvent': {'@type': 'SportsEvent', 'name': g['league']} if g['league'] else None,
+                 'url': SITE_URL + url_for('game', game_id=game_id, **({'lang': 'he'} if lang == 'he' else {}))}
+        event = {k: v for k, v in event.items() if v is not None}
+    else:
+        seo, event = None, None
+    html = render_template('game.html', t=TEXT[lang], lang=lang, g=g, game_id=game_id, page='games', seo=seo,
+                           jsonld=event)
+    return (html, 200) if g else (html, 404)     # a game leaves the list at kickoff: tell search engines it is gone
+
+
 @app.route('/all')
 def games():
     cache = get_cache()
     if not cache.ready:
-        return render_template('loading.html')
+        return _loading()
     lang, names = _lang(), cache.get('team_names', {})
     league, q, game_id = request.args.get('league', ''), request.args.get('q', '').strip(), request.args.get('game_id', '')
-
-    def view(g):
-        return dict(id=g.get('id'), kickoff=g['match_time'], league_key=g.get('league'),
-                    league=_name(g.get('league'), g.get('english_league'), lang, names),
-                    home=_name(g.get('home_team'), g.get('english_home_team'), lang, names),
-                    away=_name(g.get('away_team'), g.get('english_away_team'), lang, names),
-                    odds=[(g.get('odds') or {}).get(k) for k in ('home', 'draw', 'away')],
-                    prob=[g.get(f'{k}_prob') for k in ('home_win', 'draw', 'away_win')],
-                    ev=[g.get(f'{k}_ev') for k in ('home_win', 'draw', 'away_win')],
-                    picked=[s in (g.get('flagged_sides') or []) for s in (0, 1, 2)],
-                    history=sorted(g.get('history') or [], key=lambda h: h.get('ts', ''), reverse=True))
-
     items = cache.get('all_predictions', [])
-    if game_id:
-        from db import get_prediction
-        g = get_prediction(game_id) if any(p.get('id') == game_id for p in items) else None   # history: one read
-        g = view(g) if g else None
-        return render_template('game.html', t=TEXT[lang], lang=lang, g=g, game_id=game_id, page='games')
+    if game_id:                     # old links: the game page has its own URL now
+        return redirect(url_for('game', game_id=game_id, **({'lang': 'he'} if lang == 'he' else {})), code=301)
 
-    rows = sorted((view(g) for g in items), key=lambda r: r['kickoff'])
+    rows = sorted((_view(g, lang, names) for g in items), key=lambda r: r['kickoff'])
     leagues = sorted({(r['league_key'], r['league']) for r in rows if r['league_key']}, key=lambda x: x[1].lower())
     if league:
         rows = [r for r in rows if r['league_key'] == league]
@@ -250,7 +321,7 @@ def sweep():
     """sweep_v1: deep resting buys that catch panic sales, paper-traded by the sweep_catch Lambda every 5 minutes."""
     cache = get_cache()
     if not cache.ready:
-        return render_template('loading.html')
+        return _loading()
     lang = _lang()
     data = cache.get('sweep', {}) or {}
     st = data.get('status') or {}
@@ -268,25 +339,33 @@ def sweep():
                          low=p.get('sweep_low'), filled=_local(p.get('fill_ts')), fill_ts=p.get('fill_ts') or 0,
                          mins=p.get('mins_to_kick'), stake=stake, pnl=pnl, liq=p.get('liq_price'),
                          ret=(100 * pnl / stake) if pnl is not None and stake else None,
+                         q_sm=p.get('q_sm') or 0.0, stake_sm=p.get('stake_sm') or 0.0, pnl_sm=p.get('pnl_sm'),
                          url=f"https://polymarket.com/event/{p['poly_slug']}" if p.get('poly_slug') else None))
     closed = sorted((r for r in rows if r['status'] == 'closed'), key=lambda r: r['fill_ts'])
-    run = 0.0
+    run = run_sm = 0.0
     for r in closed:
         run += r['pnl'] or 0.0
-        r['running'] = run
+        run_sm += r['pnl_sm'] or 0.0
+        r['running'], r['running_sm'] = run, run_sm
     staked = sum(r['stake'] for r in closed)
     stats = dict(fills=len(rows), closed=len(closed), pnl=run, ret=100 * run / staked if staked else None,
                  staked=staked, target=sum(1 for r in closed if r['how'] == 'target'),
                  open=sum(1 for r in rows if r['status'] == 'open'), held=sum(1 for r in rows if r['status'] == 'held'))
+    # the same trades at the size a $1,000 bankroll could rest (sweep.py: SM_BUDGET)
+    small = [r for r in closed if r['q_sm'] > 0]
+    staked_sm = sum(r['stake_sm'] for r in small)
+    stats_sm = dict(pnl=run_sm, closed=len(small), staked=staked_sm, ret=100 * run_sm / staked_sm if staked_sm else None,
+                    fills=sum(1 for r in rows if r['q_sm'] > 0), **(st.get('sm') or {}))
     live = []
     for o in st.get('live') or []:
         home, away = _teams(o.get('title'), o.get('home'), o.get('away'), lang)
         live.append(dict(kickoff=_local(o.get('kick_ts')), home=home, away=away, level=o.get('lvl'), c=o.get('c'),
-                         L=o.get('L'), token=_token_name(o.get('o'), o.get('s', 1), home, away, lang)))
+                         L=o.get('L'), sm=o.get('sm') or 0.0, token=_token_name(o.get('o'), o.get('s', 1), home, away, lang)))
     last_run = st.get('last_run')
     last_run = _local(datetime.fromisoformat(last_run).timestamp()) if last_run else None
     points = [dict(x=r['filled'].strftime('%Y-%m-%dT%H:%M'), y=round(r['running'], 2)) for r in closed if r['filled']]
-    return render_template('sweep.html', t=TEXT[lang], lang=lang, stats=stats, status=st, last_run=last_run, live=live,
+    points_sm = [dict(x=r['filled'].strftime('%Y-%m-%dT%H:%M'), y=round(r['running_sm'], 2)) for r in small if r['filled']]
+    return render_template('sweep.html', t=TEXT[lang], lang=lang, stats=stats, small=stats_sm, points_sm=points_sm, status=st, last_run=last_run, live=live,
                            open=sorted((r for r in rows if r['status'] in ('open', 'held')), key=lambda r: -r['fill_ts']),
                            closed=closed[::-1], points=points, page='sweep')
 
@@ -309,9 +388,29 @@ def cache_status():
     return get_cache().info()
 
 
-@app.route('/robots.txt')
-def robots():
-    return send_from_directory(app.static_folder, 'robots.txt')
+@app.route('/sitemap.xml')
+def sitemap():
+    """Every public page in English and Hebrew (hreflang pairs), including a page per open game."""
+    cache = get_cache()
+    if not cache.ready:
+        return Response('loading', 503, {'Retry-After': '30'})
+    now = datetime.now(ISRAEL_TZ).strftime('%Y-%m-%d')
+    pages = [(url_for(e), now, 'hourly' if e != 'about' else 'monthly') for e in ('dashboard', 'games', 'sweep', 'about')]
+    for p in cache.get('all_predictions', []):
+        if p.get('id'):
+            ts = p.get('prediction_timestamp')
+            pages.append((url_for('game', game_id=p['id']), ts.strftime('%Y-%m-%d') if ts else now, 'hourly'))
+    out = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
+    for path, mod, freq in pages:
+        en, he = SITE_URL + path, SITE_URL + path + '?lang=he'
+        alts = (f'<xhtml:link rel="alternate" hreflang="en" href="{en}"/>'
+                f'<xhtml:link rel="alternate" hreflang="he" href="{he}"/>'
+                f'<xhtml:link rel="alternate" hreflang="x-default" href="{en}"/>')
+        for loc in (en, he):
+            out.append(f'<url><loc>{loc}</loc><lastmod>{mod}</lastmod><changefreq>{freq}</changefreq>{alts}</url>')
+    out.append('</urlset>')
+    return Response('\n'.join(out), mimetype='application/xml')
 
 
 @app.template_filter('pct')
@@ -343,7 +442,13 @@ def helpers():
         args.update(changes)
         qs = urlencode({k: v for k, v in args.items() if v is not None and v != ''})
         return request.path + (f"?{qs}" if qs else '')
-    return dict(url=url, year=datetime.now().year)
+    def seo_links():
+        """Canonical and language URLs of this page: only the path and the language count (filters, sorting and
+        paging are views of the same page)."""
+        en = SITE_URL + request.path
+        he = en + '?lang=he'
+        return dict(canonical=he if request.args.get('lang') in ('he', 'hebrew') else en, en=en, he=he)
+    return dict(url=url, year=datetime.now().year, SEO=SEO, SITE_URL=SITE_URL, seo_links=seo_links)
 
 
 if __name__ == '__main__':
